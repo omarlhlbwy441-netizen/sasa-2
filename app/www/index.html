@@ -602,10 +602,6 @@
             </div>
         </div>
         <div class="top-actions">
-            <button class="icon-btn-header" onclick="toggleGitHubModal()" title="إدارة مستودعات GitHub">
-                <i class="fa-brands fa-github"></i>
-            </button>
-
             <select id="modelSelect" class="model-select">
                 <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
                 <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite</option>
@@ -1259,60 +1255,5 @@
         }
     </script>
 
-    <!-- GitHub Modal Overlay -->
-    <div id="githubModal" class="modal-overlay">
-        <div class="modal-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 12px;">
-                <h3 style="color: var(--primary); display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-brands fa-github"></i> إدارة وتعديل مستودعات GitHub المباشرة
-                </h3>
-                <button onclick="toggleGitHubModal()" style="background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer;">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <!-- Token Section -->
-            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                <input type="password" id="ghTokenInput" placeholder="GitHub Personal Access Token (PAT)" style="flex: 1; background: var(--bg-main); border: 1px solid var(--border); color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem;" />
-                <button onclick="verifyAndLoadGitHub()" style="background: var(--primary); color: #000; font-weight: 700; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer;">
-                    توثيق وربط
-                </button>
-            </div>
-
-            <div id="ghUserStatus" style="font-size: 0.82rem; color: var(--success); margin-bottom: 12px;"></div>
-
-            <!-- Split view: Repos / Files / Code Editor -->
-            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; flex: 1; overflow: hidden; min-height: 320px;">
-                <!-- Repos & Tree List -->
-                <div style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto;">
-                    <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-muted);">المستودعات والملفات:</div>
-                    <select id="ghRepoSelect" onchange="onGHRepoSelected()" style="background: var(--bg-card); color: #fff; border: 1px solid var(--border); padding: 6px; border-radius: 6px; font-size: 0.8rem; width: 100%;">
-                        <option value="">-- اختر مستودعاً --</option>
-                    </select>
-
-                    <div style="display: flex; gap: 6px;">
-                        <input type="text" id="manualRepo" placeholder="owner/repo" style="flex: 1; background: var(--bg-card); border: 1px solid var(--border); color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem;" />
-                        <button onclick="loadManualRepo()" style="background: var(--accent); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.75rem;">فتح</button>
-                        <button onclick="forkCurrentRepo()" style="background: #eab308; color: #000; border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 700;" title="نسخ المستودع (Fork)">نسخ</button>
-                    </div>
-
-                    <div id="ghTreeList" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem;"></div>
-                </div>
-
-                <!-- Code Editor & Commit Panel -->
-                <div style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px;">
-                    <div id="ghActiveFilePath" style="font-weight: 700; font-size: 0.82rem; color: var(--primary);">لم يتم اختيار ملف بعد</div>
-                    <textarea id="ghFileEditor" style="flex: 1; background: #090d16; border: 1px solid var(--border); color: #22c55e; font-family: 'Fira Code', monospace; padding: 10px; border-radius: 8px; font-size: 0.82rem; resize: none; outline: none;"></textarea>
-                    
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="ghCommitMsg" placeholder="رسالة الالتزام (Commit Message)" value="تحديث عبر Sasa AI Platform" style="flex: 1; background: var(--bg-card); border: 1px solid var(--border); color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem;" />
-                        <button onclick="commitGHFileChange()" style="background: var(--primary); color: #000; font-weight: 700; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">
-                            <i class="fa-solid fa-cloud-arrow-up"></i> Commit & Push
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </body>
 </html>

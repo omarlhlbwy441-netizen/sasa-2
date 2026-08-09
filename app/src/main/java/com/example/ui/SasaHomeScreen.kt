@@ -87,8 +87,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.ChatMessage
-import androidx.compose.material.icons.filled.FolderZip
-import com.example.ui.components.GitHubManagerDialog
 import com.example.data.GeminiModel
 import com.example.data.MessageSender
 import com.example.ui.components.MessageTextWithCodeBlocks
@@ -176,27 +174,6 @@ fun SasaHomeScreen(
         }
     }
 
-    // GitHub Manager Dialog
-    if (uiState.showGitHubDialog) {
-        GitHubManagerDialog(
-            token = uiState.githubToken,
-            userStatus = uiState.githubUserStatus,
-            repos = uiState.githubRepos,
-            selectedRepo = uiState.selectedRepo,
-            repoTree = uiState.repoTree,
-            selectedFile = uiState.selectedFile,
-            isLoading = uiState.isLoadingGitHub,
-            onTokenSave = { token -> viewModel.setGitHubToken(token) },
-            onSelectRepo = { repo -> viewModel.setSelectedRepo(repo) },
-            onOpenFile = { owner, repo, path, branch -> viewModel.openRepoFile(owner, repo, path, branch) },
-            onCommitFile = { owner, repo, path, content, msg, sha, branch ->
-                viewModel.commitFileChanges(owner, repo, path, content, msg, sha, branch)
-            },
-            onForkRepo = { owner, repo -> viewModel.forkRepo(owner, repo) },
-            onDismiss = { viewModel.setShowGitHubDialog(false) }
-        )
-    }
-
     // Force RTL for Arabic layout
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Scaffold(
@@ -205,7 +182,6 @@ fun SasaHomeScreen(
                     selectedModel = uiState.selectedModel,
                     activeModelTag = uiState.activeModelTag,
                     onOpenModelMenu = { showModelMenu = true },
-                    onOpenGitHub = { viewModel.setShowGitHubDialog(true) },
                     onClearChat = { viewModel.onClearChat() }
                 )
             },
@@ -314,8 +290,8 @@ fun SasaHomeScreen(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    PromptChip("🐙 إرسال وفحص مستودع GitHub") {
-                                        viewModel.setShowGitHubDialog(true)
+                                    PromptChip("🔗 تحليل رابط مستودع GitHub") {
+                                        inputText = "قم بفحص وتحليل مستودع GitHub التالي واشرح بنيته وأبرز ملفاته: https://github.com/"
                                     }
                                     PromptChip("🎬 سيناريو فيلم سينمائي") {
                                         inputText = "اكتب لي سيناريو فيلم سينمائي تشويقي متكامل الحوار والمشاهد مع وصف اللقطات والإخراج."
@@ -380,7 +356,6 @@ fun HeaderBar(
     selectedModel: GeminiModel,
     activeModelTag: String,
     onOpenModelMenu: () -> Unit,
-    onOpenGitHub: () -> Unit,
     onClearChat: () -> Unit
 ) {
     Surface(
@@ -443,16 +418,6 @@ fun HeaderBar(
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(
-                    onClick = onOpenGitHub,
-                    modifier = Modifier.testTag("github_manager_button")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.FolderZip,
-                        contentDescription = "مستودعات GitHub",
-                        tint = SasaPrimary
-                    )
-                }
                 IconButton(
                     onClick = onOpenModelMenu,
                     modifier = Modifier.testTag("model_selector_button")
