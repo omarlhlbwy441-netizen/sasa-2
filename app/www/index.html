@@ -657,6 +657,10 @@
             </div>
 
             <div class="input-bar">
+                <input type="file" id="fileAttachInput" style="display: none;" onchange="handleFileSelected(this)" multiple />
+                <button class="input-icon-btn" onclick="document.getElementById('fileAttachInput').click()" title="إرفاق ملف أو كود">
+                    <i class="fa-solid fa-paperclip"></i>
+                </button>
                 <button class="input-icon-btn" id="voiceBtn" onclick="toggleVoiceInput()" title="إدخال صوتي">
                     <i class="fa-solid fa-microphone"></i>
                 </button>
@@ -702,6 +706,25 @@
             toast.textContent = msg;
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        async function handleFileSelected(input) {
+            const files = input.files;
+            if (!files || files.length === 0) return;
+            const inputEl = document.getElementById('userInput');
+            
+            for (let file of files) {
+                try {
+                    const text = await file.text();
+                    const fileContext = `\n\n--- 📁 محتوى الملف المرفق تلقائياً (${file.name}) ---\n${text.substring(0, 40000)}\n--------------------------------------------------\n`;
+                    inputEl.value = inputEl.value ? (inputEl.value + fileContext) : (`قم بتحليل ومعالجة هذا الملف المرفق:\n${fileContext}`);
+                    showToast(`تم إرفاق وقراءة الملف: ${file.name}`);
+                } catch (e) {
+                    showToast(`تم إرفاق الملف: ${file.name}`);
+                }
+            }
+            autoResize(inputEl);
+            input.value = '';
         }
 
         function autoResize(textarea) {

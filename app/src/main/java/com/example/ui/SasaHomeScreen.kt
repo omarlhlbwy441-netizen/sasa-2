@@ -152,10 +152,24 @@ fun SasaHomeScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let {
-            val fileName = uri.lastPathSegment?.substringAfterLast('/') ?: "ملف مرفق"
-            val noticeText = "📁 تم إرفاق الملف: $fileName\n\nيرجى كتابة تعليماتك أو استفسارك حول هذا الملف."
-            inputText = if (inputText.isBlank()) noticeText else "$inputText\n$noticeText"
-            Toast.makeText(context, "تم إرفاق الملف بنجاح: $fileName", Toast.LENGTH_SHORT).show()
+            val fileName = uri.lastPathSegment?.substringAfterLast('/') ?: "file"
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val content = inputStream?.bufferedReader()?.use { it.readText() }
+                if (!content.isNullOrBlank()) {
+                    val fileContext = "\n\n--- 📁 محتوى الملف المرفق تلقائياً ($fileName) ---\n${content.take(40000)}\n--------------------------------------------------"
+                    inputText = if (inputText.isBlank()) "قم بتحليل ومعالجة هذا الملف المرفق:\n$fileContext" else "$inputText\n$fileContext"
+                    Toast.makeText(context, "تم إرفاق الملف وقراءة محتواه بنجاح: $fileName", Toast.LENGTH_SHORT).show()
+                } else {
+                    val noticeText = "📁 تم إرفاق الملف: $fileName"
+                    inputText = if (inputText.isBlank()) noticeText else "$inputText\n$noticeText"
+                    Toast.makeText(context, "تم إرفاق الملف بنجاح: $fileName", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                val noticeText = "📁 تم إرفاق الملف: $fileName"
+                inputText = if (inputText.isBlank()) noticeText else "$inputText\n$noticeText"
+                Toast.makeText(context, "تم إرفاق الملف: $fileName", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
