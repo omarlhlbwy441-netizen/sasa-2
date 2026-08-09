@@ -3,7 +3,8 @@ import http.server
 import socketserver
 
 PORT = int(os.environ.get("PORT", 10000))
-DIRECTORY = "/app/www"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DIRECTORY = os.path.join(BASE_DIR, "www")
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
