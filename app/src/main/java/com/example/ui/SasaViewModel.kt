@@ -16,10 +16,10 @@ import kotlinx.coroutines.launch
 
 data class SasaUiState(
     val messages: List<ChatMessage> = emptyList(),
-    val selectedModel: GeminiModel = GeminiModel.FLASH_2_0,
+    val selectedModel: GeminiModel = GeminiModel.FLASH_3_6,
     val isGenerating: Boolean = false,
     val customApiKey: String = "",
-    val activeModelTag: String = GeminiModel.FLASH_2_0.displayName,
+    val activeModelTag: String = GeminiModel.FLASH_3_6.displayName,
     val systemNotice: String? = null,
     val showApiKeyDialog: Boolean = false
 )
@@ -33,9 +33,9 @@ class SasaViewModel(
         sender = MessageSender.SASA_AI,
         text = "مرحباً بك! أنا منظومة صاصا AI (Sasa AI v15.2).\n" +
                 "المساعد الذكي للتحليل والبرمجة والتطوير باللغة العربية.\n\n" +
-                "💡 متصل مباشرة بنماذج Gemini الرسمية (Gemini 2.0 Flash, 1.5 Flash, 1.5 Pro).\n\n" +
+                "💡 متصل مباشرة بنماذج Gemini (3.6 Flash, 3.5 Flash-Lite, 3.1 Pro, تفكير موسّع).\n\n" +
                 "كيف يمكنني مساعدتك اليوم؟",
-        modelUsed = GeminiModel.FLASH_2_0.displayName
+        modelUsed = GeminiModel.FLASH_3_6.displayName
     )
 
     private val _uiState = MutableStateFlow(
