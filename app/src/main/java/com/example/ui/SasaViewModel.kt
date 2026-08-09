@@ -65,12 +65,13 @@ class SasaViewModel(
         val prompt = inputPrompt.trim()
         if (prompt.isBlank() || _uiState.value.isGenerating) return
 
+        val existingHistory = _uiState.value.messages
         val userMessage = ChatMessage(
             sender = MessageSender.USER,
             text = prompt
         )
 
-        val updatedMessages = _uiState.value.messages + userMessage
+        val updatedMessages = existingHistory + userMessage
         _uiState.value = _uiState.value.copy(
             messages = updatedMessages,
             isGenerating = true,
@@ -85,7 +86,7 @@ class SasaViewModel(
         viewModelScope.launch {
             val result = repository.generateContentWithFailover(
                 prompt = prompt,
-                conversationHistory = updatedMessages,
+                conversationHistory = existingHistory,
                 preferredModel = _uiState.value.selectedModel,
                 customApiKey = _uiState.value.customApiKey
             )
