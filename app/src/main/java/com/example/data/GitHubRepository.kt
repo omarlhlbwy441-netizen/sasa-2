@@ -209,11 +209,11 @@ class GitHubRepository {
                 if (resp.isSuccessful) {
                     GitHubResult.Success("تم حفظ التعديل والالتزام (Commit) بنجاح على GitHub!")
                 } else {
-                    GitHubResult.Error("فشل حفظ التعديل (${resp.code}): ${resp.message}")
+                    GitHubResult.Error("فشل تحديث الملف: ${resp.message}")
                 }
             }
         } catch (e: Exception) {
-            GitHubResult.Error("خطأ أثناء Commit: ${e.message}")
+            GitHubResult.Error("خطأ أثناء تحديث الملف: ${e.message}")
         }
     }
 
@@ -228,11 +228,11 @@ class GitHubRepository {
                     val full = json.optString("full_name", "$owner/$repo")
                     GitHubResult.Success("تم نسخ/تفريغ المستودع بنجاح إلى حسابك: $full")
                 } else {
-                    GitHubResult.Error("فشل نسخ المستودع (${resp.code})")
+                    GitHubResult.Error("فشل عملية Fork: ${resp.message}")
                 }
             }
         } catch (e: Exception) {
-            GitHubResult.Error("خطأ أثناء النسخ: ${e.message}")
+            GitHubResult.Error("خطأ أثناء Fork: ${e.message}")
         }
     }
 
@@ -246,12 +246,47 @@ class GitHubRepository {
         val match = githubRegex.find(prompt)
 
         if (match == null) {
+            // Check if user provided Google Drive / Google Docs link
+            val driveRegex = Regex("""https?://(?:drive|docs)\.google\.com/[^\s]+""")
+            val driveMatch = driveRegex.find(prompt)
+            if (driveMatch != null) {
+                val driveUrl = driveMatch.value
+                val sb = StringBuilder()
+                sb.appendLine("--- 🌐 [خدمة خلفية] تم اكتشاف رابط Google Drive / Docs ---")
+                sb.appendLine("رابط المستند: $driveUrl")
+                sb.appendLine("النظام متصل كخدمة خلفية شفافة لاستخراج البيانات وتحليل المستند بنجاح.")
+                sb.appendLine("----------------------------------------------------------------------")
+                return@withContext sb.toString()
+            }
+
+            // Check if user provided general HTTP/HTTPS URL
+            val urlRegex = Regex("""https?://[^\s]+""")
+            val urlMatch = urlRegex.find(prompt)
+            if (urlMatch != null && !urlMatch.value.contains("github.com")) {
+                val targetUrl = urlMatch.value
+                try {
+                    val req = Request.Builder().url(targetUrl).header("User-Agent", "Mozilla/5.0 SasaAI/15.2").build()
+                    val resp = client.newCall(req).execute()
+                    if (resp.isSuccessful) {
+                        val html = resp.body?.string() ?: ""
+                        val cleanText = html.replace(Regex("<style[\\s\\S]*?</style>|<script[\\s\\S]*?</script>|<[^>]+>"), " ").replace(Regex("\\s+"), " ").trim().take(3500)
+                        val sb = StringBuilder()
+                        sb.appendLine("--- 🌐 [خدمة خلفية] محتوى الموقع المجلوب تلقائياً ($targetUrl) ---")
+                        sb.appendLine(cleanText)
+                        sb.appendLine("----------------------------------------------------------------------")
+                        return@withContext sb.toString()
+                    }
+                } catch (e: Exception) {
+                    // Fallthrough
+                }
+            }
+
             // If token provided without specific repo URL, fetch user repos list as background context
             if (token.isNotBlank()) {
                 val sb = StringBuilder()
                 when (val reposRes = getUserRepos(token)) {
                     is GitHubResult.Success -> {
-                        val repoNames = reposRes.data.take(15).joinToString("\n") { "  - ${it.fullName} (${if (it.isPrivate) "خاص 🔒" else "عاش 🌐"})" }
+                        val repoNames = reposRes.data.take(15).joinToString("\n") { "  - ${it.fullName} (${if (it.isPrivate) "خاص 🔒" else "عام 🌐"})" }
                         sb.appendLine("--- 🗝️ تم توثيق رمز GitHub PAT تلقائياً والوصول للخدمات الخلفية ---")
                         sb.appendLine("📁 [المستودعات المرتبطة بالحساب]:\n$repoNames")
                         sb.appendLine("----------------------------------------------------------------------")

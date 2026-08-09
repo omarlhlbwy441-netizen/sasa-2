@@ -722,8 +722,12 @@ fun BottomInputBar(
                 },
                 trailingIcon = {
                     IconButton(
-                        onClick = onSend,
-                        enabled = inputText.isNotBlank() && !isGenerating,
+                        onClick = {
+                            if (inputText.trim().isNotEmpty() && !isGenerating) {
+                                onSend()
+                            }
+                        },
+                        enabled = inputText.trim().isNotEmpty() && !isGenerating,
                         modifier = Modifier.testTag("send_message_button")
                     ) {
                         if (isGenerating) {
@@ -736,11 +740,21 @@ fun BottomInputBar(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.Send,
                                 contentDescription = "إرسال",
-                                tint = if (inputText.isNotBlank()) SasaPrimary else SasaTextSecondary
+                                tint = if (inputText.trim().isNotEmpty() && !isGenerating) SasaPrimary else SasaTextSecondary.copy(alpha = 0.5f)
                             )
                         }
                     }
                 },
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Send
+                ),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                    onSend = {
+                        if (inputText.trim().isNotEmpty() && !isGenerating) {
+                            onSend()
+                        }
+                    }
+                ),
                 maxLines = 4,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = SasaCardBackground,
