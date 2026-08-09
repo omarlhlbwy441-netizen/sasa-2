@@ -290,14 +290,17 @@ fun SasaHomeScreen(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
+                                    PromptChip("🎬 سيناريو فيلم سينمائي") {
+                                        inputText = "اكتب لي سيناريو فيلم سينمائي تشويقي متكامل الحوار والمشاهد مع وصف اللقطات والإخراج."
+                                    }
+                                    PromptChip("🎥 وصف فيديو AI (Sora/Runway)") {
+                                        inputText = "صمم لي برومبت دقيق وعالي الجودة لتوليد مشهد فيديو ذكاء اصطناعي سينمائي بصيغة 4K."
+                                    }
                                     PromptChip("💻 كتابة كود Python أو Kotlin") {
                                         inputText = "اكتب لي كوداً محترفاً ومكتتملاً لنظام إدارة مهام مع شرح العمليات."
                                     }
                                     PromptChip("⚡ تحليل ومعالجة خطأ برمجي") {
                                         inputText = "كيف أعالج خطأ Quota limits exceeded (429) في استخدام Gemini API برمجياً مع التغيير التلقائي للنماذج؟"
-                                    }
-                                    PromptChip("📊 إنشاء استعلام SQL ذكي") {
-                                        inputText = "صمم جدول SQL لإدارة المستخدمين والمستندات مع الاستعلامات الأكثر استخداماً."
                                     }
                                     PromptChip("📝 تلخيص وتبسيط الفكرة") {
                                         inputText = "اشرح لي مفهوم التفكير المعماري للذكاء الاصطناعي وكيف يختار النماذج المناسبة."
