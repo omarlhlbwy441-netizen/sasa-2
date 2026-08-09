@@ -22,6 +22,11 @@ RUN yes | sdkmanager --licenses && \
 
 WORKDIR /workspace
 COPY . .
+
+# [التحديث التقني 1]: حقن مفتاح Gemini API وبناء ملف .env ديناميكياً
+ARG GEMINI_API_KEY
+RUN echo "GEMINI_API_KEY=${GEMINI_API_KEY}" > /workspace/.env
+
 RUN if [ -f debug.keystore.base64 ]; then base64 -d debug.keystore.base64 > debug.keystore; fi
 RUN gradle assembleDebug --no-daemon
 
@@ -29,9 +34,11 @@ RUN gradle assembleDebug --no-daemon
 FROM python:3.11-slim
 
 WORKDIR /app
+
+# [التحديث التقني 2]: سحب جميع الملفات من بيئة البناء لضمان العزل الكامل
 COPY --from=builder /workspace/app/build/outputs/apk/debug/app-debug.apk /app/www/sasa-ai.apk
-COPY app/www/index.html /app/www/index.html
-COPY app/server.py /app/server.py
+COPY --from=builder /workspace/app/www/index.html /app/www/index.html
+COPY --from=builder /workspace/app/server.py /app/server.py
 
 EXPOSE 10000
 
