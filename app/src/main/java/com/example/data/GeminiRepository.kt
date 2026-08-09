@@ -40,7 +40,6 @@ class GeminiRepository {
     private fun isValidKeyCandidate(key: String): Boolean {
         if (key.isBlank()) return false
         if (key == "MY_GEMINI_API_KEY") return false
-        if (key.startsWith("AQ.")) return false // Session / prompt token, not an AIzaSy API key
         return true
     }
 
