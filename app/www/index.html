@@ -551,6 +551,30 @@
             transform: translateX(-50%) translateY(0);
         }
 
+        /* Modal Overlay CSS */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(6px);
+        }
+        .modal-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 92%;
+            max-width: 880px;
+            height: 82vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+        }
+
         /* Responsive Mobile Breakpoints */
         @media (max-width: 600px) {
             .top-bar { padding: 8px 12px; }
@@ -578,6 +602,10 @@
             </div>
         </div>
         <div class="top-actions">
+            <button class="icon-btn-header" onclick="toggleGitHubModal()" title="إدارة مستودعات GitHub">
+                <i class="fa-brands fa-github"></i>
+            </button>
+
             <select id="modelSelect" class="model-select">
                 <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
                 <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite</option>
@@ -954,6 +982,280 @@
 
             speechRecognition.start();
         }
+
+        /* GitHub Modal Integration */
+        let currentGHOwner = '';
+        let currentGHRepo = '';
+        let currentGHBranch = 'main';
+        let currentGHFileSHA = null;
+        let currentGHFilePath = '';
+
+        function toggleGitHubModal() {
+            const modal = document.getElementById('githubModal');
+            if (modal.style.display === 'flex') {
+                modal.style.display = 'none';
+            } else {
+                modal.style.display = 'flex';
+                const savedToken = localStorage.getItem('sasa_gh_token');
+                if (savedToken) {
+                    document.getElementById('ghTokenInput').value = savedToken;
+                    verifyAndLoadGitHub();
+                }
+            }
+        }
+
+        async function verifyAndLoadGitHub() {
+            const token = document.getElementById('ghTokenInput').value.trim();
+            if (!token) {
+                showToast('يرجى إدخال GitHub PAT Token');
+                return;
+            }
+            localStorage.setItem('sasa_gh_token', token);
+
+            try {
+                const userResp = await fetch('/api/github/user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                const userData = await userResp.json();
+
+                if (userData.login) {
+                    document.getElementById('ghUserStatus').innerText = `✅ متصل بحساب: ${userData.login} (${userData.name || ''})`;
+                    showToast(`تم ربط توكن GitHub بنجاح! 👋`);
+                    loadUserRepos(token);
+                } else {
+                    document.getElementById('ghUserStatus').innerText = '❌ فشل التوثيق بـ GitHub';
+                    showToast('فشل التحقق من التوكن المدخل');
+                }
+            } catch (err) {
+                showToast('خطأ بالاتصال بالخادم');
+            }
+        }
+
+        async function loadUserRepos(token) {
+            try {
+                const resp = await fetch('/api/github/repos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                const repos = await resp.json();
+                const select = document.getElementById('ghRepoSelect');
+                select.innerHTML = '<option value="">-- اختر مستودعاً --</option>';
+
+                if (Array.isArray(repos)) {
+                    repos.forEach(repo => {
+                        const opt = document.createElement('option');
+                        opt.value = repo.full_name + '|' + (repo.default_branch || 'main');
+                        opt.textContent = repo.full_name + (repo.private ? ' 🔒' : '');
+                        select.appendChild(opt);
+                    });
+                }
+            } catch (err) {
+                showToast('خطأ في تحميل المستودعات');
+            }
+        }
+
+        function onGHRepoSelected() {
+            const val = document.getElementById('ghRepoSelect').value;
+            if (!val) return;
+            const [fullName, branch] = val.split('|');
+            const [owner, repo] = fullName.split('/');
+            currentGHOwner = owner;
+            currentGHRepo = repo;
+            currentGHBranch = branch || 'main';
+            loadGHTree(owner, repo, currentGHBranch);
+        }
+
+        function loadManualRepo() {
+            const val = document.getElementById('manualRepo').value.trim();
+            if (!val || !val.includes('/')) {
+                showToast('يرجى إدخال الاسم بصيغة owner/repo');
+                return;
+            }
+            const [owner, repo] = val.split('/');
+            currentGHOwner = owner;
+            currentGHRepo = repo;
+            currentGHBranch = 'main';
+            loadGHTree(owner, repo, 'main');
+        }
+
+        async function loadGHTree(owner, repo, branch) {
+            const token = localStorage.getItem('sasa_gh_token') || '';
+            const list = document.getElementById('ghTreeList');
+            list.innerHTML = '<div>جارٍ تحميل شجرة المستودع... ⏳</div>';
+
+            try {
+                const resp = await fetch('/api/github/tree', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, owner, repo, branch })
+                });
+                const data = await resp.json();
+                list.innerHTML = '';
+
+                if (data.tree && Array.isArray(data.tree)) {
+                    const files = data.tree.filter(i => i.type === 'blob');
+                    files.forEach(file => {
+                        const item = document.createElement('div');
+                        item.style.padding = '4px 8px';
+                        item.style.cursor = 'pointer';
+                        item.style.borderRadius = '4px';
+                        item.style.borderBottom = '1px solid var(--border)';
+                        item.innerHTML = `<i class="fa-regular fa-file-code" style="color: var(--primary);"></i> ${file.path}`;
+                        item.onclick = () => loadGHFile(file.path);
+                        list.appendChild(item);
+                    });
+                } else {
+                    list.innerHTML = '<div style="color: var(--danger);">تعذر تحميل الملفات أو المستودع فارغ</div>';
+                }
+            } catch (e) {
+                list.innerHTML = '<div style="color: var(--danger);">خطأ بالاتصال</div>';
+            }
+        }
+
+        async function loadGHFile(path) {
+            const token = localStorage.getItem('sasa_gh_token') || '';
+            currentGHFilePath = path;
+            document.getElementById('ghActiveFilePath').innerText = `الملف النشط: ${path}`;
+            document.getElementById('ghFileEditor').value = 'جارٍ تحميل المحتوى... ⏳';
+
+            try {
+                const resp = await fetch('/api/github/file', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, owner: currentGHOwner, repo: currentGHRepo, path, branch: currentGHBranch })
+                });
+                const data = await resp.json();
+                currentGHFileSHA = data.sha || null;
+                document.getElementById('ghFileEditor').value = data.decodedContent || '';
+            } catch (e) {
+                showToast('خطأ في تحميل الملف');
+            }
+        }
+
+        async function commitGHFileChange() {
+            const token = localStorage.getItem('sasa_gh_token') || '';
+            if (!token || !currentGHFilePath) {
+                showToast('يرجى اختيار ملف وإدخال التوكن أولاً');
+                return;
+            }
+
+            const content = document.getElementById('ghFileEditor').value;
+            const message = document.getElementById('ghCommitMsg').value || 'تحديث عبر Sasa AI';
+
+            showToast('جارٍ رفع التعديل والالتزام (Commit)... 🚀');
+
+            try {
+                const resp = await fetch('/api/github/commit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        token,
+                        owner: currentGHOwner,
+                        repo: currentGHRepo,
+                        path: currentGHFilePath,
+                        content,
+                        message,
+                        sha: currentGHFileSHA,
+                        branch: currentGHBranch
+                    })
+                });
+                const res = await resp.json();
+                if (resp.ok) {
+                    showToast('تم حفظ التعديلات والالتزام بنجاح في GitHub! 🎉');
+                    loadGHFile(currentGHFilePath);
+                } else {
+                    showToast('فشل Commit: ' + (res.message || 'خطأ صلاحيات'));
+                }
+            } catch (e) {
+                showToast('خطأ في الاتصال أثناء Commit');
+            }
+        }
+
+        async function forkCurrentRepo() {
+            const token = localStorage.getItem('sasa_gh_token') || '';
+            if (!token || !currentGHOwner || !currentGHRepo) {
+                showToast('اختر مستودعاً للتنسخ أولاً');
+                return;
+            }
+
+            showToast(`جارٍ نسخ (Fork) المستودع ${currentGHOwner}/${currentGHRepo}... 🍴`);
+
+            try {
+                const resp = await fetch('/api/github/fork', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, owner: currentGHOwner, repo: currentGHRepo })
+                });
+                const res = await resp.json();
+                if (resp.ok) {
+                    showToast(`تم نسخ المستودع بنجاح إلى حسابك! 🎉`);
+                    loadUserRepos(token);
+                } else {
+                    showToast('فشل النسخ: ' + (res.message || 'خطأ'));
+                }
+            } catch (e) {
+                showToast('خطأ في عملية النسخ');
+            }
+        }
     </script>
+
+    <!-- GitHub Modal Overlay -->
+    <div id="githubModal" class="modal-overlay">
+        <div class="modal-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 12px;">
+                <h3 style="color: var(--primary); display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-brands fa-github"></i> إدارة وتعديل مستودعات GitHub المباشرة
+                </h3>
+                <button onclick="toggleGitHubModal()" style="background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Token Section -->
+            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                <input type="password" id="ghTokenInput" placeholder="GitHub Personal Access Token (PAT)" style="flex: 1; background: var(--bg-main); border: 1px solid var(--border); color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem;" />
+                <button onclick="verifyAndLoadGitHub()" style="background: var(--primary); color: #000; font-weight: 700; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer;">
+                    توثيق وربط
+                </button>
+            </div>
+
+            <div id="ghUserStatus" style="font-size: 0.82rem; color: var(--success); margin-bottom: 12px;"></div>
+
+            <!-- Split view: Repos / Files / Code Editor -->
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; flex: 1; overflow: hidden; min-height: 320px;">
+                <!-- Repos & Tree List -->
+                <div style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto;">
+                    <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-muted);">المستودعات والملفات:</div>
+                    <select id="ghRepoSelect" onchange="onGHRepoSelected()" style="background: var(--bg-card); color: #fff; border: 1px solid var(--border); padding: 6px; border-radius: 6px; font-size: 0.8rem; width: 100%;">
+                        <option value="">-- اختر مستودعاً --</option>
+                    </select>
+
+                    <div style="display: flex; gap: 6px;">
+                        <input type="text" id="manualRepo" placeholder="owner/repo" style="flex: 1; background: var(--bg-card); border: 1px solid var(--border); color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem;" />
+                        <button onclick="loadManualRepo()" style="background: var(--accent); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.75rem;">فتح</button>
+                        <button onclick="forkCurrentRepo()" style="background: #eab308; color: #000; border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 700;" title="نسخ المستودع (Fork)">نسخ</button>
+                    </div>
+
+                    <div id="ghTreeList" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem;"></div>
+                </div>
+
+                <!-- Code Editor & Commit Panel -->
+                <div style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px;">
+                    <div id="ghActiveFilePath" style="font-weight: 700; font-size: 0.82rem; color: var(--primary);">لم يتم اختيار ملف بعد</div>
+                    <textarea id="ghFileEditor" style="flex: 1; background: #090d16; border: 1px solid var(--border); color: #22c55e; font-family: 'Fira Code', monospace; padding: 10px; border-radius: 8px; font-size: 0.82rem; resize: none; outline: none;"></textarea>
+                    
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="ghCommitMsg" placeholder="رسالة الالتزام (Commit Message)" value="تحديث عبر Sasa AI Platform" style="flex: 1; background: var(--bg-card); border: 1px solid var(--border); color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem;" />
+                        <button onclick="commitGHFileChange()" style="background: var(--primary); color: #000; font-weight: 700; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Commit & Push
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

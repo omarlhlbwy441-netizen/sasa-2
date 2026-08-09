@@ -7,6 +7,11 @@ import com.example.data.ChatMessage
 import com.example.data.GeminiModel
 import com.example.data.GeminiRepository
 import com.example.data.GeminiResult
+import com.example.data.GitHubFileContent
+import com.example.data.GitHubRepoItem
+import com.example.data.GitHubRepository
+import com.example.data.GitHubResult
+import com.example.data.GitHubTreeItem
 import com.example.data.MessageSender
 import com.example.data.local.ChatLocalRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,11 +26,22 @@ data class SasaUiState(
     val customApiKey: String = "",
     val activeModelTag: String = GeminiModel.FLASH_3_6.displayName,
     val systemNotice: String? = null,
-    val showApiKeyDialog: Boolean = false
+    val showApiKeyDialog: Boolean = false,
+    
+    // GitHub Integration State
+    val githubToken: String = "",
+    val githubUserStatus: String? = null,
+    val showGitHubDialog: Boolean = false,
+    val githubRepos: List<GitHubRepoItem> = emptyList(),
+    val selectedRepo: GitHubRepoItem? = null,
+    val repoTree: List<GitHubTreeItem> = emptyList(),
+    val selectedFile: GitHubFileContent? = null,
+    val isLoadingGitHub: Boolean = false
 )
 
 class SasaViewModel(
     private val repository: GeminiRepository = GeminiRepository(),
+    private val githubRepo: GitHubRepository = GitHubRepository(),
     private val localRepository: ChatLocalRepository? = null
 ) : ViewModel() {
 
@@ -33,7 +49,7 @@ class SasaViewModel(
         sender = MessageSender.SASA_AI,
         text = "مرحباً بك! أنا منظومة صاصا AI (Sasa AI v15.2).\n" +
                 "المساعد الذكي للتحليل والبرمجة والتطوير باللغة العربية.\n\n" +
-                "💡 متصل مباشرة بنماذج Gemini (3.6 Flash, 3.5 Flash-Lite, 3.1 Pro, تفكير موسّع).\n\n" +
+                "💡 متصل مباشرة بنماذج Gemini ومدعوم بإدارة مستودعات GitHub المباشرة (فحص، تعديل، Commit، ونسخ).\n\n" +
                 "كيف يمكنني مساعدتك اليوم؟",
         modelUsed = GeminiModel.FLASH_3_6.displayName
     )
@@ -57,6 +73,178 @@ class SasaViewModel(
                         _uiState.value = _uiState.value.copy(messages = savedMessages)
                     }
                 }
+            }
+        }
+    }
+
+    // GitHub Integration Functions
+    fun setShowGitHubDialog(show: Boolean) {
+        _uiState.value = _uiState.value.copy(showGitHubDialog = show)
+    }
+
+    fun setGitHubToken(token: String) {
+        val cleanToken = token.trim()
+        _uiState.value = _uiState.value.copy(githubToken = cleanToken, isLoadingGitHub = true)
+        
+        viewModelScope.launch {
+            val result = githubRepo.verifyToken(cleanToken)
+            when (result) {
+                is GitHubResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        githubUserStatus = result.data,
+                        isLoadingGitHub = false,
+                        systemNotice = "تم ربط توكن GitHub بنجاح!"
+                    )
+                    loadGitHubRepos()
+                }
+                is GitHubResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        githubUserStatus = null,
+                        isLoadingGitHub = false,
+                        systemNotice = result.message
+                    )
+                }
+            }
+        }
+    }
+
+    fun loadGitHubRepos() {
+        val token = _uiState.value.githubToken
+        if (token.isBlank()) return
+
+        _uiState.value = _uiState.value.copy(isLoadingGitHub = true)
+        viewModelScope.launch {
+            when (val res = githubRepo.getUserRepos(token)) {
+                is GitHubResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        githubRepos = res.data,
+                        isLoadingGitHub = false
+                    )
+                }
+                is GitHubResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingGitHub = false,
+                        systemNotice = res.message
+                    )
+                }
+            }
+        }
+    }
+
+    fun inspectRepoTree(owner: String, repo: String, branch: String = "main") {
+        val token = _uiState.value.githubToken
+        _uiState.value = _uiState.value.copy(isLoadingGitHub = true)
+
+        viewModelScope.launch {
+            when (val res = githubRepo.getRepoTree(token, owner, repo, branch)) {
+                is GitHubResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        repoTree = res.data,
+                        isLoadingGitHub = false,
+                        selectedFile = null
+                    )
+                }
+                is GitHubResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingGitHub = false,
+                        systemNotice = res.message
+                    )
+                }
+            }
+        }
+    }
+
+    fun openRepoFile(owner: String, repo: String, path: String, branch: String = "main") {
+        val token = _uiState.value.githubToken
+        _uiState.value = _uiState.value.copy(isLoadingGitHub = true)
+
+        viewModelScope.launch {
+            when (val res = githubRepo.getFileContent(token, owner, repo, path, branch)) {
+                is GitHubResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        selectedFile = res.data,
+                        isLoadingGitHub = false
+                    )
+                }
+                is GitHubResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingGitHub = false,
+                        systemNotice = res.message
+                    )
+                }
+            }
+        }
+    }
+
+    fun commitFileChanges(
+        owner: String,
+        repo: String,
+        path: String,
+        newContent: String,
+        message: String,
+        sha: String?,
+        branch: String = "main"
+    ) {
+        val token = _uiState.value.githubToken
+        if (token.isBlank()) {
+            _uiState.value = _uiState.value.copy(systemNotice = "يرجى إدخال GitHub PAT أولاً!")
+            return
+        }
+
+        _uiState.value = _uiState.value.copy(isLoadingGitHub = true)
+        viewModelScope.launch {
+            when (val res = githubRepo.commitFileChange(token, owner, repo, path, newContent, message, sha, branch)) {
+                is GitHubResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingGitHub = false,
+                        systemNotice = res.data
+                    )
+                    // Refresh file content
+                    openRepoFile(owner, repo, path, branch)
+                }
+                is GitHubResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingGitHub = false,
+                        systemNotice = res.message
+                    )
+                }
+            }
+        }
+    }
+
+    fun forkRepo(owner: String, repo: String) {
+        val token = _uiState.value.githubToken
+        if (token.isBlank()) {
+            _uiState.value = _uiState.value.copy(systemNotice = "يرجى توفير توكن GitHub للنسخ!")
+            return
+        }
+
+        _uiState.value = _uiState.value.copy(isLoadingGitHub = true)
+        viewModelScope.launch {
+            when (val res = githubRepo.forkRepo(token, owner, repo)) {
+                is GitHubResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingGitHub = false,
+                        systemNotice = res.data
+                    )
+                    loadGitHubRepos()
+                }
+                is GitHubResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingGitHub = false,
+                        systemNotice = res.message
+                    )
+                }
+            }
+        }
+    }
+
+    fun setSelectedRepo(repo: GitHubRepoItem?) {
+        _uiState.value = _uiState.value.copy(selectedRepo = repo, repoTree = emptyList(), selectedFile = null)
+        if (repo != null) {
+            val parts = repo.fullName.split("/")
+            if (parts.size == 2) {
+                inspectRepoTree(parts[0], parts[1], repo.defaultBranch)
             }
         }
     }
