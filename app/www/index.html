@@ -739,15 +739,38 @@
         }
 
         async function resolveGitHubContextJS(promptText) {
-            const ghRegex = /https?:\/\/github\.com\/([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+)(?:\/blob\/([^\/]+)\/(.+))?/;
+            // Extract PAT token if present in prompt text
+            const tokenMatch = promptText.match(/(ghp_[a-zA-Z0-9]{36,40}|github_pat_[a-zA-Z0-9_]{80,90})/);
+            if (tokenMatch) {
+                localStorage.setItem('sasa_gh_token', tokenMatch[0]);
+            }
+            const token = localStorage.getItem('sasa_gh_token') || '';
+
+            const ghRegex = /https?:\/\/github\.com\/([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+)(?:\/blob\/([^\/]+)\/(.+)|/tree\/([^\/]+)\/(.+))?/;
             const match = promptText.match(ghRegex);
-            if (!match) return null;
+
+            if (!match) {
+                if (tokenMatch) {
+                    try {
+                        const reposResp = await fetch('/api/github/repos', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ token })
+                        });
+                        const reposData = await reposResp.json();
+                        if (Array.isArray(reposData)) {
+                            const repoList = reposData.slice(0, 15).map(r => `  - ${r.full_name} (${r.private ? 'خاص 🔒' : 'عام 🌐'})`).join('\n');
+                            return `\n\n--- 🗝️ تم توثيق رمز GitHub PAT تلقائياً والوصول للمستودعات خلفياً ---\n📁 [المستودعات المرتبطة بالحساب]:\n${repoList}\n----------------------------------------------------------------------\n`;
+                        }
+                    } catch (e) {}
+                }
+                return null;
+            }
 
             const owner = match[1];
             const repo = match[2].replace(/\.git$/, '');
             const blobBranch = match[3];
             const blobPath = match[4];
-            const token = localStorage.getItem('sasa_gh_token') || '';
 
             try {
                 if (blobBranch && blobPath) {
@@ -758,10 +781,10 @@
                     });
                     const data = await resp.json();
                     if (data.decodedContent) {
-                        return `\n\n--- 📄 محتوى ملف GitHub المجلوب تلقائياً (${owner}/${repo} - ${blobPath}) ---\n${data.decodedContent}\n----------------------------------------------------------------------\n`;
+                        return `\n\n--- 📄 محتوى ملف GitHub المجلوب تلقائياً من الخدمة الخلفية (${owner}/${repo} - ${blobPath}) ---\n${data.decodedContent}\n----------------------------------------------------------------------\n`;
                     }
                 } else {
-                    let contextStr = `\n\n--- 📦 سياق مستودع GitHub المجلوب تلقائياً (${owner}/${repo}) ---\n`;
+                    let contextStr = `\n\n--- 📦 سياق مستودع GitHub المجلوب تلقائياً عبر الخدمة الخلفية (${owner}/${repo}) ---\n`;
                     const readmeResp = await fetch('/api/github/file', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -779,8 +802,8 @@
                     });
                     const treeData = await treeResp.json();
                     if (treeData.tree && Array.isArray(treeData.tree)) {
-                        const files = treeData.tree.filter(i => i.type === 'blob').slice(0, 25).map(f => '  - ' + f.path).join('\n');
-                        contextStr += `📁 [ملفات المستودع]:\n${files}\n`;
+                        const files = treeData.tree.filter(i => i.type === 'blob').slice(0, 30).map(f => '  - ' + f.path).join('\n');
+                        contextStr += `📁 [ملفات المستودع الرئيسية]:\n${files}\n`;
                     }
                     contextStr += `----------------------------------------------------------------------\n`;
                     return contextStr;

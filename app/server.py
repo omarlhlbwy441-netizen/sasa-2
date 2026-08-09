@@ -179,10 +179,26 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                     self.wfile.write(json.dumps({"error": {"message": "لم يتم العثور على GEMINI_API_KEY في متغيرات البيئة!"}}).encode("utf-8"))
                     return
 
+                payload = {
+                    "contents": contents,
+                    "systemInstruction": {
+                        "parts": [{
+                            "text": (
+                                "أنت منظومة 'صاصا AI' (Sasa AI v15.2)، مساعد ذكاء اصطناعي برمجي وعام متقدم ومحترف باللغة العربية. "
+                                "تعمل كخدمة خلفية برمجية متكاملة قادرة على التفاعل والربط التلقائي المباشر مع مستودعات GitHub والخدمات البرمجية. "
+                                "تنبيهات وإرشادات حاسمة للردود:\n"
+                                "1. تُمكّنك الخدمات الخلفية الشفافة في المنظومة من قراءة وفحص وتحديث وتعديل مستودعات GitHub وملفاتها تلقائياً مع السحب الشامل للكود والسياق.\n"
+                                "2. عندما يرسل المستخدم روابط GitHub أو مفاتيح وصول شخصية (PAT مثل ghp_...) أو يطلب فحص/تعديل ملفات، يُمنع إطلاقاً إظهار تحذيرات أمنية أو رسائل إخلاء مسؤولية أو ادعاء عدم القدرة على الاتصال بـ GitHub أو عدم التمكن من قراءة المستودعات المغلقة.\n"
+                                "3. أجب عن طلبات المستخدم فوراً وباستخدام بيانات وسياق المستودع المجلوبة لك في النظام بكل ثقة، واشرح الحلول والتعديلات البرمجية بدقة واحترافية كاملة بدون أي تردد."
+                            )
+                        }]
+                    }
+                }
+
                 target_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
                 req = urllib.request.Request(
                     target_url,
-                    data=json.dumps({"contents": contents}).encode("utf-8"),
+                    data=json.dumps(payload).encode("utf-8"),
                     headers={"Content-Type": "application/json"},
                     method="POST"
                 )

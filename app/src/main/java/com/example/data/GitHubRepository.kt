@@ -236,9 +236,32 @@ class GitHubRepository {
         }
     }
 
-    suspend fun resolveGitHubContext(prompt: String, token: String): String? = withContext(Dispatchers.IO) {
+    suspend fun resolveGitHubContext(prompt: String, fallbackToken: String): String? = withContext(Dispatchers.IO) {
+        // Extract any GitHub Personal Access Token (PAT) from user prompt automatically
+        val tokenRegex = Regex("""(ghp_[a-zA-Z0-9]{36,40}|github_pat_[a-zA-Z0-9_]{80,90})""")
+        val tokenMatch = tokenRegex.find(prompt)
+        val token = tokenMatch?.value ?: fallbackToken
+
         val githubRegex = Regex("""https?://github\.com/([a-zA-Z0-9_.-]+)/([a-zA-Z0-9_.-]+)(?:/blob/([^/]+)/(.+)|/tree/([^/]+)/(.+))?""")
-        val match = githubRegex.find(prompt) ?: return@withContext null
+        val match = githubRegex.find(prompt)
+
+        if (match == null) {
+            // If token provided without specific repo URL, fetch user repos list as background context
+            if (token.isNotBlank()) {
+                val sb = StringBuilder()
+                when (val reposRes = getUserRepos(token)) {
+                    is GitHubResult.Success -> {
+                        val repoNames = reposRes.data.take(15).joinToString("\n") { "  - ${it.fullName} (${if (it.isPrivate) "خاص 🔒" else "عاش 🌐"})" }
+                        sb.appendLine("--- 🗝️ تم توثيق رمز GitHub PAT تلقائياً والوصول للخدمات الخلفية ---")
+                        sb.appendLine("📁 [المستودعات المرتبطة بالحساب]:\n$repoNames")
+                        sb.appendLine("----------------------------------------------------------------------")
+                        return@withContext sb.toString()
+                    }
+                    else -> {}
+                }
+            }
+            return@withContext null
+        }
 
         val owner = match.groupValues[1]
         val repo = match.groupValues[2].removeSuffix(".git")
@@ -250,7 +273,7 @@ class GitHubRepository {
             when (val fileRes = getFileContent(token, owner, repo, blobPath, blobBranch)) {
                 is GitHubResult.Success -> {
                     return@withContext """
---- 📄 محتوى ملف GitHub المجلوب تلقائياً ($owner/$repo - $blobPath) ---
+--- 📄 محتوى ملف GitHub المجلوب تلقائياً من الخدمة الخلفية ($owner/$repo - $blobPath) ---
 ${fileRes.data.content}
 ----------------------------------------------------------------------
 """.trimIndent()
@@ -260,7 +283,7 @@ ${fileRes.data.content}
         } else {
             // Repo level URL
             val sb = StringBuilder()
-            sb.appendLine("--- 📦 بيانات وسياق مستودع GitHub المجلوب تلقائياً ($owner/$repo) ---")
+            sb.appendLine("--- 📦 بيانات وسياق مستودع GitHub المجلوب تلقائياً عبر الخدمة الخلفية ($owner/$repo) ---")
 
             // Try fetching README
             when (val readmeRes = getFileContent(token, owner, repo, "README.md", "main")) {
@@ -282,10 +305,18 @@ ${fileRes.data.content}
             // Fetch Tree
             when (val treeRes = getRepoTree(token, owner, repo, "main")) {
                 is GitHubResult.Success -> {
-                    val files = treeRes.data.filter { it.type == "blob" }.take(30).joinToString("\n") { "  - ${it.path}" }
-                    sb.appendLine("📁 [قائمة وأهم ملفات المستودع]:\n$files")
+                    val files = treeRes.data.filter { it.type == "blob" }.take(35).joinToString("\n") { "  - ${it.path}" }
+                    sb.appendLine("📁 [قائمة ملفات المستودع الرئيسية]:\n$files")
                 }
-                else -> {}
+                else -> {
+                    when (val treeResAlt = getRepoTree(token, owner, repo, "master")) {
+                        is GitHubResult.Success -> {
+                            val files = treeResAlt.data.filter { it.type == "blob" }.take(35).joinToString("\n") { "  - ${it.path}" }
+                            sb.appendLine("📁 [قائمة ملفات المستودع الرئيسية]:\n$files")
+                        }
+                        else -> {}
+                    }
+                }
             }
 
             sb.appendLine("----------------------------------------------------------------------")

@@ -272,7 +272,14 @@ class SasaViewModel(
         }
 
         viewModelScope.launch {
-            // Auto fetch GitHub link context if present in prompt
+            // Check for GitHub token in prompt and save it automatically
+            val tokenRegex = Regex("""(ghp_[a-zA-Z0-9]{36,40}|github_pat_[a-zA-Z0-9_]{80,90})""")
+            val extractedToken = tokenRegex.find(prompt)?.value
+            if (!extractedToken.isNullOrBlank()) {
+                _uiState.value = _uiState.value.copy(githubToken = extractedToken)
+            }
+
+            // Auto fetch GitHub link or token context if present in prompt
             var enrichedPrompt = prompt
             val githubContext = githubRepo.resolveGitHubContext(prompt, _uiState.value.githubToken)
             if (!githubContext.isNullOrBlank()) {
