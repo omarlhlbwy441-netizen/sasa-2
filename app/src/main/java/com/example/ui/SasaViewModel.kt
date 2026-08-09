@@ -272,63 +272,79 @@ class SasaViewModel(
         }
 
         viewModelScope.launch {
-            // Check for GitHub token in prompt and save it automatically
-            val tokenRegex = Regex("""(ghp_[a-zA-Z0-9]{36,40}|github_pat_[a-zA-Z0-9_]{80,90})""")
-            val extractedToken = tokenRegex.find(prompt)?.value
-            if (!extractedToken.isNullOrBlank()) {
-                _uiState.value = _uiState.value.copy(githubToken = extractedToken)
-            }
-
-            // Auto fetch GitHub link or token context if present in prompt
-            var enrichedPrompt = prompt
-            val githubContext = githubRepo.resolveGitHubContext(prompt, _uiState.value.githubToken)
-            if (!githubContext.isNullOrBlank()) {
-                enrichedPrompt = "$prompt\n\n$githubContext"
-            }
-
-            val result = repository.generateContentWithFailover(
-                prompt = enrichedPrompt,
-                conversationHistory = existingHistory,
-                preferredModel = _uiState.value.selectedModel,
-                customApiKey = _uiState.value.customApiKey
-            )
-
-            val aiMessage = when (result) {
-                is GeminiResult.Success -> {
-                    ChatMessage(
-                        sender = MessageSender.SASA_AI,
-                        text = result.text,
-                        modelUsed = result.modelUsed.displayName
-                    )
+            try {
+                // Check for GitHub token in prompt and save it automatically
+                val tokenRegex = Regex("""(ghp_[a-zA-Z0-9]{36,40}|github_pat_[a-zA-Z0-9_]{80,90})""")
+                val extractedToken = tokenRegex.find(prompt)?.value
+                if (!extractedToken.isNullOrBlank()) {
+                    _uiState.value = _uiState.value.copy(githubToken = extractedToken)
                 }
-                is GeminiResult.QuotaExceeded -> {
-                    ChatMessage(
-                        sender = MessageSender.SYSTEM,
-                        text = "⚠️ تنبيه قيود الاستخدام: ${result.message}\nجارٍ تحويل الطلب تلقائياً...",
-                        isSystemNotice = true
-                    )
+
+                // Auto fetch GitHub link or token context if present in prompt
+                var enrichedPrompt = prompt
+                val githubContext = try {
+                    githubRepo.resolveGitHubContext(prompt, _uiState.value.githubToken)
+                } catch (e: Exception) {
+                    null
                 }
-                is GeminiResult.Error -> {
-                    ChatMessage(
-                        sender = MessageSender.SASA_AI,
-                        text = "❌ تعذر إكمال الاتصال بنموذج الذكاء الاصطناعي:\n${result.message}",
-                        isError = true
-                    )
+                if (!githubContext.isNullOrBlank()) {
+                    enrichedPrompt = "$prompt\n\n$githubContext"
                 }
+
+                val result = repository.generateContentWithFailover(
+                    prompt = enrichedPrompt,
+                    conversationHistory = existingHistory,
+                    preferredModel = _uiState.value.selectedModel,
+                    customApiKey = _uiState.value.customApiKey
+                )
+
+                val aiMessage = when (result) {
+                    is GeminiResult.Success -> {
+                        ChatMessage(
+                            sender = MessageSender.SASA_AI,
+                            text = result.text,
+                            modelUsed = result.modelUsed.displayName
+                        )
+                    }
+                    is GeminiResult.QuotaExceeded -> {
+                        ChatMessage(
+                            sender = MessageSender.SYSTEM,
+                            text = "⚠️ تنبيه قيود الاستخدام: ${result.message}\nتم التبديل والتحويل التلقائي بنجاح.",
+                            isSystemNotice = true
+                        )
+                    }
+                    is GeminiResult.Error -> {
+                        ChatMessage(
+                            sender = MessageSender.SASA_AI,
+                            text = "❌ تعذر إكمال الاتصال بالنموذج:\n${result.message}",
+                            isError = true
+                        )
+                    }
+                }
+
+                val newActiveTag = if (result is GeminiResult.Success) result.modelUsed.displayName else _uiState.value.activeModelTag
+                val systemNoticeText = if (result is GeminiResult.Error) result.message else null
+
+                _uiState.value = _uiState.value.copy(
+                    messages = _uiState.value.messages + aiMessage,
+                    activeModelTag = newActiveTag,
+                    systemNotice = systemNoticeText
+                )
+
+                // Save AI response message to Room DB
+                localRepository?.saveMessage(aiMessage)
+            } catch (e: Exception) {
+                val errorMessage = ChatMessage(
+                    sender = MessageSender.SASA_AI,
+                    text = "⚠️ حدث خطأ غير متوقع أثناء المعالجة: ${e.message ?: "يرجى إعادت المحاولة"}",
+                    isError = true
+                )
+                _uiState.value = _uiState.value.copy(
+                    messages = _uiState.value.messages + errorMessage
+                )
+            } finally {
+                _uiState.value = _uiState.value.copy(isGenerating = false)
             }
-
-            val newActiveTag = if (result is GeminiResult.Success) result.modelUsed.displayName else _uiState.value.activeModelTag
-            val systemNoticeText = if (result is GeminiResult.Error) result.message else null
-
-            _uiState.value = _uiState.value.copy(
-                messages = _uiState.value.messages + aiMessage,
-                isGenerating = false,
-                activeModelTag = newActiveTag,
-                systemNotice = systemNoticeText
-            )
-
-            // Save AI response message to Room DB
-            localRepository?.saveMessage(aiMessage)
         }
     }
 

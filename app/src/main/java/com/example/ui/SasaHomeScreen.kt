@@ -192,12 +192,7 @@ fun SasaHomeScreen(
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Scaffold(
             topBar = {
-                HeaderBar(
-                    selectedModel = uiState.selectedModel,
-                    activeModelTag = uiState.activeModelTag,
-                    onOpenModelMenu = { showModelMenu = true },
-                    onClearChat = { viewModel.onClearChat() }
-                )
+                HeaderBar()
             },
             bottomBar = {
                 BottomInputBar(
@@ -366,12 +361,7 @@ fun SasaHomeScreen(
 }
 
 @Composable
-fun HeaderBar(
-    selectedModel: GeminiModel,
-    activeModelTag: String,
-    onOpenModelMenu: () -> Unit,
-    onClearChat: () -> Unit
-) {
+fun HeaderBar() {
     Surface(
         color = SasaCardBackground,
         tonalElevation = 4.dp
@@ -379,7 +369,7 @@ fun HeaderBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -416,7 +406,7 @@ fun HeaderBar(
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
-                                text = "v15.2",
+                                text = "v15.2 Pro",
                                 fontSize = 10.sp,
                                 color = SasaAccentGreen,
                                 fontWeight = FontWeight.Bold
@@ -424,32 +414,9 @@ fun HeaderBar(
                         }
                     }
                     Text(
-                        text = "المحرك: $activeModelTag",
+                        text = "بيئة وكيل البرمجة والخدمات الخلفية الذكية ⚡",
                         style = MaterialTheme.typography.labelSmall,
                         color = SasaTextSecondary
-                    )
-                }
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(
-                    onClick = onOpenModelMenu,
-                    modifier = Modifier.testTag("model_selector_button")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Psychology,
-                        contentDescription = "تبديل النموذج",
-                        tint = SasaSecondary
-                    )
-                }
-                IconButton(
-                    onClick = onClearChat,
-                    modifier = Modifier.testTag("clear_chat_button")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.DeleteSweep,
-                        contentDescription = "مسح المحادثة",
-                        tint = SasaTextSecondary
                     )
                 }
             }

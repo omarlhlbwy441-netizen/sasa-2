@@ -602,17 +602,6 @@
             </div>
         </div>
         <div class="top-actions">
-            <select id="modelSelect" class="model-select">
-                <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
-                <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite</option>
-                <option value="gemini-3.1-pro">Gemini 3.1 Pro</option>
-                <option value="gemini-2.5-thinking">Gemini Thinking</option>
-            </select>
-
-            <button class="icon-btn-header" onclick="clearChat()" title="مسح المحادثة">
-                <i class="fa-solid fa-trash-can"></i>
-            </button>
-
             <a href="/sasa-ai.apk" class="apk-download-btn" download title="تنزيل تطبيق Android المباشر">
                 <i class="fa-solid fa-mobile-screen-button"></i>
                 <span class="btn-text">تحميل APK</span>
@@ -846,29 +835,30 @@
             autoResize(inputEl);
             appendMessage('user', text);
 
-            const model = document.getElementById('modelSelect').value;
+            const modelSelectEl = document.getElementById('modelSelect');
+            const model = modelSelectEl ? modelSelectEl.value : 'gemini-3.6-flash';
             document.getElementById('loadingIndicator').style.display = 'flex';
 
-            // Auto resolve GitHub link context if present
-            const ghContext = await resolveGitHubContextJS(text);
-            const enrichedText = ghContext ? (text + ghContext) : text;
-
-            // System prompt time injection for current precision time questions
-            const now = new Date();
-            const timeContext = ` الوقت والتاريخ الحالي للجهاز هو: ${now.toLocaleDateString('ar-EG')} - ${now.toLocaleTimeString('ar-EG')}. (التوقيت المحلي مصر/القاهرة: UTC+3).`;
-            
-            const userContent = history.length === 0 ? (enrichedText + "\n[سياق النظام: " + timeContext + "]") : enrichedText;
-            history.push({ role: "user", parts: [{ text: userContent }] });
-
             try {
-                // Try backend endpoint proxy first (uses GEMINI_API_KEY from Render env)
+                // Auto resolve GitHub link context if present
+                const ghContext = await resolveGitHubContextJS(text);
+                const enrichedText = ghContext ? (text + ghContext) : text;
+
+                // System prompt time injection for current precision time questions
+                const now = new Date();
+                const timeContext = ` الوقت والتاريخ الحالي للجهاز هو: ${now.toLocaleDateString('ar-EG')} - ${now.toLocaleTimeString('ar-EG')}. (التوقيت المحلي: UTC+3).`;
+                
+                const userContent = history.length === 0 ? (enrichedText + "\n[سياق النظام: " + timeContext + "]") : enrichedText;
+                history.push({ role: "user", parts: [{ text: userContent }] });
+
+                // Try backend endpoint proxy first
                 let response = await fetch(`/api/chat`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ model: model, contents: history })
                 });
 
-                // Fallback to direct client API call if backend endpoint not reachable or using local key
+                // Fallback to direct client API call if backend endpoint not reachable
                 if (!response.ok && apiKey) {
                     response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
                         method: 'POST',
@@ -881,7 +871,6 @@
                 }
 
                 const data = await response.json();
-                document.getElementById('loadingIndicator').style.display = 'none';
 
                 if (data.candidates && data.candidates.length > 0) {
                     const aiText = data.candidates[0].content.parts.map(p => p.text).join('\n');
@@ -893,8 +882,9 @@
                     appendMessage('ai', '⚠️ لم يتوفر رد من النموذج.');
                 }
             } catch (err) {
-                document.getElementById('loadingIndicator').style.display = 'none';
                 appendMessage('ai', '⚠️ حدث خطأ في الاتصال بالشبكة: ' + err.message);
+            } finally {
+                document.getElementById('loadingIndicator').style.display = 'none';
             }
         }
 
