@@ -12,13 +12,24 @@ DIRECTORY = os.path.join(BASE_DIR, "www")
 def get_gemini_key():
     key = os.environ.get("GEMINI_API_KEY", "").strip()
     if not key:
-        env_path = os.path.join(os.path.dirname(BASE_DIR), ".env")
-        if os.path.exists(env_path):
-            with open(env_path, "r", encoding="utf-8") as f:
-                for line in f:
-                    if line.startswith("GEMINI_API_KEY="):
-                        key = line.split("=", 1)[1].strip()
-                        break
+        possible_paths = [
+            os.path.join(BASE_DIR, ".env"),
+            os.path.join(os.path.dirname(BASE_DIR), ".env"),
+            "/app/.env",
+            "/.env",
+            "/workspace/.env"
+        ]
+        for env_path in possible_paths:
+            if os.path.exists(env_path):
+                try:
+                    with open(env_path, "r", encoding="utf-8") as f:
+                        for line in f:
+                            if line.startswith("GEMINI_API_KEY="):
+                                key = line.split("=", 1)[1].strip()
+                                if key:
+                                    return key
+                except Exception:
+                    pass
     return key
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -93,7 +104,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps({"error": {"message": str(e)}}).encode("utf-8"))
             return
 
-        self.send_response(44)
+        self.send_response(404)
         self.end_headers()
 
     def guess_type(self, path):
