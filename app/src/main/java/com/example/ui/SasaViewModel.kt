@@ -272,8 +272,15 @@ class SasaViewModel(
         }
 
         viewModelScope.launch {
+            // Auto fetch GitHub link context if present in prompt
+            var enrichedPrompt = prompt
+            val githubContext = githubRepo.resolveGitHubContext(prompt, _uiState.value.githubToken)
+            if (!githubContext.isNullOrBlank()) {
+                enrichedPrompt = "$prompt\n\n$githubContext"
+            }
+
             val result = repository.generateContentWithFailover(
-                prompt = prompt,
+                prompt = enrichedPrompt,
                 conversationHistory = existingHistory,
                 preferredModel = _uiState.value.selectedModel,
                 customApiKey = _uiState.value.customApiKey

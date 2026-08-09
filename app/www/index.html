@@ -742,6 +742,59 @@
             }
         }
 
+        async function resolveGitHubContextJS(promptText) {
+            const ghRegex = /https?:\/\/github\.com\/([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+)(?:\/blob\/([^\/]+)\/(.+))?/;
+            const match = promptText.match(ghRegex);
+            if (!match) return null;
+
+            const owner = match[1];
+            const repo = match[2].replace(/\.git$/, '');
+            const blobBranch = match[3];
+            const blobPath = match[4];
+            const token = localStorage.getItem('sasa_gh_token') || '';
+
+            try {
+                if (blobBranch && blobPath) {
+                    const resp = await fetch('/api/github/file', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token, owner, repo, path: blobPath, branch: blobBranch })
+                    });
+                    const data = await resp.json();
+                    if (data.decodedContent) {
+                        return `\n\n--- 📄 محتوى ملف GitHub المجلوب تلقائياً (${owner}/${repo} - ${blobPath}) ---\n${data.decodedContent}\n----------------------------------------------------------------------\n`;
+                    }
+                } else {
+                    let contextStr = `\n\n--- 📦 سياق مستودع GitHub المجلوب تلقائياً (${owner}/${repo}) ---\n`;
+                    const readmeResp = await fetch('/api/github/file', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token, owner, repo, path: 'README.md', branch: 'main' })
+                    });
+                    const readmeData = await readmeResp.json();
+                    if (readmeData.decodedContent) {
+                        contextStr += `📖 [محتوى README.md]:\n${readmeData.decodedContent.substring(0, 3000)}\n`;
+                    }
+
+                    const treeResp = await fetch('/api/github/tree', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token, owner, repo, branch: 'main' })
+                    });
+                    const treeData = await treeResp.json();
+                    if (treeData.tree && Array.isArray(treeData.tree)) {
+                        const files = treeData.tree.filter(i => i.type === 'blob').slice(0, 25).map(f => '  - ' + f.path).join('\n');
+                        contextStr += `📁 [ملفات المستودع]:\n${files}\n`;
+                    }
+                    contextStr += `----------------------------------------------------------------------\n`;
+                    return contextStr;
+                }
+            } catch (e) {
+                console.error("Error fetching GH context:", e);
+            }
+            return null;
+        }
+
         async function sendMessage() {
             const inputEl = document.getElementById('userInput');
             const text = inputEl.value.trim();
@@ -754,11 +807,15 @@
             const model = document.getElementById('modelSelect').value;
             document.getElementById('loadingIndicator').style.display = 'flex';
 
+            // Auto resolve GitHub link context if present
+            const ghContext = await resolveGitHubContextJS(text);
+            const enrichedText = ghContext ? (text + ghContext) : text;
+
             // System prompt time injection for current precision time questions
             const now = new Date();
             const timeContext = ` الوقت والتاريخ الحالي للجهاز هو: ${now.toLocaleDateString('ar-EG')} - ${now.toLocaleTimeString('ar-EG')}. (التوقيت المحلي مصر/القاهرة: UTC+3).`;
             
-            const userContent = history.length === 0 ? (text + "\n[سياق النظام: " + timeContext + "]") : text;
+            const userContent = history.length === 0 ? (enrichedText + "\n[سياق النظام: " + timeContext + "]") : enrichedText;
             history.push({ role: "user", parts: [{ text: userContent }] });
 
             try {

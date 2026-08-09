@@ -235,4 +235,63 @@ class GitHubRepository {
             GitHubResult.Error("خطأ أثناء النسخ: ${e.message}")
         }
     }
+
+    suspend fun resolveGitHubContext(prompt: String, token: String): String? = withContext(Dispatchers.IO) {
+        val githubRegex = Regex("""https?://github\.com/([a-zA-Z0-9_.-]+)/([a-zA-Z0-9_.-]+)(?:/blob/([^/]+)/(.+)|/tree/([^/]+)/(.+))?""")
+        val match = githubRegex.find(prompt) ?: return@withContext null
+
+        val owner = match.groupValues[1]
+        val repo = match.groupValues[2].removeSuffix(".git")
+        val blobBranch = match.groupValues.getOrNull(3)
+        val blobPath = match.groupValues.getOrNull(4)
+
+        if (!blobPath.isNullOrBlank() && !blobBranch.isNullOrBlank()) {
+            // Specific file URL
+            when (val fileRes = getFileContent(token, owner, repo, blobPath, blobBranch)) {
+                is GitHubResult.Success -> {
+                    return@withContext """
+--- 📄 محتوى ملف GitHub المجلوب تلقائياً ($owner/$repo - $blobPath) ---
+${fileRes.data.content}
+----------------------------------------------------------------------
+""".trimIndent()
+                }
+                else -> {}
+            }
+        } else {
+            // Repo level URL
+            val sb = StringBuilder()
+            sb.appendLine("--- 📦 بيانات وسياق مستودع GitHub المجلوب تلقائياً ($owner/$repo) ---")
+
+            // Try fetching README
+            when (val readmeRes = getFileContent(token, owner, repo, "README.md", "main")) {
+                is GitHubResult.Success -> {
+                    sb.appendLine("📖 [محتوى README.md]:")
+                    sb.appendLine(readmeRes.data.content.take(4000))
+                }
+                else -> {
+                    when (val readmeResAlt = getFileContent(token, owner, repo, "README.md", "master")) {
+                        is GitHubResult.Success -> {
+                            sb.appendLine("📖 [محتوى README.md]:")
+                            sb.appendLine(readmeResAlt.data.content.take(4000))
+                        }
+                        else -> {}
+                    }
+                }
+            }
+
+            // Fetch Tree
+            when (val treeRes = getRepoTree(token, owner, repo, "main")) {
+                is GitHubResult.Success -> {
+                    val files = treeRes.data.filter { it.type == "blob" }.take(30).joinToString("\n") { "  - ${it.path}" }
+                    sb.appendLine("📁 [قائمة وأهم ملفات المستودع]:\n$files")
+                }
+                else -> {}
+            }
+
+            sb.appendLine("----------------------------------------------------------------------")
+            return@withContext sb.toString()
+        }
+
+        return@withContext null
+    }
 }
