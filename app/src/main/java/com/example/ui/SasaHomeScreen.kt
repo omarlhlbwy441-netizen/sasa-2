@@ -51,6 +51,8 @@ import androidx.compose.material.icons.filled.ThumbDown
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.Visibility
 import com.example.ui.components.PreviewDialog
+import com.example.ui.components.CloudWorkspaceSettingsDialog
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -225,6 +227,7 @@ fun SasaHomeScreen(
                     selectedModel = uiState.selectedModel,
                     onModelClick = { showModelMenu = true },
                     onPreviewClick = { showGlobalPreview = true },
+                    onCloudSettingsClick = { viewModel.setShowCloudWorkspaceSettings(true) },
                     onClearChatClick = { viewModel.onClearChat() }
                 )
             },
@@ -266,6 +269,16 @@ fun SasaHomeScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
+                // Cloud Workspace Settings Dialog
+                if (uiState.showCloudWorkspaceSettings) {
+                    CloudWorkspaceSettingsDialog(
+                        config = uiState.cloudWorkspaceConfig,
+                        onSaveConfig = { viewModel.updateCloudWorkspaceConfig(it) },
+                        onTestConnection = { viewModel.testCloudWorkspaceExecution(it) },
+                        onDismiss = { viewModel.setShowCloudWorkspaceSettings(false) }
+                    )
+                }
+
                 Column(modifier = Modifier.fillMaxSize()) {
 
                     // Chat messages list
@@ -406,6 +419,7 @@ fun HeaderBar(
     selectedModel: GeminiModel = GeminiModel.FLASH_3_6,
     onModelClick: () -> Unit = {},
     onPreviewClick: () -> Unit = {},
+    onCloudSettingsClick: () -> Unit = {},
     onClearChatClick: () -> Unit = {}
 ) {
     Surface(
@@ -472,17 +486,33 @@ fun HeaderBar(
                 }
             }
 
-            // Preview Screen Button
-            IconButton(
-                onClick = onPreviewClick,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(SasaPrimary.copy(alpha = 0.15f))
-                    .border(1.dp, SasaPrimary.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+            // Top Action Buttons (Cloud Workspace Settings + Live Preview Screen)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Cloud Workspace Settings Button
+                IconButton(
+                    onClick = onCloudSettingsClick,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(SasaPrimary.copy(alpha = 0.15f))
+                        .border(1.dp, SasaPrimary.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CloudSync,
+                        contentDescription = "إعدادات البيئة السحابية (Codespaces)",
+                        tint = SasaPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Preview Screen Button
+                IconButton(
+                    onClick = onPreviewClick,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(SasaPrimary.copy(alpha = 0.15f))
+                        .border(1.dp, SasaPrimary.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
                 ) {
                     Icon(
                         imageVector = Icons.Default.Visibility,

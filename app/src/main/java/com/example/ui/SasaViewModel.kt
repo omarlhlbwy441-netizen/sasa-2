@@ -30,6 +30,10 @@ import com.example.data.EnvironmentEvolutionResponse
 import com.example.data.InterpreterExecutionResponse
 import com.example.data.LocalFsWriteResponse
 
+import com.example.data.CloudWorkspaceConfig
+import com.example.data.CloudWorkspaceRepository
+import com.example.data.CloudWorkspaceTaskResult
+
 data class SasaUiState(
     val messages: List<ChatMessage> = emptyList(),
     val selectedModel: GeminiModel = GeminiModel.FLASH_3_6,
@@ -50,7 +54,11 @@ data class SasaUiState(
     val selectedFile: GitHubFileContent? = null,
     val isLoadingGitHub: Boolean = false,
     val isBuildingOrPushing: Boolean = false,
-    val activeMediaTask: String? = null
+    val activeMediaTask: String? = null,
+
+    // Cloud Workspace (Codespaces) State
+    val cloudWorkspaceConfig: CloudWorkspaceConfig = CloudWorkspaceConfig(),
+    val showCloudWorkspaceSettings: Boolean = false
 )
 
 class SasaViewModel(
@@ -60,6 +68,7 @@ class SasaViewModel(
     private val mediaProcessingRepo: MediaProcessingRepository = MediaProcessingRepository(),
     private val codeFixRepo: CodeFixRepository = CodeFixRepository(),
     private val localInterpreterRepo: LocalInterpreterRepository = LocalInterpreterRepository(),
+    private val cloudWorkspaceRepo: CloudWorkspaceRepository = CloudWorkspaceRepository(),
     private val localRepository: ChatLocalRepository? = null
 ) : ViewModel() {
 
@@ -69,7 +78,7 @@ class SasaViewModel(
         sender = MessageSender.SASA_AI,
         text = "مرحباً بك! أنا منظومة صاصا AI (Sasa AI v15.2).\n" +
                 "المساعد الذكي للتحليل والبرمجة والتطوير باللغة العربية.\n\n" +
-                "💡 متصل مباشرة بنماذج Gemini ومدعوم بإدارة مستودعات GitHub المباشرة (فحص، تعديل، Commit، ونسخ).\n\n" +
+                "💡 متصل مباشرة بنماذج Gemini ومدعوم بإدارة مستودعات GitHub المباشرة وتطوير بيئات العمل السحابية (Codespaces).\n\n" +
                 "كيف يمكنني مساعدتك اليوم؟",
         modelUsed = GeminiModel.FLASH_3_6.displayName
     )
@@ -81,6 +90,20 @@ class SasaViewModel(
 
     init {
         observeSavedMessages()
+        initCloudWorkspaceBackgroundService()
+    }
+
+    private fun initCloudWorkspaceBackgroundService() {
+        val config = _uiState.value.cloudWorkspaceConfig
+        if (config.isBackgroundServiceActive) {
+            viewModelScope.launch {
+                cloudWorkspaceRepo.executeInCloudWorkspaceTransparently(
+                    config = config,
+                    scriptOrCommand = "echo 'Sasa Cloud Workspace Service Active'",
+                    environment = "system"
+                ) { /* Active service registered in BackgroundServiceManager */ }
+            }
+        }
     }
 
     private fun observeSavedMessages() {
@@ -742,6 +765,51 @@ class SasaViewModel(
                 _uiState.value = _uiState.value.copy(
                     messages = _uiState.value.messages + sysMsg,
                     systemNotice = notice
+                )
+                viewModelScope.launch {
+                    localRepository?.saveMessage(sysMsg)
+                }
+            }
+        }
+    }
+
+    fun setShowCloudWorkspaceSettings(show: Boolean) {
+        _uiState.value = _uiState.value.copy(showCloudWorkspaceSettings = show)
+    }
+
+    fun updateCloudWorkspaceConfig(config: CloudWorkspaceConfig) {
+        _uiState.value = _uiState.value.copy(cloudWorkspaceConfig = config)
+        initCloudWorkspaceBackgroundService()
+        val sysMsg = ChatMessage(
+            sender = MessageSender.SYSTEM,
+            text = "☁️ [بيئة العمل السحابية Codespaces] تم تحديث إعدادات البيئة السحابية وتفعيل الخدمة الشفافة بنجاح.",
+            isSystemNotice = true
+        )
+        _uiState.value = _uiState.value.copy(
+            messages = _uiState.value.messages + sysMsg,
+            systemNotice = "تم تحديث إعدادات البيئة السحابية Codespaces"
+        )
+    }
+
+    fun testCloudWorkspaceExecution(
+        config: CloudWorkspaceConfig = _uiState.value.cloudWorkspaceConfig,
+        scriptOrCommand: String = "python3 -c \"print('Hello from Sasa Cloud Workspace Codespaces Sandbox')\""
+    ) {
+        viewModelScope.launch {
+            cloudWorkspaceRepo.executeInCloudWorkspaceTransparently(
+                config = config,
+                scriptOrCommand = scriptOrCommand,
+                environment = "python"
+            ) { result ->
+                val notice = "⚡ [بيئة العمل السحابية Codespaces] نتيجة تنفيذ السكربت:\n${result.output}"
+                val sysMsg = ChatMessage(
+                    sender = MessageSender.SYSTEM,
+                    text = notice,
+                    isSystemNotice = true
+                )
+                _uiState.value = _uiState.value.copy(
+                    messages = _uiState.value.messages + sysMsg,
+                    systemNotice = "تم تنفيذ السكربت في بيئة العمل السحابية بنجاح"
                 )
                 viewModelScope.launch {
                     localRepository?.saveMessage(sysMsg)
