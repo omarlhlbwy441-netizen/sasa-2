@@ -24,7 +24,8 @@ WORKDIR /workspace
 COPY . .
 
 # [التحديث التقني 1]: حقن مفتاح Gemini API وبناء ملف .env ديناميكياً
-ARG GEMINI_API_KEY
+ARG GEMINI_API_KEY=""
+ENV GEMINI_API_KEY=""
 RUN echo "GEMINI_API_KEY=${GEMINI_API_KEY}" > /workspace/.env
 
 RUN if [ -f debug.keystore.base64 ]; then base64 -d debug.keystore.base64 > debug.keystore; fi
