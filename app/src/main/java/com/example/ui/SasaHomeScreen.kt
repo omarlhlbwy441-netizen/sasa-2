@@ -414,8 +414,6 @@ fun HeaderBar(
     onApiKeyClick: () -> Unit = {},
     onClearChatClick: () -> Unit = {}
 ) {
-    var showOverflowMenu by remember { mutableStateOf(false) }
-
     Surface(
         color = SasaCardBackground,
         tonalElevation = 4.dp
@@ -423,15 +421,15 @@ fun HeaderBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // App Title & Transparent Service Indicator
+            // App Title & Transparent Background Service Indicator
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
+                        .size(38.dp)
                         .clip(CircleShape)
                         .background(SasaPrimaryContainer)
                         .border(1.5.dp, SasaPrimary, CircleShape),
@@ -441,10 +439,10 @@ fun HeaderBar(
                         imageVector = Icons.Default.AutoAwesome,
                         contentDescription = "صاصا AI",
                         tint = SasaSecondary,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 }
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -453,12 +451,12 @@ fun HeaderBar(
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(SasaAccentGreen.copy(alpha = 0.2f))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(
@@ -469,90 +467,14 @@ fun HeaderBar(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "خدمات خلفية شفافة",
-                                    fontSize = 9.sp,
+                                    text = "خدمات خلفية شفافة مفعلة",
+                                    fontSize = 10.sp,
                                     color = SasaAccentGreen,
-                                    fontWeight = FontWeight.SemiBold
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
                         }
                     }
-                }
-            }
-
-            // Streamlined Single Menu Trigger
-            Box {
-                IconButton(
-                    onClick = { showOverflowMenu = true },
-                    modifier = Modifier
-                        .size(38.dp)
-                        .testTag("overflow_menu_button")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = "خيارات الخدمة",
-                        tint = Color.White,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-
-                DropdownMenu(
-                    expanded = showOverflowMenu,
-                    onDismissRequest = { showOverflowMenu = false },
-                    modifier = Modifier.background(SasaCardBackground)
-                ) {
-                    DropdownMenuItem(
-                        text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = SasaPrimary, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("النموذج: ${selectedModel.displayName.replace("Gemini ", "")}", color = Color.White)
-                            }
-                        },
-                        onClick = {
-                            showOverflowMenu = false
-                            onModelClick()
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Code, contentDescription = null, tint = SasaSecondary, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("إدارة مستودع GitHub", color = Color.White)
-                            }
-                        },
-                        onClick = {
-                            showOverflowMenu = false
-                            onGitHubClick()
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Key, contentDescription = null, tint = SasaPrimary, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("إعدادات مفتاح API", color = Color.White)
-                            }
-                        },
-                        onClick = {
-                            showOverflowMenu = false
-                            onApiKeyClick()
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.DeleteSweep, contentDescription = null, tint = Color(0xFFFF5252), modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("مسح المحادثة", color = Color(0xFFFF5252))
-                            }
-                        },
-                        onClick = {
-                            showOverflowMenu = false
-                            onClearChatClick()
-                        }
-                    )
                 }
             }
         }
