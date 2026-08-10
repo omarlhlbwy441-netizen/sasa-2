@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 
 import com.example.data.FileGeneratorRepository
 import com.example.data.GeneratedFile
+import com.example.data.MediaProcessingRepository
 
 data class SasaUiState(
     val messages: List<ChatMessage> = emptyList(),
@@ -40,13 +41,15 @@ data class SasaUiState(
     val repoTree: List<GitHubTreeItem> = emptyList(),
     val selectedFile: GitHubFileContent? = null,
     val isLoadingGitHub: Boolean = false,
-    val isBuildingOrPushing: Boolean = false
+    val isBuildingOrPushing: Boolean = false,
+    val activeMediaTask: String? = null
 )
 
 class SasaViewModel(
     private val repository: GeminiRepository = GeminiRepository(),
     private val githubRepo: GitHubRepository = GitHubRepository(),
     private val fileGeneratorRepo: FileGeneratorRepository = FileGeneratorRepository(),
+    private val mediaProcessingRepo: MediaProcessingRepository = MediaProcessingRepository(),
     private val localRepository: ChatLocalRepository? = null
 ) : ViewModel() {
 
@@ -433,6 +436,78 @@ class SasaViewModel(
                     isBuildingOrPushing = false,
                     systemNotice = "❌ تعذر رفع التحديث إلى المستودع السحابي: ${err.message}"
                 )
+            }
+        }
+    }
+
+    fun generateMediaBackground(
+        prompt: String,
+        mediaType: String = "IMAGE",
+        style: String = "modern"
+    ) {
+        _uiState.value = _uiState.value.copy(activeMediaTask = "توليد وسائط خلفية: $mediaType")
+        viewModelScope.launch {
+            mediaProcessingRepo.generateMediaTransparently(
+                prompt = prompt,
+                mediaType = mediaType,
+                style = style
+            ) { result ->
+                val mediaNotice = if (result.success) {
+                    "🎨 [خدمة خلفية شفافة] تم توليد الوسائط بنجاح: ${result.description}"
+                } else {
+                    "⚠️ [خدمة خلفية] فشل توليد الوسائط: ${result.message}"
+                }
+                
+                val sysMsg = ChatMessage(
+                    sender = MessageSender.SYSTEM,
+                    text = mediaNotice,
+                    isSystemNotice = true
+                )
+                
+                _uiState.value = _uiState.value.copy(
+                    activeMediaTask = null,
+                    messages = _uiState.value.messages + sysMsg,
+                    systemNotice = mediaNotice
+                )
+                
+                viewModelScope.launch {
+                    localRepository?.saveMessage(sysMsg)
+                }
+            }
+        }
+    }
+
+    fun processMediaBackground(
+        operation: String,
+        mediaBase64: String
+    ) {
+        _uiState.value = _uiState.value.copy(activeMediaTask = "معالجة وسائط خلفية: $operation")
+        viewModelScope.launch {
+            mediaProcessingRepo.processMediaTransparently(
+                operation = operation,
+                mediaBase64 = mediaBase64
+            ) { result ->
+                val notice = if (result.success) {
+                    "📷 [خدمة خلفية شفافة] ${result.extractedText ?: "تمت معالجة الوسائط بنجاح"}"
+                } else {
+                    "⚠️ [خدمة خلفية] تعذرت معالجة الوسائط"
+                }
+
+                val sysMsg = ChatMessage(
+                    sender = MessageSender.SYSTEM,
+                    text = notice,
+                    isSystemNotice = true
+                )
+
+                _uiState.value = _uiState.value.copy(
+                    activeMediaTask = null,
+                    messages = _uiState.value.messages + sysMsg,
+                    systemNotice = notice
+                )
+
+                viewModelScope.launch {
+                    localRepository?.saveMessage(sysMsg)
+                }
             }
         }
     }

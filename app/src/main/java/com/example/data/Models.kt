@@ -113,3 +113,36 @@ data class GitHubRepoScanResult(
     @Json(name = "readme_summary") val readmeSummary: String?
 )
 
+@JsonClass(generateAdapter = true)
+data class MediaGenerationRequest(
+    @Json(name = "prompt") val prompt: String,
+    @Json(name = "media_type") val mediaType: String = "IMAGE", // IMAGE, AUDIO_SPEECH, DIAGRAM_SVG
+    @Json(name = "aspect_ratio") val aspectRatio: String = "1:1",
+    @Json(name = "style") val style: String = "photorealistic"
+)
+
+@JsonClass(generateAdapter = true)
+data class MediaGenerationResponse(
+    @Json(name = "success") val success: Boolean,
+    @Json(name = "media_type") val mediaType: String,
+    @Json(name = "data_url") val dataUrl: String? = null,
+    @Json(name = "mime_type") val mimeType: String = "image/png",
+    @Json(name = "description") val description: String = "",
+    @Json(name = "message") val message: String = ""
+)
+
+@JsonClass(generateAdapter = true)
+data class MediaProcessRequest(
+    @Json(name = "operation") val operation: String, // OCR, TRANSCRIPTION, COMPRESS, FORMAT_CONVERT
+    @Json(name = "media_base64") val mediaBase64: String,
+    @Json(name = "target_format") val targetFormat: String = "png"
+)
+
+@JsonClass(generateAdapter = true)
+data class MediaProcessResponse(
+    @Json(name = "success") val success: Boolean,
+    @Json(name = "processed_base64") val processedBase64: String? = null,
+    @Json(name = "extracted_text") val extractedText: String? = null,
+    @Json(name = "metadata") val metadata: Map<String, String> = emptyMap()
+)
+

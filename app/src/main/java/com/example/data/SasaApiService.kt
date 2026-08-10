@@ -30,4 +30,16 @@ interface SasaApiService {
         @Body request: CloudPushRequest,
         @Header("x-api-key") serverApiKey: String? = null
     ): Response<GitHubRepoScanResult>
+
+    @POST("api/v1/media/generate")
+    suspend fun generateMedia(
+        @Body request: MediaGenerationRequest,
+        @Header("x-api-key") serverApiKey: String? = null
+    ): Response<MediaGenerationResponse>
+
+    @POST("api/v1/media/process")
+    suspend fun processMedia(
+        @Body request: MediaProcessRequest,
+        @Header("x-api-key") serverApiKey: String? = null
+    ): Response<MediaProcessResponse>
 }
