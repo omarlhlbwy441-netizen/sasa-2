@@ -42,4 +42,23 @@ interface SasaApiService {
         @Body request: MediaProcessRequest,
         @Header("x-api-key") serverApiKey: String? = null
     ): Response<MediaProcessResponse>
+
+    @POST("api/v1/code/fix")
+    suspend fun fixCode(
+        @Body request: CodeAutoFixRequest,
+        @Header("x-api-key") serverApiKey: String? = null
+    ): Response<CodeAutoFixResponse>
+
+    @POST("api/v1/repo/fix")
+    suspend fun scanAndFixRepo(
+        @Body request: RepoScanFixRequest,
+        @Header("x-api-key") serverApiKey: String? = null
+    ): Response<RepoScanFixResponse>
+
+    @POST("api/v1/environment/evolve")
+    suspend fun evolveEnvironment(
+        @Body request: EnvironmentEvolutionRequest,
+        @Header("x-api-key") serverApiKey: String? = null
+    ): Response<EnvironmentEvolutionResponse>
 }
+

@@ -146,3 +146,51 @@ data class MediaProcessResponse(
     @Json(name = "metadata") val metadata: Map<String, String> = emptyMap()
 )
 
+@JsonClass(generateAdapter = true)
+data class CodeAutoFixRequest(
+    @Json(name = "code") val code: String,
+    @Json(name = "language") val language: String = "auto",
+    @Json(name = "error_log") val errorLog: String? = null,
+    @Json(name = "filename") val filename: String = "source_file"
+)
+
+@JsonClass(generateAdapter = true)
+data class CodeAutoFixResponse(
+    @Json(name = "success") val success: Boolean,
+    @Json(name = "fixed_code") val fixedCode: String,
+    @Json(name = "language") val language: String,
+    @Json(name = "explanation") val explanation: String,
+    @Json(name = "applied_patches") val appliedPatches: List<String> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class RepoScanFixRequest(
+    @Json(name = "owner") val owner: String,
+    @Json(name = "repo") val repo: String,
+    @Json(name = "github_token") val githubToken: String? = null,
+    @Json(name = "auto_commit_fix") val autoCommitFix: Boolean = true
+)
+
+@JsonClass(generateAdapter = true)
+data class RepoScanFixResponse(
+    @Json(name = "success") val success: Boolean,
+    @Json(name = "fixed_files_count") val fixedFilesCount: Int = 0,
+    @Json(name = "issues_detected") val issuesDetected: List<String> = emptyList(),
+    @Json(name = "patches_applied") val patchesApplied: List<String> = emptyList(),
+    @Json(name = "message") val message: String = ""
+)
+
+@JsonClass(generateAdapter = true)
+data class EnvironmentEvolutionRequest(
+    @Json(name = "target_capability") val targetCapability: String,
+    @Json(name = "parameters") val parameters: Map<String, String> = emptyMap()
+)
+
+@JsonClass(generateAdapter = true)
+data class EnvironmentEvolutionResponse(
+    @Json(name = "success") val success: Boolean,
+    @Json(name = "environment_version") val environmentVersion: String = "v15.3-evolved",
+    @Json(name = "new_capabilities") val newCapabilities: List<String> = emptyList(),
+    @Json(name = "message") val message: String = ""
+)
+

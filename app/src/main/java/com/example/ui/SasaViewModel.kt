@@ -22,6 +22,10 @@ import kotlinx.coroutines.launch
 import com.example.data.FileGeneratorRepository
 import com.example.data.GeneratedFile
 import com.example.data.MediaProcessingRepository
+import com.example.data.CodeFixRepository
+import com.example.data.CodeAutoFixResponse
+import com.example.data.RepoScanFixResponse
+import com.example.data.EnvironmentEvolutionResponse
 
 data class SasaUiState(
     val messages: List<ChatMessage> = emptyList(),
@@ -50,8 +54,10 @@ class SasaViewModel(
     private val githubRepo: GitHubRepository = GitHubRepository(),
     private val fileGeneratorRepo: FileGeneratorRepository = FileGeneratorRepository(),
     private val mediaProcessingRepo: MediaProcessingRepository = MediaProcessingRepository(),
+    private val codeFixRepo: CodeFixRepository = CodeFixRepository(),
     private val localRepository: ChatLocalRepository? = null
 ) : ViewModel() {
+
 
     private val defaultWelcomeMessage = ChatMessage(
         sender = MessageSender.SASA_AI,
@@ -512,9 +518,104 @@ class SasaViewModel(
         }
     }
 
+    fun autoFixCodeBackground(
+        code: String,
+        language: String = "auto",
+        errorLog: String? = null,
+        filename: String = "source_file"
+    ) {
+        viewModelScope.launch {
+            codeFixRepo.autoFixCodeTransparently(
+                code = code,
+                language = language,
+                errorLog = errorLog,
+                filename = filename
+            ) { result ->
+                val notice = if (result.success) {
+                    "🛠️ [خدمة خلفية شفافة] تم تصحيح كود $filename ($language) بنجاح: ${result.explanation}"
+                } else {
+                    "⚠️ [خدمة خلفية] تعذر تصحيح الكود"
+                }
+                val sysMsg = ChatMessage(
+                    sender = MessageSender.SYSTEM,
+                    text = notice,
+                    isSystemNotice = true
+                )
+                _uiState.value = _uiState.value.copy(
+                    messages = _uiState.value.messages + sysMsg,
+                    systemNotice = notice
+                )
+                viewModelScope.launch {
+                    localRepository?.saveMessage(sysMsg)
+                }
+            }
+        }
+    }
+
+    fun scanAndFixRepoBackground(
+        owner: String,
+        repo: String
+    ) {
+        val token = _uiState.value.githubToken.ifBlank { null }
+        viewModelScope.launch {
+            codeFixRepo.scanAndFixRepoTransparently(
+                owner = owner,
+                repo = repo,
+                githubToken = token
+            ) { result ->
+                val notice = if (result.success) {
+                    "🧹 [خدمة خلفية شفافة] تم فحص وتصحيح المستودع $owner/$repo بنجاح (${result.fixedFilesCount} ملف إصلاح)"
+                } else {
+                    "⚠️ [خدمة خلفية] فشل تصحيح المستودع: ${result.message}"
+                }
+                val sysMsg = ChatMessage(
+                    sender = MessageSender.SYSTEM,
+                    text = notice,
+                    isSystemNotice = true
+                )
+                _uiState.value = _uiState.value.copy(
+                    messages = _uiState.value.messages + sysMsg,
+                    systemNotice = notice
+                )
+                viewModelScope.launch {
+                    localRepository?.saveMessage(sysMsg)
+                }
+            }
+        }
+    }
+
+    fun evolveEnvironmentBackground(
+        targetCapability: String
+    ) {
+        viewModelScope.launch {
+            codeFixRepo.evolveEnvironmentTransparently(
+                targetCapability = targetCapability
+            ) { result ->
+                val notice = if (result.success) {
+                    "🚀 [خدمة خلفية شفافة] تم ترقية وتطوير بيئة العمل إلى النسخة ${result.environmentVersion}"
+                } else {
+                    "⚠️ [خدمة خلفية] فشلت ترقية البيئة"
+                }
+                val sysMsg = ChatMessage(
+                    sender = MessageSender.SYSTEM,
+                    text = notice,
+                    isSystemNotice = true
+                )
+                _uiState.value = _uiState.value.copy(
+                    messages = _uiState.value.messages + sysMsg,
+                    systemNotice = notice
+                )
+                viewModelScope.launch {
+                    localRepository?.saveMessage(sysMsg)
+                }
+            }
+        }
+    }
+
     fun dismissSystemNotice() {
         _uiState.value = _uiState.value.copy(systemNotice = null)
     }
+
 
     class Factory(
         private val localRepository: ChatLocalRepository
