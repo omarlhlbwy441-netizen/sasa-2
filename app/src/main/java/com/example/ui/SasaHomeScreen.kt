@@ -43,6 +43,8 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.SmartToy
@@ -322,41 +324,45 @@ fun SasaHomeScreen(
                             }
                         }
 
-                        // Quick prompt suggestion chips if conversation is brief
-                        if (uiState.messages.size <= 2 && !uiState.isGenerating) {
+                        // Clean empty-state greeting when conversation is empty
+                        if (uiState.messages.isEmpty() && !uiState.isGenerating) {
                             item {
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text(
-                                    text = "💡 اقتراحات سريعة للبدء:",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = SasaTextSecondary,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                )
-                                FlowRow(
+                                Spacer(modifier = Modifier.height(40.dp))
+                                Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = 4.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        .padding(24.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    PromptChip("🔗 تحليل رابط مستودع GitHub") {
-                                        inputText = "قم بفحص وتحليل مستودع GitHub التالي واشرح بنيته وأبرز ملفاته: https://github.com/omarlhlbwy441-netizen/sasa"
+                                    Box(
+                                        modifier = Modifier
+                                            .size(64.dp)
+                                            .clip(CircleShape)
+                                            .background(SasaPrimaryContainer)
+                                            .border(2.dp, SasaPrimary, CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.AutoAwesome,
+                                            contentDescription = "صاصا AI",
+                                            tint = SasaSecondary,
+                                            modifier = Modifier.size(32.dp)
+                                        )
                                     }
-                                    PromptChip("🎬 سيناريو فيلم سينمائي") {
-                                        inputText = "اكتب لي سيناريو فيلم سينمائي تشويقي متكامل الحوار والمشاهد مع وصف اللقطات والإخراج."
-                                    }
-                                    PromptChip("🎥 وصف فيديو AI (Sora/Runway)") {
-                                        inputText = "صمم لي برومبت دقيق وعالي الجودة لتوليد مشهد فيديو ذكاء اصطناعي سينمائي بصيغة 4K."
-                                    }
-                                    PromptChip("💻 كتابة كود Python أو Kotlin") {
-                                        inputText = "اكتب لي كوداً محترفاً ومكتتملاً لنظام إدارة مهام مع شرح العمليات."
-                                    }
-                                    PromptChip("⚡ تحليل ومعالجة خطأ برمجي") {
-                                        inputText = "كيف أعالج خطأ Quota limits exceeded (429) في استخدام Gemini API برمجياً مع التغيير التلقائي للنماذج؟"
-                                    }
-                                    PromptChip("📝 تلخيص وتبسيط الفكرة") {
-                                        inputText = "اشرح لي مفهوم التفكير المعماري للذكاء الاصطناعي وكيف يختار النماذج المناسبة."
-                                    }
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Text(
+                                        text = "مرحباً بك في صاصا AI",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "أنظمة معالجة الأكواد والميديا وتراسل الخدمات الخلفية الشفافة تعمل بنجاح في الخلفية.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = SasaTextSecondary,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    )
                                 }
                             }
                         }
@@ -408,6 +414,8 @@ fun HeaderBar(
     onApiKeyClick: () -> Unit = {},
     onClearChatClick: () -> Unit = {}
 ) {
+    var showOverflowMenu by remember { mutableStateOf(false) }
+
     Surface(
         color = SasaCardBackground,
         tonalElevation = 4.dp
@@ -415,11 +423,11 @@ fun HeaderBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 8.dp),
+                .padding(horizontal = 14.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // App Title & Badge
+            // App Title & Transparent Service Indicator
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
@@ -436,7 +444,7 @@ fun HeaderBar(
                         modifier = Modifier.size(20.dp)
                     )
                 }
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(10.dp))
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -445,98 +453,105 @@ fun HeaderBar(
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
+                                .clip(RoundedCornerShape(10.dp))
                                 .background(SasaAccentGreen.copy(alpha = 0.2f))
-                                .padding(horizontal = 4.dp, vertical = 1.dp)
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
-                            Text(
-                                text = "v15.2",
-                                fontSize = 9.sp,
-                                color = SasaAccentGreen,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .clip(CircleShape)
+                                        .background(SasaAccentGreen)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "خدمات خلفية شفافة",
+                                    fontSize = 9.sp,
+                                    color = SasaAccentGreen,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
                         }
                     }
                 }
             }
 
-            // Interactive Header Action Buttons
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                // Model Selector Pill / Button
-                Surface(
-                    onClick = onModelClick,
-                    shape = RoundedCornerShape(16.dp),
-                    color = SasaPrimary.copy(alpha = 0.15f),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, SasaPrimary.copy(alpha = 0.5f)),
-                    modifier = Modifier.testTag("model_selector_button")
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = selectedModel.displayName.replace("Gemini ", ""),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = SasaPrimary
-                        )
-                        Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = "تغيير النموذج",
-                            tint = SasaPrimary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
-
-                // GitHub Manager Dialog Button
+            // Streamlined Single Menu Trigger
+            Box {
                 IconButton(
-                    onClick = onGitHubClick,
+                    onClick = { showOverflowMenu = true },
                     modifier = Modifier
-                        .size(36.dp)
-                        .testTag("github_dialog_button")
+                        .size(38.dp)
+                        .testTag("overflow_menu_button")
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Code,
-                        contentDescription = "إدارة GitHub",
-                        tint = SasaSecondary,
-                        modifier = Modifier.size(20.dp)
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "خيارات الخدمة",
+                        tint = Color.White,
+                        modifier = Modifier.size(22.dp)
                     )
                 }
 
-                // API Key Settings Dialog Button
-                IconButton(
-                    onClick = onApiKeyClick,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .testTag("api_key_dialog_button")
+                DropdownMenu(
+                    expanded = showOverflowMenu,
+                    onDismissRequest = { showOverflowMenu = false },
+                    modifier = Modifier.background(SasaCardBackground)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Key,
-                        contentDescription = "مفتاح API",
-                        tint = SasaPrimary,
-                        modifier = Modifier.size(20.dp)
+                    DropdownMenuItem(
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = SasaPrimary, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("النموذج: ${selectedModel.displayName.replace("Gemini ", "")}", color = Color.White)
+                            }
+                        },
+                        onClick = {
+                            showOverflowMenu = false
+                            onModelClick()
+                        }
                     )
-                }
-
-                // Clear Chat History Button
-                IconButton(
-                    onClick = onClearChatClick,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .testTag("clear_chat_button")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.DeleteSweep,
-                        contentDescription = "مسح المحادثة",
-                        tint = Color(0xFFFF5252),
-                        modifier = Modifier.size(20.dp)
+                    DropdownMenuItem(
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Code, contentDescription = null, tint = SasaSecondary, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("إدارة مستودع GitHub", color = Color.White)
+                            }
+                        },
+                        onClick = {
+                            showOverflowMenu = false
+                            onGitHubClick()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Key, contentDescription = null, tint = SasaPrimary, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("إعدادات مفتاح API", color = Color.White)
+                            }
+                        },
+                        onClick = {
+                            showOverflowMenu = false
+                            onApiKeyClick()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.DeleteSweep, contentDescription = null, tint = Color(0xFFFF5252), modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("مسح المحادثة", color = Color(0xFFFF5252))
+                            }
+                        },
+                        onClick = {
+                            showOverflowMenu = false
+                            onClearChatClick()
+                        }
                     )
                 }
             }
