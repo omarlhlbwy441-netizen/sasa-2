@@ -175,6 +175,25 @@
             color: #0f172a;
         }
 
+        .zip-download-btn {
+            background: rgba(168, 85, 247, 0.15);
+            color: #c084fc;
+            border: 1px solid #a855f7;
+            border-radius: 12px;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .zip-download-btn:hover {
+            background: #a855f7;
+            color: #ffffff;
+        }
+
         /* Main Container */
         .chat-container {
             flex: 1;
@@ -774,6 +793,10 @@
             <a href="/sasa-ai.apk" class="apk-download-btn" download title="تنزيل تطبيق Android المباشر">
                 <i class="fa-solid fa-mobile-screen-button"></i>
                 <span class="btn-text">تطبيق APK</span>
+            </a>
+            <a href="/sasa_repository_full.zip" class="zip-download-btn" download title="تنزيل أرشيف المستودع بالكامل ZIP">
+                <i class="fa-solid fa-file-zipper"></i>
+                <span class="btn-text">تنزيل المستودع ZIP</span>
             </a>
         </div>
     </div>
