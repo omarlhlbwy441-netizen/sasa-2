@@ -35,8 +35,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AttachFile
-import com.example.ui.components.ApiKeyDialog
-import com.example.ui.components.GitHubManagerDialog
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ContentCopy
@@ -200,8 +198,6 @@ fun SasaHomeScreen(
                 HeaderBar(
                     selectedModel = uiState.selectedModel,
                     onModelClick = { showModelMenu = true },
-                    onGitHubClick = { viewModel.setShowGitHubDialog(true) },
-                    onApiKeyClick = { viewModel.setShowApiKeyDialog(true) },
                     onClearChatClick = { viewModel.onClearChat() }
                 )
             },
@@ -243,34 +239,6 @@ fun SasaHomeScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
-                // GitHub Manager Dialog
-                if (uiState.showGitHubDialog) {
-                    GitHubManagerDialog(
-                        token = uiState.githubToken,
-                        userStatus = uiState.githubUserStatus,
-                        repos = uiState.githubRepos,
-                        selectedRepo = uiState.selectedRepo,
-                        repoTree = uiState.repoTree,
-                        selectedFile = uiState.selectedFile,
-                        isLoading = uiState.isLoadingGitHub,
-                        onTokenSave = { viewModel.setGitHubToken(it) },
-                        onSelectRepo = { viewModel.setSelectedRepo(it) },
-                        onOpenFile = { owner, repo, path, branch -> viewModel.openRepoFile(owner, repo, path, branch) },
-                        onCommitFile = { owner, repo, path, content, msg, sha, branch -> viewModel.commitFileChanges(owner, repo, path, content, msg, sha, branch) },
-                        onForkRepo = { owner, repo -> viewModel.forkRepo(owner, repo) },
-                        onDismiss = { viewModel.setShowGitHubDialog(false) }
-                    )
-                }
-
-                // API Key Settings Dialog
-                if (uiState.showApiKeyDialog) {
-                    ApiKeyDialog(
-                        currentKey = uiState.customApiKey,
-                        onSaveKey = { viewModel.onSaveCustomApiKey(it) },
-                        onDismiss = { viewModel.setShowApiKeyDialog(false) }
-                    )
-                }
-
                 Column(modifier = Modifier.fillMaxSize()) {
 
                     // Chat messages list
@@ -410,8 +378,6 @@ fun SasaHomeScreen(
 fun HeaderBar(
     selectedModel: GeminiModel = GeminiModel.FLASH_3_6,
     onModelClick: () -> Unit = {},
-    onGitHubClick: () -> Unit = {},
-    onApiKeyClick: () -> Unit = {},
     onClearChatClick: () -> Unit = {}
 ) {
     Surface(
