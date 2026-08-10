@@ -19,6 +19,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+import com.example.data.FileGeneratorRepository
+import com.example.data.GeneratedFile
+
 data class SasaUiState(
     val messages: List<ChatMessage> = emptyList(),
     val selectedModel: GeminiModel = GeminiModel.FLASH_3_6,
@@ -36,12 +39,14 @@ data class SasaUiState(
     val selectedRepo: GitHubRepoItem? = null,
     val repoTree: List<GitHubTreeItem> = emptyList(),
     val selectedFile: GitHubFileContent? = null,
-    val isLoadingGitHub: Boolean = false
+    val isLoadingGitHub: Boolean = false,
+    val isBuildingOrPushing: Boolean = false
 )
 
 class SasaViewModel(
     private val repository: GeminiRepository = GeminiRepository(),
     private val githubRepo: GitHubRepository = GitHubRepository(),
+    private val fileGeneratorRepo: FileGeneratorRepository = FileGeneratorRepository(),
     private val localRepository: ChatLocalRepository? = null
 ) : ViewModel() {
 
@@ -303,7 +308,9 @@ class SasaViewModel(
                         ChatMessage(
                             sender = MessageSender.SASA_AI,
                             text = result.text,
-                            modelUsed = result.modelUsed.displayName
+                            modelUsed = result.modelUsed.displayName,
+                            codeBlocks = result.codeBlocks,
+                            generatedFiles = result.generatedFiles
                         )
                     }
                     is GeminiResult.QuotaExceeded -> {
@@ -381,6 +388,53 @@ class SasaViewModel(
             messages = listOf(resetMessage),
             systemNotice = null
         )
+    }
+
+    fun pushUpdateToCloudRepo(
+        filePath: String,
+        content: String,
+        commitMessage: String = "تحديث تلقائي من صاصا AI"
+    ) {
+        val token = _uiState.value.githubToken
+        val repo = _uiState.value.selectedRepo
+        val owner = repo?.fullName?.split("/")?.getOrNull(0) ?: "omarlhlbwy441-netizen"
+        val repoName = repo?.fullName?.split("/")?.getOrNull(1) ?: "sasa"
+
+        if (token.isBlank()) {
+            _uiState.value = _uiState.value.copy(systemNotice = "⚠️ يرجى توفير توكن GitHub لرفع التحديثات للسحاب.")
+            return
+        }
+
+        _uiState.value = _uiState.value.copy(isBuildingOrPushing = true)
+        viewModelScope.launch {
+            val result = fileGeneratorRepo.pushFileToCloudRepo(
+                githubToken = token,
+                owner = owner,
+                repo = repoName,
+                filePath = filePath,
+                content = content,
+                commitMessage = commitMessage
+            )
+
+            result.onSuccess { msg ->
+                val sysMsg = ChatMessage(
+                    sender = MessageSender.SYSTEM,
+                    text = "☁️ [خدمة خلفية] $msg",
+                    isSystemNotice = true
+                )
+                _uiState.value = _uiState.value.copy(
+                    isBuildingOrPushing = false,
+                    messages = _uiState.value.messages + sysMsg,
+                    systemNotice = msg
+                )
+                localRepository?.saveMessage(sysMsg)
+            }.onFailure { err ->
+                _uiState.value = _uiState.value.copy(
+                    isBuildingOrPushing = false,
+                    systemNotice = "❌ تعذر رفع التحديث إلى المستودع السحابي: ${err.message}"
+                )
+            }
+        }
     }
 
     fun dismissSystemNotice() {

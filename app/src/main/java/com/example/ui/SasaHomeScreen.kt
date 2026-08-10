@@ -301,6 +301,9 @@ fun SasaHomeScreen(
                                     val shareIntent = Intent.createChooser(sendIntent, "مشاركة رد صاصا AI")
                                     context.startActivity(shareIntent)
                                 },
+                                onPushToCloud = { path, content ->
+                                    viewModel.pushUpdateToCloudRepo(path, content)
+                                },
                                 onFeedback = { isUp ->
                                     if (feedbackState[msg.id] == isUp) {
                                         feedbackState.remove(msg.id)
@@ -548,6 +551,7 @@ fun ChatMessageItem(
     onCopy: () -> Unit = {},
     onListen: () -> Unit = {},
     onShare: () -> Unit = {},
+    onPushToCloud: ((filePath: String, content: String) -> Unit)? = null,
     onFeedback: (Boolean) -> Unit = {}
 ) {
     val isUser = message.sender == MessageSender.USER
@@ -639,7 +643,10 @@ fun ChatMessageItem(
                     Spacer(modifier = Modifier.height(4.dp))
                 }
 
-                MessageTextWithCodeBlocks(text = message.text)
+                MessageTextWithCodeBlocks(
+                    text = message.text,
+                    onPushToCloud = onPushToCloud
+                )
 
                 // Action buttons under AI responses (Copy, Listen, Share, Thumb Up, Thumb Down)
                 if (!isUser && !message.isError) {

@@ -13,7 +13,12 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 sealed class GeminiResult {
-    data class Success(val text: String, val modelUsed: GeminiModel) : GeminiResult()
+    data class Success(
+        val text: String,
+        val modelUsed: GeminiModel,
+        val codeBlocks: List<CodeBlock> = emptyList(),
+        val generatedFiles: List<GeneratedFile> = emptyList()
+    ) : GeminiResult()
     data class QuotaExceeded(val message: String, val modelTried: GeminiModel) : GeminiResult()
     data class Error(val message: String) : GeminiResult()
 }
@@ -194,7 +199,21 @@ class GeminiRepository {
 
             val parsedText = parseCandidateText(responseBodyString)
             return if (parsedText.isNotBlank()) {
-                GeminiResult.Success(parsedText, model)
+                val codeBlocks = extractCodeBlocks(parsedText)
+                val generatedFiles = codeBlocks.filter { !it.filename.isNullOrBlank() }.map {
+                    GeneratedFile(
+                        filename = it.filename!!,
+                        fileType = it.language,
+                        content = it.code,
+                        path = it.filename
+                    )
+                }
+                GeminiResult.Success(
+                    text = parsedText,
+                    modelUsed = model,
+                    codeBlocks = codeBlocks,
+                    generatedFiles = generatedFiles
+                )
             } else {
                 GeminiResult.Error("لم يتم استلام رد نصي من النموذج ${model.displayName}.")
             }
@@ -239,5 +258,17 @@ class GeminiRepository {
         } catch (e: Exception) {
             "فشل الاتصال بالخادم. يرجى التحقق من مفتاح API وإعدادات الشبكة."
         }
+    }
+
+    private fun extractCodeBlocks(text: String): List<CodeBlock> {
+        val blocks = mutableListOf<CodeBlock>()
+        val regex = Regex("""```([a-zA-Z0-9_+#-]*)\s*(?:[#/:=]?\s*([a-zA-Z0-9_./\-]+))?\n([\s\S]*?)```""")
+        regex.findAll(text).forEach { match ->
+            val lang = match.groupValues[1].ifBlank { "text" }
+            val filename = match.groupValues[2].ifBlank { null }
+            val code = match.groupValues[3].trim()
+            blocks.add(CodeBlock(language = lang, filename = filename, code = code))
+        }
+        return blocks
     }
 }

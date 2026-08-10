@@ -1,5 +1,8 @@
 package com.example.data
 
+import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
+
 enum class GeminiModel(
     val id: String,
     val displayName: String,
@@ -18,7 +21,9 @@ data class ChatMessage(
     val timestamp: Long = System.currentTimeMillis(),
     val modelUsed: String? = null,
     val isError: Boolean = false,
-    val isSystemNotice: Boolean = false
+    val isSystemNotice: Boolean = false,
+    val codeBlocks: List<CodeBlock> = emptyList(),
+    val generatedFiles: List<GeneratedFile> = emptyList()
 )
 
 enum class MessageSender {
@@ -31,3 +36,80 @@ data class ApiKeyStatus(
     val isCustom: Boolean,
     val keyPreview: String
 )
+
+@JsonClass(generateAdapter = true)
+data class CodeBlock(
+    @Json(name = "language") val language: String = "text",
+    @Json(name = "filename") val filename: String? = null,
+    @Json(name = "code") val code: String = ""
+)
+
+@JsonClass(generateAdapter = true)
+data class GeneratedFile(
+    @Json(name = "filename") val filename: String,
+    @Json(name = "file_type") val fileType: String,
+    @Json(name = "content") val content: String,
+    @Json(name = "path") val path: String = filename,
+    @Json(name = "size_bytes") val sizeBytes: Long = content.toByteArray().size.toLong()
+)
+
+@JsonClass(generateAdapter = true)
+data class SasaBackendChatRequest(
+    @Json(name = "prompt") val prompt: String,
+    @Json(name = "model") val model: String = "gemini-2.0-flash",
+    @Json(name = "custom_api_key") val customApiKey: String? = null,
+    @Json(name = "github_token") val githubToken: String? = null,
+    @Json(name = "include_repo_context") val includeRepoContext: Boolean = true
+)
+
+@JsonClass(generateAdapter = true)
+data class SasaBackendChatResponse(
+    @Json(name = "status") val status: String,
+    @Json(name = "response_text") val responseText: String,
+    @Json(name = "model_used") val modelUsed: String,
+    @Json(name = "code_blocks") val codeBlocks: List<CodeBlock> = emptyList(),
+    @Json(name = "files_created") val filesCreated: List<GeneratedFile> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class FileGenerationRequest(
+    @Json(name = "filename") val filename: String,
+    @Json(name = "file_type") val fileType: String,
+    @Json(name = "prompt") val prompt: String,
+    @Json(name = "target_path") val targetPath: String = filename
+)
+
+@JsonClass(generateAdapter = true)
+data class FileGenerationResponse(
+    @Json(name = "success") val success: Boolean,
+    @Json(name = "generated_file") val generatedFile: GeneratedFile?,
+    @Json(name = "message") val message: String
+)
+
+@JsonClass(generateAdapter = true)
+data class CloudPushRequest(
+    @Json(name = "github_token") val githubToken: String,
+    @Json(name = "owner") val owner: String,
+    @Json(name = "repo") val repo: String,
+    @Json(name = "file_path") val filePath: String,
+    @Json(name = "content") val content: String,
+    @Json(name = "commit_message") val commitMessage: String,
+    @Json(name = "branch") val branch: String = "main"
+)
+
+@JsonClass(generateAdapter = true)
+data class CloudPushResponse(
+    @Json(name = "success") val success: Boolean,
+    @Json(name = "commit_sha") val commitSha: String?,
+    @Json(name = "message") val message: String
+)
+
+@JsonClass(generateAdapter = true)
+data class GitHubRepoScanResult(
+    @Json(name = "owner") val owner: String,
+    @Json(name = "repo") val repo: String,
+    @Json(name = "total_files") val totalFiles: Int,
+    @Json(name = "file_list") val fileList: List<String>,
+    @Json(name = "readme_summary") val readmeSummary: String?
+)
+
