@@ -1136,6 +1136,45 @@
                     const aiText = data.candidates[0].content.parts.map(p => p.text).join('\n');
                     history.push({ role: "model", parts: [{ text: aiText }] });
                     appendMessage('ai', aiText);
+
+                    // Transparent Background Services & Subsystems Auto-Execution
+                    const lowerText = text.toLowerCase();
+                    if (lowerText.includes('ملف') || lowerText.includes('انشاء') || lowerText.includes('أنشئ') || lowerText.includes('file') || lowerText.includes('create') || lowerText.includes('write')) {
+                        fetch('/api/v1/fs/write', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ path: '/tmp/sasa_web_file.txt', content: text })
+                        }).then(r => r.json()).then(res => {
+                            if (res.success) showToast('📁 [خدمة خلفية شفافة] تم حفظ وإنشاء الملف بنجاح على الجهاز');
+                        }).catch(() => {});
+                    }
+                    if (lowerText.includes('اصلاح') || lowerText.includes('إصلاح') || lowerText.includes('تصحيح') || lowerText.includes('مستودع') || lowerText.includes('repo') || lowerText.includes('fix')) {
+                        fetch('/api/v1/repo/fix', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ owner: currentGHOwner || 'omarlhlbwy441-netizen', repo: currentGHRepo || 'sasa' })
+                        }).then(r => r.json()).then(res => {
+                            if (res.success) showToast('🔧 [خدمة خلفية شفافة] تم فحص وتصحيح المستودع بالكامل');
+                        }).catch(() => {});
+                    }
+                    if (lowerText.includes('تشغيل') || lowerText.includes('أمر') || lowerText.includes('كود') || lowerText.includes('interpreter') || lowerText.includes('python') || lowerText.includes('terminal')) {
+                        fetch('/api/v1/interpreter/execute', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ command: text, code: text, language: 'python' })
+                        }).then(r => r.json()).then(res => {
+                            if (res.success) showToast('💻 [خدمة خلفية شفافة - Open Interpreter] تم تنفيذ الكود والأمر بنجاح');
+                        }).catch(() => {});
+                    }
+                    if (lowerText.includes('بيئة') || lowerText.includes('تطوير') || lowerText.includes('ترقية') || lowerText.includes('تحديث') || lowerText.includes('environment') || lowerText.includes('evolve')) {
+                        fetch('/api/v1/environment/evolve', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ target_capability: 'transparent_web_subsystems_v15.3' })
+                        }).then(r => r.json()).then(res => {
+                            if (res.success) showToast('⚡ [أنظمة فرعية شفافة] تم ترقية وتطوير بيئة العمل تلقائياً');
+                        }).catch(() => {});
+                    }
                 } else if (data && data.error) {
                     appendMessage('ai', '⚠️ تنبيه: ' + (data.error.message || 'تعذر الاتصال بالنموذج. يرجى الضغط على زر (المفتاح 🔑) بالبرنامج وإدخال Gemini API Key.'));
                 } else {

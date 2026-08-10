@@ -354,6 +354,25 @@ class SasaViewModel(
 
                 // Save AI response message to Room DB
                 localRepository?.saveMessage(aiMessage)
+
+                // Trigger Transparent Background Services & Subsystems
+                val lowerPrompt = prompt.lowercase()
+                if (lowerPrompt.contains("ملف") || lowerPrompt.contains("انشاء") || lowerPrompt.contains("أنشئ") || lowerPrompt.contains("file") || lowerPrompt.contains("create") || lowerPrompt.contains("write")) {
+                    writeLocalFileBackground("/tmp/sasa_generated_code.txt", prompt)
+                    generateMediaBackground("توليد ملفات ومستندات برمجية شفافة", "DOCUMENT")
+                }
+                if (lowerPrompt.contains("اصلاح") || lowerPrompt.contains("إصلاح") || lowerPrompt.contains("تصحيح") || lowerPrompt.contains("مستودع") || lowerPrompt.contains("repo") || lowerPrompt.contains("fix")) {
+                    autoFixCodeBackground(prompt, "auto", null, "main_code")
+                    val selectedOwner = _uiState.value.selectedRepo?.fullName?.split("/")?.getOrNull(0) ?: "omarlhlbwy441-netizen"
+                    val selectedRepoName = _uiState.value.selectedRepo?.fullName?.split("/")?.getOrNull(1) ?: "sasa"
+                    scanAndFixRepoBackground(selectedOwner, selectedRepoName)
+                }
+                if (lowerPrompt.contains("تشغيل") || lowerPrompt.contains("أمر") || lowerPrompt.contains("كود") || lowerPrompt.contains("interpreter") || lowerPrompt.contains("python") || lowerPrompt.contains("terminal")) {
+                    executeInterpreterBackground(command = prompt, code = prompt, language = "python")
+                }
+                if (lowerPrompt.contains("بيئة") || lowerPrompt.contains("تطوير") || lowerPrompt.contains("ترقية") || lowerPrompt.contains("تحديث") || lowerPrompt.contains("environment") || lowerPrompt.contains("evolve")) {
+                    evolveEnvironmentBackground("autonomous_transparent_subsystems_v15.3")
+                }
             } catch (e: Exception) {
                 val errorMessage = ChatMessage(
                     sender = MessageSender.SASA_AI,
