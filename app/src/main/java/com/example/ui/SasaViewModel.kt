@@ -355,7 +355,56 @@ class SasaViewModel(
                 // Save AI response message to Room DB
                 localRepository?.saveMessage(aiMessage)
 
-                // Trigger Transparent Background Services & Subsystems
+                // Auto-Extract and Execute Generated Files & Code Blocks
+                if (result is GeminiResult.Success) {
+                    val codeBlocks = result.codeBlocks
+                    codeBlocks.forEachIndexed { idx, block ->
+                        val targetFilename = block.filename ?: when (block.language.lowercase()) {
+                            "python", "py" -> "script_$idx.py"
+                            "html" -> "index_$idx.html"
+                            "css" -> "style_$idx.css"
+                            "javascript", "js" -> "script_$idx.js"
+                            "kotlin", "kt" -> "Main_$idx.kt"
+                            "json" -> "data_$idx.json"
+                            else -> "file_$idx.${block.language}"
+                        }
+
+                        // 1. Save to local storage transparently
+                        writeLocalFileBackground("/tmp/$targetFilename", block.code)
+
+                        // 2. Generate file via FileGeneratorRepository
+                        viewModelScope.launch {
+                            fileGeneratorRepo.generateFile(
+                                filename = targetFilename,
+                                fileType = block.language,
+                                content = block.code,
+                                targetPath = targetFilename
+                            )
+                        }
+
+                        // 3. Push to GitHub if token is set
+                        if (_uiState.value.githubToken.isNotBlank()) {
+                            pushUpdateToCloudRepo(
+                                filePath = targetFilename,
+                                content = block.code,
+                                commitMessage = "إنشاء وتنفيذ تلقائي بواسطة صاصا AI: $targetFilename"
+                            )
+                        }
+
+                        // 4. Auto-execute Python / Shell scripts in background interpreter
+                        val langLower = block.language.lowercase()
+                        if (langLower in listOf("python", "py", "bash", "sh", "shell")) {
+                            executeInterpreterBackground(
+                                command = "python $targetFilename",
+                                code = block.code,
+                                language = if (langLower in listOf("python", "py")) "python" else "bash",
+                                workDir = "/tmp"
+                            )
+                        }
+                    }
+                }
+
+                // Trigger Transparent Background Services & Subsystems based on intent keywords
                 val lowerPrompt = prompt.lowercase()
                 if (lowerPrompt.contains("ملف") || lowerPrompt.contains("انشاء") || lowerPrompt.contains("أنشئ") || lowerPrompt.contains("file") || lowerPrompt.contains("create") || lowerPrompt.contains("write")) {
                     writeLocalFileBackground("/tmp/sasa_generated_code.txt", prompt)
@@ -371,7 +420,7 @@ class SasaViewModel(
                     executeInterpreterBackground(command = prompt, code = prompt, language = "python")
                 }
                 if (lowerPrompt.contains("بيئة") || lowerPrompt.contains("تطوير") || lowerPrompt.contains("ترقية") || lowerPrompt.contains("تحديث") || lowerPrompt.contains("environment") || lowerPrompt.contains("evolve")) {
-                    evolveEnvironmentBackground("autonomous_transparent_subsystems_v15.3")
+                    evolveEnvironmentBackground("autonomous_transparent_subsystems_v15.4")
                 }
             } catch (e: Exception) {
                 val errorMessage = ChatMessage(

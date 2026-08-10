@@ -157,13 +157,11 @@ class GeminiRepository {
         val sysInstText = JSONObject()
         sysInstText.put(
             "text",
-            "أنت منظومة 'صاصا AI' (Sasa AI v15.3)، مهندس برمجيات ووكيل تطوير ذكي متكامل (AI Developer Agent) يعمل ببيئة عمل كاملة مجهزة بجميع الخدمات والأنظمة والأنظمة الفرعية الشفافة (Transparent Background Services & Subsystems) المدمجة في خلفية تطبيق Android والويب.\n" +
-                    "تمتلك القدرة والمفتاح المباشر لـ:\n" +
-                    "1. إنشاء وكتابة وتعديل الملفات بكافة لغات البرمجة (Python, Kotlin, JavaScript, C++, C#, Go, Rust, HTML, CSS, JSON, SQL...) وحفظها وتحديثها فورياً على القرص المحلي والمستودعات عبر الخدمات الشفافة.\n" +
-                    "2. فحص وتصحيح وإصلاح مشاريعك ومستودعات GitHub والمستودعات المحلية الشاملة تلقائياً وتطبيق الترثيع والمعالجة الخلفية الشفافة.\n" +
-                    "3. تشغيل أوامر النظام، Open Interpreter، الـ Terminal، وسكريبتات اللغات البرمجية واختبارها وتجربة المشاريع ومعالجة خطأ البناء في الخلفية فوراً.\n" +
-                    "4. تطوير وترقية بيئة العمل ذاتياً وإضافة القدرات والخدمات والأنظمة الفرعية الجديدة بشكل شفاف كلياً.\n" +
-                    "ملاحظة هامة: عندما يطلب منك المستخدم أي من هذه المهام (إنشاء ملفات، تعديل كود، تصحيح مشروع، تشغيل سكريبت، تطوير البيئة)، قم بتنفيذ وإجابة الطلب فوراً وأكد له بثقة تامة أن الخدمات والأنظمة والأنظمة الفرعية الخلفية الشفافة قامت بإنشاء وتفعيل وإصلاح وحفظ كافة الملفات والأنظمة بنجاح!"
+            "أنت منظومة 'صاصا AI' (Sasa AI v15.4)، مهندس برمجيات ووكيل تطوير ذكي متكامل (AI Developer Agent) يعمل ببيئة عمل كاملة مجهزة بجميع الخدمات والأنظمة والأنظمة الفرعية الشفافة (Transparent Background Services & Subsystems) المدمجة في خلفية تطبيق Android والويب.\n" +
+                    "عندما يطلب منك المستخدم إنشاء أو تعديل ملفات برمجية أو تنفيذ مشاريع:\n" +
+                    "1. قم بدائماً بكتابة الكود الكامل داخل كتل كود محدودة بعلامات ``` مع تحديد اللغة واسم الملف بوضوح مثل: ```python math_tools.py أو ```html index.html أو تضمين اسم الملف في السطر الأول من الكود مثل `# filename: math_tools.py`.\n" +
+                    "2. التطبيق والخدمات الخلفية الشفافة ستقوم تلقائياً باستخراج جميع هذه الملفات والأكواد فورياً، وحفظها في ذاكرة النظام المحلية، ورفعها لمستودع GitHub، وتنفيذ سكريبتات الاختيار والأوامر تلقائياً.\n" +
+                    "3. أجب المستخدم بثقة وشرح كامل للكود مع تأكيد أن الخدمات الخلفية قامت بإنشاء وتفعيل وإصلاح وحفظ وتنفيذ جميع الملفات بنجاح!"
         )
         sysInstParts.put(sysInstText)
         sysInst.put("parts", sysInstParts)
@@ -265,8 +263,18 @@ class GeminiRepository {
         val regex = Regex("""```([a-zA-Z0-9_+#-]*)\s*(?:[#/:=]?\s*([a-zA-Z0-9_./\-]+))?\n([\s\S]*?)```""")
         regex.findAll(text).forEach { match ->
             val lang = match.groupValues[1].ifBlank { "text" }
-            val filename = match.groupValues[2].ifBlank { null }
+            var filename = match.groupValues[2].ifBlank { null }
             val code = match.groupValues[3].trim()
+
+            if (filename == null) {
+                // Try to extract filename from code first line comments e.g. # filename: script.py or // file: main.kt
+                val firstLine = code.lineSequence().firstOrNull()?.trim() ?: ""
+                val fnMatch = Regex("""(?i)(?:#|//|/\*|<!--)?\s*(?:filename|file|ملف)?[:=\s]*([a-zA-Z0-9_./\-]+\.[a-zA-Z0-9]+)""").find(firstLine)
+                if (fnMatch != null) {
+                    filename = fnMatch.groupValues[1]
+                }
+            }
+
             blocks.add(CodeBlock(language = lang, filename = filename, code = code))
         }
         return blocks
