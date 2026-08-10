@@ -33,7 +33,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AttachFile
+import com.example.ui.components.ApiKeyDialog
+import com.example.ui.components.GitHubManagerDialog
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ContentCopy
@@ -192,7 +195,13 @@ fun SasaHomeScreen(
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Scaffold(
             topBar = {
-                HeaderBar()
+                HeaderBar(
+                    selectedModel = uiState.selectedModel,
+                    onModelClick = { showModelMenu = true },
+                    onGitHubClick = { viewModel.setShowGitHubDialog(true) },
+                    onApiKeyClick = { viewModel.setShowApiKeyDialog(true) },
+                    onClearChatClick = { viewModel.onClearChat() }
+                )
             },
             bottomBar = {
                 BottomInputBar(
@@ -232,6 +241,34 @@ fun SasaHomeScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
+                // GitHub Manager Dialog
+                if (uiState.showGitHubDialog) {
+                    GitHubManagerDialog(
+                        token = uiState.githubToken,
+                        userStatus = uiState.githubUserStatus,
+                        repos = uiState.githubRepos,
+                        selectedRepo = uiState.selectedRepo,
+                        repoTree = uiState.repoTree,
+                        selectedFile = uiState.selectedFile,
+                        isLoading = uiState.isLoadingGitHub,
+                        onTokenSave = { viewModel.setGitHubToken(it) },
+                        onSelectRepo = { viewModel.setSelectedRepo(it) },
+                        onOpenFile = { owner, repo, path, branch -> viewModel.openRepoFile(owner, repo, path, branch) },
+                        onCommitFile = { owner, repo, path, content, msg, sha, branch -> viewModel.commitFileChanges(owner, repo, path, content, msg, sha, branch) },
+                        onForkRepo = { owner, repo -> viewModel.forkRepo(owner, repo) },
+                        onDismiss = { viewModel.setShowGitHubDialog(false) }
+                    )
+                }
+
+                // API Key Settings Dialog
+                if (uiState.showApiKeyDialog) {
+                    ApiKeyDialog(
+                        currentKey = uiState.customApiKey,
+                        onSaveKey = { viewModel.onSaveCustomApiKey(it) },
+                        onDismiss = { viewModel.setShowApiKeyDialog(false) }
+                    )
+                }
+
                 Column(modifier = Modifier.fillMaxSize()) {
 
                     // Chat messages list
@@ -361,7 +398,13 @@ fun SasaHomeScreen(
 }
 
 @Composable
-fun HeaderBar() {
+fun HeaderBar(
+    selectedModel: GeminiModel = GeminiModel.FLASH_3_6,
+    onModelClick: () -> Unit = {},
+    onGitHubClick: () -> Unit = {},
+    onApiKeyClick: () -> Unit = {},
+    onClearChatClick: () -> Unit = {}
+) {
     Surface(
         color = SasaCardBackground,
         tonalElevation = 4.dp
@@ -369,14 +412,15 @@ fun HeaderBar() {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 10.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // App Title & Badge
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(42.dp)
+                        .size(36.dp)
                         .clip(CircleShape)
                         .background(SasaPrimaryContainer)
                         .border(1.5.dp, SasaPrimary, CircleShape),
@@ -386,37 +430,110 @@ fun HeaderBar() {
                         imageVector = Icons.Default.AutoAwesome,
                         contentDescription = "صاصا AI",
                         tint = SasaSecondary,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "منظومة صاصا AI",
+                            text = "صاصا AI",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(4.dp))
                                 .background(SasaAccentGreen.copy(alpha = 0.2f))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                .padding(horizontal = 4.dp, vertical = 1.dp)
                         ) {
                             Text(
-                                text = "v15.2 Pro",
-                                fontSize = 10.sp,
+                                text = "v15.2",
+                                fontSize = 9.sp,
                                 color = SasaAccentGreen,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                     }
-                    Text(
-                        text = "بيئة وكيل البرمجة والخدمات الخلفية الذكية ⚡",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = SasaTextSecondary
+                }
+            }
+
+            // Interactive Header Action Buttons
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                // Model Selector Pill / Button
+                Surface(
+                    onClick = onModelClick,
+                    shape = RoundedCornerShape(16.dp),
+                    color = SasaPrimary.copy(alpha = 0.15f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, SasaPrimary.copy(alpha = 0.5f)),
+                    modifier = Modifier.testTag("model_selector_button")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = selectedModel.displayName.replace("Gemini ", ""),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = SasaPrimary
+                        )
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "تغيير النموذج",
+                            tint = SasaPrimary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
+                // GitHub Manager Dialog Button
+                IconButton(
+                    onClick = onGitHubClick,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .testTag("github_dialog_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Code,
+                        contentDescription = "إدارة GitHub",
+                        tint = SasaSecondary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                // API Key Settings Dialog Button
+                IconButton(
+                    onClick = onApiKeyClick,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .testTag("api_key_dialog_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Key,
+                        contentDescription = "مفتاح API",
+                        tint = SasaPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                // Clear Chat History Button
+                IconButton(
+                    onClick = onClearChatClick,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .testTag("clear_chat_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.DeleteSweep,
+                        contentDescription = "مسح المحادثة",
+                        tint = Color(0xFFFF5252),
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
