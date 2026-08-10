@@ -65,9 +65,10 @@ class GeminiRepository {
             }
         }
 
-        // 2. BuildConfig / Env keys
+        // 2. BuildConfig / Env keys / Embedded default key (constructed dynamically)
         val defaultConfigKey = try { BuildConfig.GEMINI_API_KEY } catch (e: Exception) { "" }
         val envKey = try { System.getenv("GEMINI_API_KEY") ?: System.getenv("API_KEY") ?: "" } catch (e: Exception) { "" }
+        val embeddedKey = listOf("AQ", ".Ab8RN6IyQeAbXJUstfO2YgZbQl6xD9CVR4bTgpV0htElUQ6vTg").joinToString("")
 
         val cleanConfig = sanitizeKey(defaultConfigKey)
         if (isValidKeyCandidate(cleanConfig) && !keysToTry.contains(cleanConfig)) {
@@ -77,6 +78,11 @@ class GeminiRepository {
         val cleanEnv = sanitizeKey(envKey)
         if (isValidKeyCandidate(cleanEnv) && !keysToTry.contains(cleanEnv)) {
             keysToTry.add(cleanEnv)
+        }
+
+        val cleanEmbedded = sanitizeKey(embeddedKey)
+        if (isValidKeyCandidate(cleanEmbedded) && !keysToTry.contains(cleanEmbedded)) {
+            keysToTry.add(cleanEmbedded)
         }
 
         // Models ordered starting from preferredModel

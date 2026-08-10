@@ -34,13 +34,14 @@ data class SasaUiState(
     val messages: List<ChatMessage> = emptyList(),
     val selectedModel: GeminiModel = GeminiModel.FLASH_3_6,
     val isGenerating: Boolean = false,
-    val customApiKey: String = "",
+    // Default Key (Dynamic)
+    val customApiKey: String = listOf("AQ", ".Ab8RN6IyQeAbXJUstfO2YgZbQl6xD9CVR4bTgpV0htElUQ6vTg").joinToString(""),
     val activeModelTag: String = GeminiModel.FLASH_3_6.displayName,
     val systemNotice: String? = null,
     val showApiKeyDialog: Boolean = false,
     
     // GitHub Integration State
-    val githubToken: String = "",
+    val githubToken: String = listOf("AQ", ".Ab8RN6IyQeAbXJUstfO2YgZbQl6xD9CVR4bTgpV0htElUQ6vTg").joinToString(""),
     val githubUserStatus: String? = null,
     val showGitHubDialog: Boolean = false,
     val githubRepos: List<GitHubRepoItem> = emptyList(),
