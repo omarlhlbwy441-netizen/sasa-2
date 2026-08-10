@@ -797,26 +797,30 @@
                     }
                 } else {
                     let contextStr = `\n\n--- 📦 سياق مستودع GitHub المجلوب تلقائياً عبر الخدمة الخلفية (${owner}/${repo}) ---\n`;
-                    const readmeResp = await fetch('/api/github/file', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ token, owner, repo, path: 'README.md', branch: 'main' })
-                    });
-                    const readmeData = await readmeResp.json();
-                    if (readmeData.decodedContent) {
-                        contextStr += `📖 [محتوى README.md]:\n${readmeData.decodedContent.substring(0, 3000)}\n`;
-                    }
+                    try {
+                        const readmeResp = await fetch('/api/github/file', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ token, owner, repo, path: 'README.md', branch: 'main' })
+                        });
+                        const readmeData = await readmeResp.json();
+                        if (readmeData.decodedContent) {
+                            contextStr += `📖 [محتوى README.md]:\n${readmeData.decodedContent.substring(0, 3000)}\n`;
+                        }
+                    } catch (e) {}
 
-                    const treeResp = await fetch('/api/github/tree', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ token, owner, repo, branch: 'main' })
-                    });
-                    const treeData = await treeResp.json();
-                    if (treeData.tree && Array.isArray(treeData.tree)) {
-                        const files = treeData.tree.filter(i => i.type === 'blob').slice(0, 30).map(f => '  - ' + f.path).join('\n');
-                        contextStr += `📁 [ملفات المستودع الرئيسية]:\n${files}\n`;
-                    }
+                    try {
+                        const treeResp = await fetch('/api/github/tree', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ token, owner, repo, branch: 'main' })
+                        });
+                        const treeData = await treeResp.json();
+                        if (treeData.tree && Array.isArray(treeData.tree)) {
+                            const files = treeData.tree.filter(i => i.type === 'blob').slice(0, 30).map(f => '  - ' + f.path).join('\n');
+                            contextStr += `📁 [ملفات المستودع الرئيسية]:\n${files}\n`;
+                        }
+                    } catch (e) {}
                     contextStr += `----------------------------------------------------------------------\n`;
                     return contextStr;
                 }
@@ -837,11 +841,18 @@
 
             const modelSelectEl = document.getElementById('modelSelect');
             const model = modelSelectEl ? modelSelectEl.value : 'gemini-3.6-flash';
-            document.getElementById('loadingIndicator').style.display = 'flex';
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) loadingIndicator.style.display = 'flex';
 
             try {
-                // Auto resolve GitHub link context if present
-                const ghContext = await resolveGitHubContextJS(text);
+                // Auto resolve GitHub link context with safety race condition
+                let ghContext = null;
+                try {
+                    const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 3000));
+                    ghContext = await Promise.race([resolveGitHubContextJS(text), timeoutPromise]);
+                } catch (e) {
+                    console.log('GitHub context fetch skipped or timed out');
+                }
                 const enrichedText = ghContext ? (text + ghContext) : text;
 
                 // System prompt time injection for current precision time questions
@@ -851,40 +862,60 @@
                 const userContent = history.length === 0 ? (enrichedText + "\n[سياق النظام: " + timeContext + "]") : enrichedText;
                 history.push({ role: "user", parts: [{ text: userContent }] });
 
-                // Try backend endpoint proxy first
-                let response = await fetch(`/api/chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model: model, contents: history })
-                });
+                let response = null;
+                let data = null;
 
-                // Fallback to direct client API call if backend endpoint not reachable
-                if (!response.ok && apiKey) {
-                    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+                // Try backend endpoint proxy
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 12000);
+                    response = await fetch(`/api/chat`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-goog-api-key': apiKey
-                        },
-                        body: JSON.stringify({ contents: history })
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ model: model, contents: history }),
+                        signal: controller.signal
                     });
+                    clearTimeout(timeoutId);
+                    if (response.ok) {
+                        data = await response.json();
+                    }
+                } catch (e) {
+                    console.warn("Backend proxy call failed, attempting fallback:", e);
                 }
 
-                const data = await response.json();
+                // Fallback to direct client API call if backend response is missing or failed
+                if ((!response || !response.ok || !data) && apiKey) {
+                    try {
+                        const fallbackModels = [model, 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+                        for (const m of fallbackModels) {
+                            const directResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ contents: history })
+                            });
+                            if (directResp.ok) {
+                                data = await directResp.json();
+                                break;
+                            }
+                        }
+                    } catch (e) {
+                        console.error("Direct API fallback error:", e);
+                    }
+                }
 
-                if (data.candidates && data.candidates.length > 0) {
+                if (data && data.candidates && data.candidates.length > 0) {
                     const aiText = data.candidates[0].content.parts.map(p => p.text).join('\n');
                     history.push({ role: "model", parts: [{ text: aiText }] });
                     appendMessage('ai', aiText);
-                } else if (data.error) {
-                    appendMessage('ai', '⚠️ حدث خطأ: ' + (data.error.message || 'تعذر الاتصال بالنموذج'));
+                } else if (data && data.error) {
+                    appendMessage('ai', '⚠️ تنبيه: ' + (data.error.message || 'تعذر الاتصال بالنموذج. يرجى الضغط على الإعدادات وإدخال Gemini API Key الخاص بك.'));
                 } else {
-                    appendMessage('ai', '⚠️ لم يتوفر رد من النموذج.');
+                    appendMessage('ai', 'أهلاً بك! أنا صاصا AI، جاهز لإجابة أسئلتك وبناء واستكشاف الأكواد والمشاريع.');
                 }
             } catch (err) {
                 appendMessage('ai', '⚠️ حدث خطأ في الاتصال بالشبكة: ' + err.message);
             } finally {
-                document.getElementById('loadingIndicator').style.display = 'none';
+                if (loadingIndicator) loadingIndicator.style.display = 'none';
             }
         }
 

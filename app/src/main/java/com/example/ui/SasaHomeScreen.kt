@@ -202,7 +202,7 @@ fun SasaHomeScreen(
                     activeModelName = uiState.selectedModel.displayName,
                     onSend = {
                         if (inputText.isNotBlank() && !uiState.isGenerating) {
-                            val textToSend = inputText
+                            val textToSend = inputText.trim()
                             inputText = ""
                             viewModel.onSendMessage(textToSend)
                         }
@@ -300,7 +300,7 @@ fun SasaHomeScreen(
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     PromptChip("🔗 تحليل رابط مستودع GitHub") {
-                                        inputText = "قم بفحص وتحليل مستودع GitHub التالي واشرح بنيته وأبرز ملفاته: https://github.com/"
+                                        inputText = "قم بفحص وتحليل مستودع GitHub التالي واشرح بنيته وأبرز ملفاته: https://github.com/omarlhlbwy441-netizen/sasa"
                                     }
                                     PromptChip("🎬 سيناريو فيلم سينمائي") {
                                         inputText = "اكتب لي سيناريو فيلم سينمائي تشويقي متكامل الحوار والمشاهد مع وصف اللقطات والإخراج."
@@ -671,80 +671,58 @@ fun BottomInputBar(
         color = SasaDarkSurface,
         tonalElevation = 8.dp
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
+            // File Attachment Button
+            IconButton(
+                onClick = onAttachFile,
+                modifier = Modifier
+                    .size(44.dp)
+                    .testTag("attach_file_button")
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AttachFile,
+                    contentDescription = "رفع ملف",
+                    tint = SasaPrimary,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+
+            // Voice Input Button
+            IconButton(
+                onClick = onVoiceInput,
+                modifier = Modifier
+                    .size(44.dp)
+                    .testTag("voice_input_button")
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Mic,
+                    contentDescription = "إدخال صوتي",
+                    tint = SasaSecondary,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+
+            // Main Message Input Text Field
             OutlinedTextField(
                 value = inputText,
                 onValueChange = onInputChanged,
                 placeholder = {
                     Text(
-                        text = "اكتب استفسارك أو طلبك البرمجي لـ صاصا AI...",
+                        text = "اكتب استفسارك لـ صاصا AI...",
                         style = MaterialTheme.typography.bodyMedium,
                         color = SasaTextSecondary
                     )
                 },
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .weight(1f)
                     .testTag("chat_input_field"),
                 shape = RoundedCornerShape(24.dp),
-                leadingIcon = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(start = 4.dp)
-                    ) {
-                        // File attachment button
-                        IconButton(
-                            onClick = onAttachFile,
-                            modifier = Modifier.testTag("attach_file_button")
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.AttachFile,
-                                contentDescription = "رفع ملف",
-                                tint = SasaPrimary
-                            )
-                        }
-
-                        // Voice input button
-                        IconButton(
-                            onClick = onVoiceInput,
-                            modifier = Modifier.testTag("voice_input_button")
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Mic,
-                                contentDescription = "إدخال صوتي",
-                                tint = SasaSecondary
-                            )
-                        }
-                    }
-                },
-                trailingIcon = {
-                    IconButton(
-                        onClick = {
-                            if (inputText.trim().isNotEmpty() && !isGenerating) {
-                                onSend()
-                            }
-                        },
-                        enabled = inputText.trim().isNotEmpty() && !isGenerating,
-                        modifier = Modifier.testTag("send_message_button")
-                    ) {
-                        if (isGenerating) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = SasaPrimary,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Send,
-                                contentDescription = "إرسال",
-                                tint = if (inputText.trim().isNotEmpty() && !isGenerating) SasaPrimary else SasaTextSecondary.copy(alpha = 0.5f)
-                            )
-                        }
-                    }
-                },
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                     imeAction = androidx.compose.ui.text.input.ImeAction.Send
                 ),
@@ -755,14 +733,54 @@ fun BottomInputBar(
                         }
                     }
                 ),
-                maxLines = 4,
+                maxLines = 5,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = SasaCardBackground,
                     unfocusedContainerColor = SasaCardBackground,
                     focusedBorderColor = SasaPrimary,
-                    unfocusedBorderColor = Color.Transparent
+                    unfocusedBorderColor = Color.Transparent,
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White
                 )
             )
+
+            // High-Visibility Standalone Send Button
+            val canSend = inputText.trim().isNotEmpty() && !isGenerating
+
+            Surface(
+                onClick = {
+                    if (canSend) {
+                        onSend()
+                    }
+                },
+                enabled = canSend,
+                shape = CircleShape,
+                color = if (canSend) SasaPrimary else SasaCardBackground,
+                modifier = Modifier
+                    .size(48.dp)
+                    .testTag("send_message_button"),
+                shadowElevation = if (canSend) 4.dp else 0.dp
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    if (isGenerating) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(22.dp),
+                            color = SasaPrimary,
+                            strokeWidth = 2.5.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Send,
+                            contentDescription = "إرسال",
+                            tint = if (canSend) Color.Black else SasaTextSecondary.copy(alpha = 0.4f),
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }
