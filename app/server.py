@@ -170,7 +170,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
         if self.path.startswith("/api/chat") or self.path.startswith("/api/v1/gemini/chat"):
             try:
-                model = body.get("model", "gemini-2.0-flash")
+                model = body.get("model", "gemini-flash-lite-latest")
                 prompt = body.get("prompt", "")
                 contents = body.get("contents", [])
                 if prompt and not contents:
@@ -190,64 +190,70 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                     "systemInstruction": {
                         "parts": [{
                             "text": (
-                                "أنت منظومة 'صاصا AI' (Sasa AI v15.3)، مهندس برمجيات ووكيل تطوير ذكي متكامل (AI Developer Agent) يعمل ببيئة عمل كاملة مجهزة بجميع الخدمات والأنظمة والأنظمة الفرعية الشفافة (Transparent Background Services & Subsystems) المدمجة في خلفية تطبيق Android والويب.\n"
-                                "تمتلك القدرة والمفتاح المباشر لـ:\n"
-                                "1. إنشاء وكتابة وتعديل الملفات بكافة لغات البرمجة (Python, Kotlin, JavaScript, C++, C#, Go, Rust, HTML, CSS, JSON, SQL...) وحفظها وتحديثها فورياً على القرص المحلي والمستودعات عبر الخدمات الشفافة.\n"
-                                "2. فحص وتصحيح وإصلاح مشاريعك ومستودعات GitHub والمستودعات المحلية الشاملة تلقائياً وتطبيق الترثيع والمعالجة الخلفية الشفافة.\n"
-                                "3. تشغيل أوامر النظام، Open Interpreter، الـ Terminal، وسكريبتات اللغات البرمجية واختبارها وتجربة المشاريع ومعالجة خطأ البناء في الخلفية فوراً.\n"
-                                "4. تطوير وترقية بيئة العمل ذاتياً وإضافة القدرات والخدمات والأنظمة الفرعية الجديدة بشكل شفاف كلياً.\n"
+                                "أنت منظومة 'صاصا AI' (Sasa AI v15.5)، مهندس برمجيات ووكيل تطوير ذكي متكامل (AI Developer Agent) يعمل ببيئة عمل كاملة مجهزة بجميع الخدمات والأنظمة والأنظمة الفرعية الشفافة (Transparent Background Services & Subsystems) المدمجة في خلفية تطبيق Android والويب.
+"
+                                "تمتلك القدرة والمفتاح المباشر لـ:
+"
+                                "1. إنشاء وكتابة وتعديل الملفات بكافة لغات البرمجة (Python, Kotlin, JavaScript, C++, C#, Go, Rust, HTML, CSS, JSON, SQL...) وحفظها وتحديثها فورياً على القرص المحلي والمستودعات عبر الخدمات الشفافة.
+"
+                                "2. فحص وتصحيح وإصلاح مشاريعك ومستودعات GitHub والمستودعات المحلية الشاملة تلقائياً وتطبيق الترثيع والمعالجة الخلفية الشفافة.
+"
+                                "3. تشغيل أوامر النظام، Open Interpreter، الـ Terminal، وسكريبتات اللغات البرمجية واختبارها وتجربة المشاريع ومعالجة خطأ البناء في الخلفية فوراً.
+"
+                                "4. تطوير وترقية بيئة العمل ذاتياً وإضافة القدرات والخدمات والأنظمة الفرعية الجديدة بشكل شفاف كلياً.
+"
                                 "ملاحظة هامة: عندما يطلب منك المستخدم أي من هذه المهام (إنشاء ملفات، تعديل كود، تصحيح مشروع، تشغيل سكريبت، تطوير البيئة)، قم بتنفيذ وإجابة الطلب فوراً وأكد له بثقة تامة أن الخدمات والأنظمة والأنظمة الفرعية الخلفية الشفافة قامت بإنشاء وتفعيل وإصلاح وحفظ كافة الملفات والأنظمة بنجاح!"
                             )
                         }]
                     }
                 }
 
-                target_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-                req = urllib.request.Request(
-                    target_url,
-                    data=json.dumps(payload).encode("utf-8"),
-                    headers={"Content-Type": "application/json"},
-                    method="POST"
-                )
+                models_to_try = [model, "gemini-flash-lite-latest", "gemini-2.5-flash-lite", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-2.5-flash", "gemini-3.6-flash"]
+                seen = set()
+                models_to_try = [m for m in models_to_try if not (m in seen or seen.add(m))]
 
+                last_error_resp = None
                 ctx = ssl.create_default_context()
-                with urllib.request.urlopen(req, context=ctx) as resp:
-                    resp_data = resp.read()
-                    parsed = json.loads(resp_data.decode("utf-8"))
-                    
-                    # Extract response text for v1 format
-                    if self.path.startswith("/api/v1/gemini/chat"):
-                        res_text = ""
-                        try:
-                            res_text = parsed["candidates"][0]["content"]["parts"][0]["text"]
-                        except Exception:
-                            res_text = "تم استلام الرد بنجاح من صاصا AI"
-                        
-                        self._send_json({
-                            "status": "success",
-                            "response_text": res_text,
-                            "model_used": model,
-                            "code_blocks": [],
-                            "files_created": []
-                        })
-                        return
 
-                    self.send_response(200)
-                    self.send_header("Content-Type", "application/json")
-                    self.send_header("Access-Control-Allow-Origin", "*")
-                    self.end_headers()
-                    self.wfile.write(resp_data)
+                for m in models_to_try:
+                    target_url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key}"
+                    req = urllib.request.Request(
+                        target_url,
+                        data=json.dumps(payload).encode("utf-8"),
+                        headers={"Content-Type": "application/json"},
+                        method="POST"
+                    )
+                    try:
+                        with urllib.request.urlopen(req, context=ctx) as resp:
+                            resp_data = resp.read()
+                            parsed = json.loads(resp_data.decode("utf-8"))
+                            
+                            if parsed.get("candidates"):
+                                if self.path.startswith("/api/v1/gemini/chat"):
+                                    res_text = parsed["candidates"][0]["content"]["parts"][0]["text"]
+                                    self._send_json({
+                                        "status": "success",
+                                        "response_text": res_text,
+                                        "model_used": m,
+                                        "code_blocks": [],
+                                        "files_created": []
+                                    })
+                                    return
+                                self.send_response(200)
+                                self.send_header("Content-Type", "application/json")
+                                self.send_header("Access-Control-Allow-Origin", "*")
+                                self.end_headers()
+                                self.wfile.write(resp_data)
+                                return
+                    except Exception as e:
+                        last_error_resp = str(e)
+                        continue
 
-            except urllib.error.HTTPError as e:
-                err_content = e.read().decode("utf-8")
-                self.send_response(e.code)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                self.wfile.write(err_content.encode("utf-8"))
+                self._send_json({"error": {"message": f"تعذر الاتصال بكافة النماذج: {last_error_resp}"}}, status=500)
+                return
             except Exception as e:
                 self._send_json({"error": {"message": str(e)}}, status=500)
-            return
+                return
 
         # Media Generation API
         if self.path == "/api/v1/media/generate":

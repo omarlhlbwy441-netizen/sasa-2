@@ -51,7 +51,7 @@ class GeminiRepository {
     suspend fun generateContentWithFailover(
         prompt: String,
         conversationHistory: List<ChatMessage>,
-        preferredModel: GeminiModel = GeminiModel.FLASH_3_6,
+        preferredModel: GeminiModel = GeminiModel.FLASH_LITE_LATEST,
         customApiKey: String? = null
     ): GeminiResult = withContext(Dispatchers.IO) {
 

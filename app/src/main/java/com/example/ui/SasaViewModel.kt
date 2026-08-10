@@ -36,11 +36,11 @@ import com.example.data.CloudWorkspaceTaskResult
 
 data class SasaUiState(
     val messages: List<ChatMessage> = emptyList(),
-    val selectedModel: GeminiModel = GeminiModel.FLASH_3_6,
+    val selectedModel: GeminiModel = GeminiModel.FLASH_LITE_LATEST,
     val isGenerating: Boolean = false,
     // Default Key (Dynamic)
     val customApiKey: String = listOf("AQ", ".Ab8RN6IyQeAbXJUstfO2YgZbQl6xD9CVR4bTgpV0htElUQ6vTg").joinToString(""),
-    val activeModelTag: String = GeminiModel.FLASH_3_6.displayName,
+    val activeModelTag: String = GeminiModel.FLASH_LITE_LATEST.displayName,
     val systemNotice: String? = null,
     val showApiKeyDialog: Boolean = false,
     
@@ -80,7 +80,7 @@ class SasaViewModel(
                 "المساعد الذكي للتحليل والبرمجة والتطوير باللغة العربية.\n\n" +
                 "💡 متصل مباشرة بنماذج Gemini ومدعوم بإدارة مستودعات GitHub المباشرة وتطوير بيئات العمل السحابية (Codespaces).\n\n" +
                 "كيف يمكنني مساعدتك اليوم؟",
-        modelUsed = GeminiModel.FLASH_3_6.displayName
+        modelUsed = GeminiModel.FLASH_LITE_LATEST.displayName
     )
 
     private val _uiState = MutableStateFlow(
