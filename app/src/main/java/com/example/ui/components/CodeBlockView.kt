@@ -32,6 +32,12 @@ import com.example.ui.theme.SasaCodeBackground
 import com.example.ui.theme.SasaPrimary
 import com.example.ui.theme.SasaTextSecondary
 
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+
 @Composable
 fun MessageTextWithCodeBlocks(
     text: String,
@@ -40,6 +46,16 @@ fun MessageTextWithCodeBlocks(
 ) {
     val clipboardManager = LocalClipboardManager.current
     val parts = parseMarkdownCodeBlocks(text)
+    var previewCodeBlock by remember { mutableStateOf<TextPart.CodeBlock?>(null) }
+
+    if (previewCodeBlock != null) {
+        PreviewDialog(
+            title = "معاينة المباشرة (${previewCodeBlock!!.language.ifBlank { "web" }})",
+            content = previewCodeBlock!!.code,
+            language = previewCodeBlock!!.language,
+            onDismiss = { previewCodeBlock = null }
+        )
+    }
 
     Column(modifier = modifier) {
         parts.forEach { part ->
@@ -78,15 +94,31 @@ fun MessageTextWithCodeBlocks(
                                 color = SasaPrimary,
                                 fontFamily = FontFamily.Monospace
                             )
-                            IconButton(
-                                onClick = {
-                                    clipboardManager.setText(AnnotatedString(part.code))
-                                },
-                                modifier = Modifier
-                                    .height(32.dp)
-                                    .width(32.dp)
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                // Live Preview Button
+                                IconButton(
+                                    onClick = { previewCodeBlock = part },
+                                    modifier = Modifier
+                                        .height(32.dp)
+                                        .width(32.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Visibility,
+                                        contentDescription = "معاينة مباشرة",
+                                        tint = SasaPrimary,
+                                        modifier = Modifier.padding(2.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(4.dp))
+                                // Copy Button
+                                IconButton(
+                                    onClick = {
+                                        clipboardManager.setText(AnnotatedString(part.code))
+                                    },
+                                    modifier = Modifier
+                                        .height(32.dp)
+                                        .width(32.dp)
+                                ) {
                                     Icon(
                                         imageVector = Icons.Default.ContentCopy,
                                         contentDescription = "نسخ الكود",

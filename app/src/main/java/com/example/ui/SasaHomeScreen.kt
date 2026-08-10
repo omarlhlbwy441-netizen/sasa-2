@@ -49,6 +49,8 @@ import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.ThumbDown
 import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material.icons.filled.Visibility
+import com.example.ui.components.PreviewDialog
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -114,6 +116,30 @@ fun SasaHomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     var inputText by remember { mutableStateOf("") }
     var showModelMenu by remember { mutableStateOf(false) }
+    var showGlobalPreview by remember { mutableStateOf(false) }
+
+    // Find latest HTML or code block content across all messages for default preview
+    val defaultHtml = "<!DOCTYPE html>\n<html lang=\"ar\" dir=\"rtl\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>معاينة صاصا AI</title>\n  <style>\n    body { font-family: sans-serif; background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }\n    .card { background: #1e293b; padding: 2rem; border-radius: 1rem; border: 1px solid #38bdf8; text-align: center; }\n  </style>\n</head>\n<body>\n  <div class=\"card\">\n    <h2>🚀 شاشة العرض والمشاهدة المباشرة (Sasa Live Preview)</h2>\n    <p>جاهزة لتشغيل وعرض واجهات الـ HTML، الـ CSS، الـ Web، وجميع التصاميم البرمجية فورياً!</p>\n  </div>\n</body>\n</html>"
+
+    val latestCodeOrHtml = remember(uiState.messages) {
+        val lastMessage = uiState.messages.lastOrNull { it.sender == com.example.data.MessageSender.SASA_AI }
+        if (lastMessage != null) {
+            val regex = Regex("```(?:html|htm|web|xml)?\\n([\\s\\S]*?)```")
+            val match = regex.find(lastMessage.text)
+            match?.groupValues?.get(1)?.trim() ?: defaultHtml
+        } else {
+            defaultHtml
+        }
+    }
+
+    if (showGlobalPreview) {
+        PreviewDialog(
+            title = "شاشة العرض والمعاينة المباشرة (Live Viewer)",
+            content = latestCodeOrHtml,
+            language = "html",
+            onDismiss = { showGlobalPreview = false }
+        )
+    }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -198,6 +224,7 @@ fun SasaHomeScreen(
                 HeaderBar(
                     selectedModel = uiState.selectedModel,
                     onModelClick = { showModelMenu = true },
+                    onPreviewClick = { showGlobalPreview = true },
                     onClearChatClick = { viewModel.onClearChat() }
                 )
             },
@@ -378,6 +405,7 @@ fun SasaHomeScreen(
 fun HeaderBar(
     selectedModel: GeminiModel = GeminiModel.FLASH_3_6,
     onModelClick: () -> Unit = {},
+    onPreviewClick: () -> Unit = {},
     onClearChatClick: () -> Unit = {}
 ) {
     Surface(
@@ -441,6 +469,27 @@ fun HeaderBar(
                             }
                         }
                     }
+                }
+            }
+
+            // Preview Screen Button
+            IconButton(
+                onClick = onPreviewClick,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(SasaPrimary.copy(alpha = 0.15f))
+                    .border(1.dp, SasaPrimary.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Visibility,
+                        contentDescription = "شاشة العرض المعاينة",
+                        tint = SasaPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
         }
