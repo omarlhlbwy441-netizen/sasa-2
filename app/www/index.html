@@ -1342,27 +1342,27 @@
             speechRecognition.onstart = () => {
                 isRecording = true;
                 if (btn) btn.classList.add('recording');
-                showToast('جاري الاستماع... اتكلم الآن 🎙️');
+                showToast('جاري الاستماع... تحدث الآن 🎙️');
             };
 
             speechRecognition.onresult = (e) => {
                 const transcript = e.results[0][0].transcript;
-                const input = document.getElementById('userInput');
-                if (input) {
-                    input.value += (input.value ? ' ' : '') + transcript;
-                    autoResize(input);
+                const inputEl = document.getElementById('userInput');
+                if (inputEl) {
+                    inputEl.value = inputEl.value ? (inputEl.value + ' ' + transcript) : transcript;
+                    autoResize(inputEl);
                 }
             };
 
-            speechRecognition.onerror = () => {
-                isRecording = false;
+            speechRecognition.onerror = (e) => {
+                showToast('حدث خطأ في التقاط الصوت: ' + e.error);
                 if (btn) btn.classList.remove('recording');
-                showToast('لم يتم التقاط الصوت بوضوح');
+                isRecording = false;
             };
 
             speechRecognition.onend = () => {
-                isRecording = false;
                 if (btn) btn.classList.remove('recording');
+                isRecording = false;
             };
 
             speechRecognition.start();
@@ -1371,16 +1371,15 @@
         function toggleGitHubModal() {
             const modal = document.getElementById('githubModal');
             if (!modal) return;
-            if (modal.style.display === 'flex') {
-                modal.style.display = 'none';
-            } else {
+            if (modal.style.display === 'none' || !modal.style.display) {
                 modal.style.display = 'flex';
-                const savedToken = localStorage.getItem('sasa_gh_token');
+                const savedToken = localStorage.getItem('sasa_gh_token') || '';
                 if (savedToken) {
-                    const tokenInput = document.getElementById('ghTokenInput');
-                    if (tokenInput) tokenInput.value = savedToken;
+                    document.getElementById('ghTokenInput').value = savedToken;
                     verifyAndLoadGitHub();
                 }
+            } else {
+                modal.style.display = 'none';
             }
         }
 
@@ -1388,211 +1387,182 @@
             const tokenInput = document.getElementById('ghTokenInput');
             const token = tokenInput ? tokenInput.value.trim() : '';
             if (!token) {
-                showToast('يرجى إدخال GitHub PAT Token');
+                showToast('يرجى أدخال توكن GitHub أولاً');
                 return;
             }
+
             localStorage.setItem('sasa_gh_token', token);
-
             const statusEl = document.getElementById('ghUserStatus');
+            if (statusEl) statusEl.textContent = 'جاري التحقق من التوكن... ⏳';
 
-            try {
-                const userResp = await fetch('/api/github/user', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token })
-                });
-                const userData = await userResp.json();
-
-                if (userData.login) {
-                    if (statusEl) statusEl.innerText = `✅ متصل بحساب: ${userData.login} (${userData.name || ''})`;
-                    showToast(`تم ربط توكن GitHub بنجاح! 👋`);
-                    loadUserRepos(token);
-                } else {
-                    if (statusEl) statusEl.innerText = '❌ فشل التوثيق بـ GitHub';
-                    showToast('فشل التحقق من التوكن المدخل');
-                }
-            } catch (err) {
-                showToast('خطأ بالاتصال بالخادم');
-            }
-        }
-
-        async function loadUserRepos(token) {
             try {
                 const resp = await fetch('/api/github/repos', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token })
                 });
-                const repos = await resp.json();
-                const select = document.getElementById('ghRepoSelect');
-                if (!select) return;
-                select.innerHTML = '<option value="">-- اختر مستودعاً --</option>';
+                const data = await resp.json();
 
-                if (Array.isArray(repos)) {
-                    repos.forEach(repo => {
-                        const opt = document.createElement('option');
-                        opt.value = repo.full_name + '|' + (repo.default_branch || 'main');
-                        opt.textContent = repo.full_name + (repo.private ? ' 🔒' : '');
-                        select.appendChild(opt);
-                    });
+                if (resp.ok && data.repos) {
+                    if (statusEl) statusEl.textContent = `✅ متصل بنجاح! تم جلب ${data.repos.length} مستودع.`;
+                    const selectEl = document.getElementById('ghRepoSelect');
+                    if (selectEl) {
+                        selectEl.innerHTML = '<option value="">-- اختر مستودعاً --</option>';
+                        data.repos.forEach(repo => {
+                            const opt = document.createElement('option');
+                            opt.value = repo.full_name;
+                            opt.textContent = `${repo.full_name} (${repo.private ? '🔒 خاص' : '🌐 عام'})`;
+                            selectEl.appendChild(opt);
+                        });
+                    }
+                    showToast('تم ربط حساب GitHub وجلب المستودعات 🚀');
+                } else {
+                    if (statusEl) statusEl.textContent = '❌ تعذر التحقق من التوكن: ' + (data.error || 'خطأ غير معروف');
                 }
             } catch (err) {
-                showToast('خطأ في تحميل المستودعات');
+                if (statusEl) statusEl.textContent = '❌ خطأ في الاتصال بالشبكة: ' + err.message;
+            }
+        }
+
+        async function onGHRepoSelected() {
+            const selectEl = document.getElementById('ghRepoSelect');
+            const repoFullName = selectEl ? selectEl.value : '';
+            if (!repoFullName) return;
+
+            const parts = repoFullName.split('/');
+            if (parts.length === 2) {
+                fetchAndDisplayTree(parts[0], parts[1]);
+            }
+        }
+
+        function loadManualRepo() {
+            const input = document.getElementById('manualRepo');
+            const val = input ? input.value.trim() : '';
+            const parts = val.split('/');
+            if (parts.length === 2) {
+                fetchAndDisplayTree(parts[0], parts[1]);
+            } else {
+                showToast('يرجى كتابة اسم المستودع بصيغة owner/repo');
             }
         }
 
         let currentGHOwner = '';
         let currentGHRepo = '';
-        let currentGHBranch = 'main';
-        let currentGHFileSHA = null;
-        let currentGHFilePath = '';
+        let currentGHPath = '';
 
-        function onGHRepoSelected() {
-            const select = document.getElementById('ghRepoSelect');
-            if (!select || !select.value) return;
-            const [fullName, branch] = select.value.split('|');
-            const [owner, repo] = fullName.split('/');
+        async function fetchAndDisplayTree(owner, repo) {
             currentGHOwner = owner;
             currentGHRepo = repo;
-            currentGHBranch = branch || 'main';
-            loadGHTree(owner, repo, currentGHBranch);
-        }
-
-        function loadManualRepo() {
-            const val = document.getElementById('manualRepo').value.trim();
-            if (!val || !val.includes('/')) {
-                showToast('يرجى إدخال الاسم بصيغة owner/repo');
-                return;
-            }
-            const [owner, repo] = val.split('/');
-            currentGHOwner = owner;
-            currentGHRepo = repo;
-            currentGHBranch = 'main';
-            loadGHTree(owner, repo, 'main');
-        }
-
-        async function loadGHTree(owner, repo, branch) {
             const token = localStorage.getItem('sasa_gh_token') || '';
-            const list = document.getElementById('ghTreeList');
-            if (!list) return;
-            list.innerHTML = '<div>جارٍ تحميل شجرة المستودع... ⏳</div>';
+            const treeListEl = document.getElementById('ghTreeList');
+            if (treeListEl) treeListEl.innerHTML = '<div style="color: var(--primary);">جاري تحميل ملفات المستودع... ⏳</div>';
 
             try {
                 const resp = await fetch('/api/github/tree', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token, owner, repo, branch })
+                    body: JSON.stringify({ token, owner, repo, branch: 'main' })
                 });
                 const data = await resp.json();
-                list.innerHTML = '';
 
-                if (data.tree && Array.isArray(data.tree)) {
-                    const files = data.tree.filter(i => i.type === 'blob');
-                    files.forEach(file => {
-                        const item = document.createElement('div');
-                        item.style.padding = '4px 8px';
-                        item.style.cursor = 'pointer';
-                        item.style.borderRadius = '4px';
-                        item.style.borderBottom = '1px solid var(--border)';
-                        item.innerHTML = `<i class="fa-regular fa-file-code" style="color: var(--primary);"></i> ${file.path}`;
-                        item.onclick = () => loadGHFile(file.path);
-                        list.appendChild(item);
+                if (resp.ok && data.tree) {
+                    treeListEl.innerHTML = '';
+                    const blobs = data.tree.filter(i => i.type === 'blob');
+                    blobs.forEach(item => {
+                        const fileDiv = document.createElement('div');
+                        fileDiv.style.cssText = 'padding: 4px 8px; cursor: pointer; border-radius: 4px; font-size: 0.8rem; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+                        fileDiv.innerHTML = `<i class="fa-regular fa-file-code" style="margin-left: 6px; color: var(--primary);"></i> ${item.path}`;
+                        fileDiv.onclick = () => openGHFile(owner, repo, item.path);
+                        fileDiv.onmouseover = () => fileDiv.style.background = '#334155';
+                        fileDiv.onmouseout = () => fileDiv.style.background = 'transparent';
+                        treeListEl.appendChild(fileDiv);
                     });
+                    showToast(`تم تحميل قائمة ملفات ${owner}/${repo}`);
                 } else {
-                    list.innerHTML = '<div style="color: var(--danger);">تعذر تحميل الملفات أو المستودع فارغ</div>';
+                    treeListEl.innerHTML = '<div style="color: #ef4444;">تعذر تحميل شجرة المستودع</div>';
                 }
-            } catch (e) {
-                list.innerHTML = '<div style="color: var(--danger);">خطأ بالاتصال</div>';
+            } catch (err) {
+                treeListEl.innerHTML = '<div style="color: #ef4444;">خطأ شبكة أثناء التحميل</div>';
             }
         }
 
-        async function loadGHFile(path) {
+        async function openGHFile(owner, repo, path) {
+            currentGHPath = path;
             const token = localStorage.getItem('sasa_gh_token') || '';
-            currentGHFilePath = path;
-            const pathLabel = document.getElementById('ghActiveFilePath');
+            const activeLabel = document.getElementById('ghActiveFilePath');
+            if (activeLabel) activeLabel.textContent = `الملف المفتوح: ${path}`;
+
             const editor = document.getElementById('ghFileEditor');
-            if (pathLabel) pathLabel.innerText = `الملف النشط: ${path}`;
-            if (editor) editor.value = 'جارٍ تحميل المحتوى... ⏳';
+            if (editor) editor.value = 'جاري قراءة محتوى الملف... ⏳';
 
             try {
                 const resp = await fetch('/api/github/file', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token, owner: currentGHOwner, repo: currentGHRepo, path, branch: currentGHBranch })
+                    body: JSON.stringify({ token, owner, repo, path, branch: 'main' })
                 });
                 const data = await resp.json();
-                currentGHFileSHA = data.sha || null;
-                if (editor) editor.value = data.decodedContent || '';
-            } catch (e) {
-                showToast('خطأ في تحميل الملف');
+
+                if (resp.ok && data.decodedContent !== undefined) {
+                    if (editor) editor.value = data.decodedContent;
+                } else {
+                    if (editor) editor.value = '// تعذر جلب محتوى الملف: ' + (data.error || 'خطأ');
+                }
+            } catch (err) {
+                if (editor) editor.value = '// خطأ في الاتصال بالشبكة';
             }
         }
 
         async function commitGHFileChange() {
-            const token = localStorage.getItem('sasa_gh_token') || '';
-            if (!token || !currentGHFilePath) {
-                showToast('يرجى اختيار ملف وإدخال التوكن أولاً');
+            if (!currentGHOwner || !currentGHRepo || !currentGHPath) {
+                showToast('اختر ملفاً أولاً لتتمكن من التعديل والالتزام (Commit)');
                 return;
             }
 
-            const editor = document.getElementById('ghFileEditor');
-            const msgInput = document.getElementById('ghCommitMsg');
-            const content = editor ? editor.value : '';
-            const message = (msgInput && msgInput.value) ? msgInput.value : 'تحديث عبر Sasa AI';
-
-            showToast('جارٍ رفع التعديل والالتزام (Commit)... 🚀');
+            const token = localStorage.getItem('sasa_gh_token') || '';
+            const content = document.getElementById('ghFileEditor').value;
+            const msg = document.getElementById('ghCommitMsg').value.trim() || `تحديث ${currentGHPath} عبر Sasa AI`;
 
             try {
                 const resp = await fetch('/api/github/commit', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        token,
-                        owner: currentGHOwner,
-                        repo: currentGHRepo,
-                        path: currentGHFilePath,
-                        content,
-                        message,
-                        sha: currentGHFileSHA,
-                        branch: currentGHBranch
-                    })
+                    body: JSON.stringify({ token, owner: currentGHOwner, repo: currentGHRepo, path: currentGHPath, content, message: msg, branch: 'main' })
                 });
-                const res = await resp.json();
-                if (resp.ok) {
-                    showToast('تم حفظ التعديلات والالتزام بنجاح في GitHub! 🎉');
-                    loadGHFile(currentGHFilePath);
+                const data = await resp.json();
+
+                if (resp.ok && data.success) {
+                    showToast('تم الالتزام والتحديث على GitHub بنجاح! 🚀');
                 } else {
-                    showToast('فشل Commit: ' + (res.message || 'خطأ صلاحيات'));
+                    showToast('تعذر التحديث: ' + (data.error || 'خطأ'));
                 }
-            } catch (e) {
-                showToast('خطأ في الاتصال أثناء Commit');
+            } catch (err) {
+                showToast('خطأ في شبكة التحديث');
             }
         }
 
         async function forkCurrentRepo() {
-            const token = localStorage.getItem('sasa_gh_token') || '';
-            if (!token || !currentGHOwner || !currentGHRepo) {
-                showToast('اختر مستودعاً للتنسخ أولاً');
+            if (!currentGHOwner || !currentGHRepo) {
+                showToast('اختر مستودعاً أولاً لعمل Fork');
                 return;
             }
 
-            showToast(`جارٍ نسخ (Fork) المستودع ${currentGHOwner}/${currentGHRepo}... 🍴`);
-
+            const token = localStorage.getItem('sasa_gh_token') || '';
             try {
                 const resp = await fetch('/api/github/fork', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token, owner: currentGHOwner, repo: currentGHRepo })
                 });
-                const res = await resp.json();
-                if (resp.ok) {
-                    showToast(`تم نسخ المستودع بنجاح إلى حسابك! 🎉`);
-                    loadUserRepos(token);
+                const data = await resp.json();
+
+                if (resp.ok && data.forkedRepo) {
+                    showToast(`تم عمل Fork للمستودع إلى حسابك: ${data.forkedRepo.full_name} 🍴`);
                 } else {
-                    showToast('فشل النسخ: ' + (res.message || 'خطأ'));
+                    showToast('تعذر عمل Fork: ' + (data.error || 'خطأ'));
                 }
-            } catch (e) {
-                showToast('خطأ في عملية النسخ');
+            } catch (err) {
+                showToast('خطأ في عمل Fork');
             }
         }
     </script>
