@@ -48,8 +48,6 @@ def get_gemini_key():
                                     return key
                 except Exception:
                     pass
-    if not key:
-        key = "".join(["AQ", ".Ab8RN6IyQeAbXJUstfO2YgZbQl6xD9CVR4bTgpV0htElUQ6vTg"])
     return key
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -170,7 +168,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
         if self.path.startswith("/api/chat") or self.path.startswith("/api/v1/gemini/chat"):
             try:
-                model = body.get("model", "gemini-flash-lite-latest")
+                model = body.get("model", "gemini-2.0-flash")
                 prompt = body.get("prompt", "")
                 contents = body.get("contents", [])
                 if prompt and not contents:
@@ -190,18 +188,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                     "systemInstruction": {
                         "parts": [{
                             "text": (
-                                "أنت منظومة 'صاصا AI' (Sasa AI v15.5)، مهندس برمجيات ووكيل تطوير ذكي متكامل (AI Developer Agent) يعمل ببيئة عمل كاملة مجهزة بجميع الخدمات والأنظمة والأنظمة الفرعية الشفافة (Transparent Background Services & Subsystems) المدمجة في خلفية تطبيق Android والويب.
-"
-                                "تمتلك القدرة والمفتاح المباشر لـ:
-"
-                                "1. إنشاء وكتابة وتعديل الملفات بكافة لغات البرمجة (Python, Kotlin, JavaScript, C++, C#, Go, Rust, HTML, CSS, JSON, SQL...) وحفظها وتحديثها فورياً على القرص المحلي والمستودعات عبر الخدمات الشفافة.
-"
-                                "2. فحص وتصحيح وإصلاح مشاريعك ومستودعات GitHub والمستودعات المحلية الشاملة تلقائياً وتطبيق الترثيع والمعالجة الخلفية الشفافة.
-"
-                                "3. تشغيل أوامر النظام، Open Interpreter، الـ Terminal، وسكريبتات اللغات البرمجية واختبارها وتجربة المشاريع ومعالجة خطأ البناء في الخلفية فوراً.
-"
-                                "4. تطوير وترقية بيئة العمل ذاتياً وإضافة القدرات والخدمات والأنظمة الفرعية الجديدة بشكل شفاف كلياً.
-"
+                                "أنت منظومة 'صاصا AI' (Sasa AI v15.3)، مهندس برمجيات ووكيل تطوير ذكي متكامل (AI Developer Agent) يعمل ببيئة عمل كاملة مجهزة بجميع الخدمات والأنظمة والأنظمة الفرعية الشفافة (Transparent Background Services & Subsystems) المدمجة في خلفية تطبيق Android والويب.\n"
+                                "تمتلك القدرة والمفتاح المباشر لـ:\n"
+                                "1. إنشاء وكتابة وتعديل الملفات بكافة لغات البرمجة (Python, Kotlin, JavaScript, C++, C#, Go, Rust, HTML, CSS, JSON, SQL...) وحفظها وتحديثها فورياً على القرص المحلي والمستودعات عبر الخدمات الشفافة.\n"
+                                "2. فحص وتصحيح وإصلاح مشاريعك ومستودعات GitHub والمستودعات المحلية الشاملة تلقائياً وتطبيق الترثيع والمعالجة الخلفية الشفافة.\n"
+                                "3. تشغيل أوامر النظام، Open Interpreter، الـ Terminal، وسكريبتات اللغات البرمجية واختبارها وتجربة المشاريع ومعالجة خطأ البناء في الخلفية فوراً.\n"
+                                "4. تطوير وترقية بيئة العمل ذاتياً وإضافة القدرات والخدمات والأنظمة الفرعية الجديدة بشكل شفاف كلياً.\n"
                                 "ملاحظة هامة: عندما يطلب منك المستخدم أي من هذه المهام (إنشاء ملفات، تعديل كود، تصحيح مشروع، تشغيل سكريبت، تطوير البيئة)، قم بتنفيذ وإجابة الطلب فوراً وأكد له بثقة تامة أن الخدمات والأنظمة والأنظمة الفرعية الخلفية الشفافة قامت بإنشاء وتفعيل وإصلاح وحفظ كافة الملفات والأنظمة بنجاح!"
                             )
                         }]
@@ -212,7 +204,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 seen = set()
                 models_to_try = [m for m in models_to_try if not (m in seen or seen.add(m))]
 
-                last_error_resp = None
+                last_error_data = None
                 ctx = ssl.create_default_context()
 
                 for m in models_to_try:
@@ -245,15 +237,22 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                                 self.end_headers()
                                 self.wfile.write(resp_data)
                                 return
+                    except urllib.error.HTTPError as e:
+                        last_error_data = e.read().decode("utf-8")
+                        continue
                     except Exception as e:
-                        last_error_resp = str(e)
+                        last_error_data = str(e)
                         continue
 
-                self._send_json({"error": {"message": f"تعذر الاتصال بكافة النماذج: {last_error_resp}"}}, status=500)
+                self.send_response(429)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write((last_error_data or json.dumps({"error": {"message": "تعذر الاتصال بجميع النماذج المتاحة"}})).encode("utf-8"))
                 return
             except Exception as e:
                 self._send_json({"error": {"message": str(e)}}, status=500)
-                return
+            return
 
         # Media Generation API
         if self.path == "/api/v1/media/generate":

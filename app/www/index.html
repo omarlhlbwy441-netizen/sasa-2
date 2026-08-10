@@ -773,7 +773,12 @@
             </div>
         </div>
         <div class="top-actions">
-            <select id="modelSelect" class="model-select" title="اختر نموذج Gemini">                <option value="gemini-flash-lite-latest" selected>3.5 Flash-Lite ⚡ (موصى به)</option>                <option value="gemini-2.5-flash-lite">2.5 Flash-Lite 🚀</option>                <option value="gemini-3.6-flash">3.6 Flash 💡</option>                <option value="gemini-2.5-flash">2.5 Flash 🧠</option>            </select>
+            <select id="modelSelect" class="model-select" title="اختر نموذج Gemini">
+                <option value="gemini-flash-lite-latest" selected>3.5 Flash-Lite ⚡ (موصى به)</option>
+                <option value="gemini-2.5-flash-lite">2.5 Flash-Lite 🚀</option>
+                <option value="gemini-3.6-flash">3.6 Flash 💡</option>
+                <option value="gemini-2.5-flash">2.5 Flash 🧠</option>
+            </select>
             <button class="top-btn" onclick="toggleGitHubModal()" title="إدارة مستودعات GitHub">
                 <i class="fa-brands fa-github"></i>
                 <span class="btn-text">GitHub</span>
@@ -926,7 +931,7 @@
     <div id="toast" class="toast">تم نسخ الرد بنجاح</div>
 
     <script>
-        let apiKey = localStorage.getItem('gemini_api_key') || (['AQ', '.Ab8RN6IyQeAbXJUstfO2YgZbQl6xD9CVR4bTgpV0htElUQ6vTg'].join(''));
+        let apiKey = localStorage.getItem('gemini_api_key') || '';
         const history = [];
         let speechRecognition = null;
         let isRecording = false;
