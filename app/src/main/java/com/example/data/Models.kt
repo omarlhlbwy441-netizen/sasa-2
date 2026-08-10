@@ -194,3 +194,35 @@ data class EnvironmentEvolutionResponse(
     @Json(name = "message") val message: String = ""
 )
 
+@JsonClass(generateAdapter = true)
+data class InterpreterExecutionRequest(
+    @Json(name = "command") val command: String = "",
+    @Json(name = "code") val code: String = "",
+    @Json(name = "language") val language: String = "python",
+    @Json(name = "work_dir") val workDir: String = "/tmp"
+)
+
+@JsonClass(generateAdapter = true)
+data class InterpreterExecutionResponse(
+    @Json(name = "success") val success: Boolean,
+    @Json(name = "output") val output: String = "",
+    @Json(name = "language") val language: String = "python",
+    @Json(name = "execution_status") val executionStatus: String = "COMPLETED",
+    @Json(name = "message") val message: String = ""
+)
+
+@JsonClass(generateAdapter = true)
+data class LocalFsWriteRequest(
+    @Json(name = "path") val path: String,
+    @Json(name = "content") val content: String
+)
+
+@JsonClass(generateAdapter = true)
+data class LocalFsWriteResponse(
+    @Json(name = "success") val success: Boolean,
+    @Json(name = "file_path") val filePath: String = "",
+    @Json(name = "bytes_written") val bytesWritten: Long = 0,
+    @Json(name = "message") val message: String = ""
+)
+
+

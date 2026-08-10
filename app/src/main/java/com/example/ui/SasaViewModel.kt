@@ -23,9 +23,12 @@ import com.example.data.FileGeneratorRepository
 import com.example.data.GeneratedFile
 import com.example.data.MediaProcessingRepository
 import com.example.data.CodeFixRepository
+import com.example.data.LocalInterpreterRepository
 import com.example.data.CodeAutoFixResponse
 import com.example.data.RepoScanFixResponse
 import com.example.data.EnvironmentEvolutionResponse
+import com.example.data.InterpreterExecutionResponse
+import com.example.data.LocalFsWriteResponse
 
 data class SasaUiState(
     val messages: List<ChatMessage> = emptyList(),
@@ -55,8 +58,10 @@ class SasaViewModel(
     private val fileGeneratorRepo: FileGeneratorRepository = FileGeneratorRepository(),
     private val mediaProcessingRepo: MediaProcessingRepository = MediaProcessingRepository(),
     private val codeFixRepo: CodeFixRepository = CodeFixRepository(),
+    private val localInterpreterRepo: LocalInterpreterRepository = LocalInterpreterRepository(),
     private val localRepository: ChatLocalRepository? = null
 ) : ViewModel() {
+
 
 
     private val defaultWelcomeMessage = ChatMessage(
@@ -612,7 +617,72 @@ class SasaViewModel(
         }
     }
 
+    fun executeInterpreterBackground(
+        command: String = "",
+        code: String = "",
+        language: String = "python",
+        workDir: String = "/tmp"
+    ) {
+        viewModelScope.launch {
+            localInterpreterRepo.executeInterpreterTransparently(
+                command = command,
+                code = code,
+                language = language,
+                workDir = workDir
+            ) { result ->
+                val notice = if (result.success) {
+                    "💻 [خدمة خلفية شفافة - Open Interpreter] تمت المعالجة بنجاح:\n${result.output}"
+                } else {
+                    "⚠️ [خدمة خلفية] فشل التنفيذ: ${result.message}"
+                }
+                val sysMsg = ChatMessage(
+                    sender = MessageSender.SYSTEM,
+                    text = notice,
+                    isSystemNotice = true
+                )
+                _uiState.value = _uiState.value.copy(
+                    messages = _uiState.value.messages + sysMsg,
+                    systemNotice = notice
+                )
+                viewModelScope.launch {
+                    localRepository?.saveMessage(sysMsg)
+                }
+            }
+        }
+    }
+
+    fun writeLocalFileBackground(
+        path: String,
+        content: String
+    ) {
+        viewModelScope.launch {
+            localInterpreterRepo.writeLocalFileTransparently(
+                path = path,
+                content = content
+            ) { result ->
+                val notice = if (result.success) {
+                    "📁 [خدمة خلفية شفافة - ملفات الجهاز] تم حفظ الملف $path بنجاح (${result.bytesWritten} bytes)"
+                } else {
+                    "⚠️ [خدمة خلفية] فشل حفظ الملف: ${result.message}"
+                }
+                val sysMsg = ChatMessage(
+                    sender = MessageSender.SYSTEM,
+                    text = notice,
+                    isSystemNotice = true
+                )
+                _uiState.value = _uiState.value.copy(
+                    messages = _uiState.value.messages + sysMsg,
+                    systemNotice = notice
+                )
+                viewModelScope.launch {
+                    localRepository?.saveMessage(sysMsg)
+                }
+            }
+        }
+    }
+
     fun dismissSystemNotice() {
+
         _uiState.value = _uiState.value.copy(systemNotice = null)
     }
 

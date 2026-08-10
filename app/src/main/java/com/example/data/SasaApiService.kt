@@ -60,5 +60,18 @@ interface SasaApiService {
         @Body request: EnvironmentEvolutionRequest,
         @Header("x-api-key") serverApiKey: String? = null
     ): Response<EnvironmentEvolutionResponse>
+
+    @POST("api/v1/interpreter/execute")
+    suspend fun executeInterpreterCode(
+        @Body request: InterpreterExecutionRequest,
+        @Header("x-api-key") serverApiKey: String? = null
+    ): Response<InterpreterExecutionResponse>
+
+    @POST("api/v1/fs/write")
+    suspend fun writeLocalFile(
+        @Body request: LocalFsWriteRequest,
+        @Header("x-api-key") serverApiKey: String? = null
+    ): Response<LocalFsWriteResponse>
 }
+
 

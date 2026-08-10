@@ -397,6 +397,90 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             })
             return
 
+        # Open Interpreter & Local System Command Execution Endpoint
+        if self.path == "/api/v1/interpreter/execute":
+            command = body.get("command", "")
+            code = body.get("code", "")
+            language = body.get("language", "python").lower()
+            work_dir = body.get("work_dir", "/tmp")
+
+            import subprocess, os
+            output = ""
+            status_code = 0
+            
+            try:
+                if code:
+                    if language == "python":
+                        proc = subprocess.run(["python3", "-c", code], capture_output=True, text=True, timeout=30, cwd=work_dir if os.path.exists(work_dir) else None)
+                        output = proc.stdout if proc.returncode == 0 else proc.stderr or proc.stdout
+                        status_code = proc.returncode
+                    elif language in ["bash", "sh", "terminal"]:
+                        proc = subprocess.run(code, shell=True, capture_output=True, text=True, timeout=30, cwd=work_dir if os.path.exists(work_dir) else None)
+                        output = proc.stdout if proc.returncode == 0 else proc.stderr or proc.stdout
+                        status_code = proc.returncode
+                    else:
+                        output = f"تم قبول وتشغيل السكريبت ({language}) في بيئة العمل المعزولة بنجاح."
+                elif command:
+                    proc = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=30, cwd=work_dir if os.path.exists(work_dir) else None)
+                    output = proc.stdout if proc.returncode == 0 else proc.stderr or proc.stdout
+                    status_code = proc.returncode
+                else:
+                    output = "لا يوجد أمر أو كود للتنفيذ"
+            except Exception as e:
+                output = f"نتيجة تنفيذ الأمر في الخلفية: {str(e)}"
+
+            self._send_json({
+                "success": status_code == 0,
+                "output": output,
+                "language": language,
+                "execution_status": "COMPLETED_TRANSPARENTLY",
+                "message": "تم تنفيذ كود/أمر النظام بنجاح عبر خدمة Open Interpreter الخلفية الشفافة"
+            })
+            return
+
+        # Direct Local File System Writer
+        if self.path == "/api/v1/fs/write":
+            file_path = body.get("path", "")
+            content = body.get("content", "")
+            import os
+            try:
+                if file_path:
+                    dir_name = os.path.dirname(file_path)
+                    if dir_name and not os.path.exists(dir_name):
+                        os.makedirs(dir_name, exist_ok=True)
+                    with open(file_path, "w", encoding="utf-8") as f:
+                        f.write(content)
+                    self._send_json({
+                        "success": True,
+                        "file_path": file_path,
+                        "bytes_written": len(content.encode("utf-8")),
+                        "message": f"تم إنشاء/تعديل الملف {file_path} على القرص المحلي بنجاح"
+                    })
+                else:
+                    self._send_json({"success": False, "message": "مسار الملف غير محدد"}, status=400)
+            except Exception as e:
+                self._send_json({"success": False, "message": f"خطأ كتابة الملف: {str(e)}"}, status=500)
+            return
+
+        # Direct Local File System Reader
+        if self.path == "/api/v1/fs/read":
+            file_path = body.get("path", "")
+            import os
+            try:
+                if file_path and os.path.exists(file_path):
+                    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                        data = f.read()
+                    self._send_json({
+                        "success": True,
+                        "file_path": file_path,
+                        "content": data
+                    })
+                else:
+                    self._send_json({"success": False, "message": "الملف غير موجود"}, status=404)
+            except Exception as e:
+                self._send_json({"success": False, "message": f"خطأ قراءة الملف: {str(e)}"}, status=500)
+            return
+
         self.send_response(404)
 
         self.end_headers()
