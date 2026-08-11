@@ -389,11 +389,11 @@ fun SasaHomeScreen(
                         // Clean empty-state greeting when conversation is empty
                         if (uiState.messages.isEmpty() && !uiState.isGenerating) {
                             item {
-                                Spacer(modifier = Modifier.height(40.dp))
+                                Spacer(modifier = Modifier.height(24.dp))
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(24.dp),
+                                        .padding(20.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Box(
@@ -411,20 +411,47 @@ fun SasaHomeScreen(
                                             modifier = Modifier.size(32.dp)
                                         )
                                     }
-                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Spacer(modifier = Modifier.height(12.dp))
                                     Text(
-                                        text = "مرحباً بك في صاصا AI",
+                                        text = "مرحباً بك في صاصا AI (Sasa AI)",
                                         style = MaterialTheme.typography.titleLarge,
                                         fontWeight = FontWeight.Bold,
                                         color = Color.White
                                     )
-                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "أنظمة معالجة الأكواد والميديا وتراسل الخدمات الخلفية الشفافة تعمل بنجاح في الخلفية.",
+                                        text = "الوكيل البرمجي المتكامل وتطوير الشيخ الهلباوي",
                                         style = MaterialTheme.typography.bodyMedium,
+                                        color = SasaAccentGreen,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(
+                                        text = "أنظمة التكويد، مستودعات GitHub، المكالمات الصوتية، والخدمات الخلفية الشفافة نشطة وجاهزة.",
+                                        style = MaterialTheme.typography.bodySmall,
                                         color = SasaTextSecondary,
                                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                     )
+                                    Spacer(modifier = Modifier.height(20.dp))
+
+                                    @OptIn(ExperimentalLayoutApi::class)
+                                    FlowRow(
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        PromptChip(label = "📞 اتصال صوتي حي مع صاصا") {
+                                            viewModel.setShowVoiceCallDialog(true)
+                                        }
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        PromptChip(label = "🤖 من أنت وما هي جميع خدماتك؟") {
+                                            viewModel.onSendMessage("من أنت وما هي جميع الخدمات والإمكانيات التي تقدمها بالتفصيل؟")
+                                        }
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        PromptChip(label = "🐙 إدارة مستودعات GitHub") {
+                                            viewModel.setShowGitHubDialog(true)
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -549,20 +576,31 @@ fun HeaderBar(
 
             // Top Primary Action Buttons (Voice Call + Live Preview Screen + Transparent Services Overflow Menu)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Voice Call & Live Screen Share Button
-                IconButton(
+                // Voice Call & Live Screen Share Button (زر الاتصال)
+                Surface(
                     onClick = onVoiceCallClick,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(SasaPrimary.copy(alpha = 0.25f))
-                        .border(1.dp, SasaSecondary, RoundedCornerShape(10.dp))
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color(0xFF1B5E20).copy(alpha = 0.5f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, SasaAccentGreen)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Call,
-                        contentDescription = "مكالمة صوتية وتطوير حي مباشر",
-                        tint = SasaSecondary,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Call,
+                            contentDescription = "زر الاتصال والمكالمة الصوتية الحية",
+                            tint = SasaAccentGreen,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "اتصال",
+                            color = SasaAccentGreen,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.width(6.dp))

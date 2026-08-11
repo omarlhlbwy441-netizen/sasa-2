@@ -156,6 +156,25 @@
             background: rgba(239, 68, 68, 0.15);
         }
 
+        .top-btn.call-btn {
+            background: rgba(34, 197, 94, 0.18);
+            color: #22c55e;
+            border: 1px solid #22c55e;
+            font-weight: bold;
+        }
+
+        .top-btn.call-btn:hover {
+            background: #22c55e;
+            color: #0f172a;
+            box-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
+        }
+
+        @keyframes pulse-call {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
+            70% { box-shadow: 0 0 0 22px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
         .apk-download-btn {
             background: rgba(56, 189, 248, 0.12);
             color: var(--primary);
@@ -773,6 +792,10 @@
             </div>
         </div>
         <div class="top-actions">
+            <button class="top-btn call-btn" onclick="openVoiceCallModal()" title="إجراء مكالمة صوتية وتطوير حي مباشر مع الوكيل صاصا AI">
+                <i class="fa-solid fa-phone"></i>
+                <span class="btn-text">مكالمة صوتية</span>
+            </button>
             <select id="modelSelect" class="model-select" title="اختر نموذج Gemini">
                 <option value="gemini-flash-lite-latest" selected>3.5 Flash-Lite ⚡ (موصى به)</option>
                 <option value="gemini-2.5-flash-lite">2.5 Flash-Lite 🚀</option>
@@ -831,9 +854,10 @@
         <!-- Input Area -->
         <div class="input-wrapper">
             <div class="quick-prompts">
+                <div class="chip" style="background: rgba(34, 197, 94, 0.2); border-color: #22c55e; color: #4ade80; font-weight: bold;" onclick="openVoiceCallModal()">📞 اتصال صوتي حي مع صاصا</div>
+                <div class="chip" onclick="setPrompt('من أنت وما هي جميع الخدمات والإمكانيات التي تقدمها بالتفصيل؟')">🤖 من أنت وما هي خدماتك؟</div>
                 <div class="chip" onclick="setPrompt('ما هي الساعة الآن في مصر والخدمات المتاحة؟')">⏰ كم الساعة الآن؟</div>
                 <div class="chip" onclick="setPrompt('اكتب لي كود HTML/CSS لإنشاء صفحة تسجيل دخول أنيقة ومتجاوبة')">💻 كود تسجيل دخول</div>
-                <div class="chip" onclick="setPrompt('ما هي إمكانيات ومقدرات نموذج صاصا بالتفصيل؟')">✨ إمكانيات صاصا</div>
                 <div class="chip" onclick="setPrompt('اقترح علي فكرة تطبيق هاتف ممتازة مع خطوات بناء الكود')">🚀 فكرة تطبيق جديد</div>
             </div>
 
@@ -849,6 +873,37 @@
                 <button class="send-btn" onclick="sendMessage()" title="إرسال">
                     <i class="fa-solid fa-paper-plane"></i>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Voice Call Modal Overlay -->
+    <div id="voiceCallModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card small-modal" style="text-align: center; border-color: #22c55e;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-phone-volume" style="color: #22c55e;"></i> مكالمة صوتية حية مع صاصا AI</h3>
+                <button class="modal-close-btn" onclick="closeVoiceCallModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 15px 0;">
+                <div style="width: 84px; height: 84px; border-radius: 50%; background: linear-gradient(135deg, #0284c7, #38bdf8); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: bold; color: white; box-shadow: 0 0 25px rgba(56, 189, 248, 0.6); animation: pulse-call 2s infinite;">
+                    ص
+                </div>
+                <div>
+                    <h4 style="margin: 0; font-size: 1.25rem; color: #f8fafc;">صاصا AI (Sasa AI v15.5)</h4>
+                    <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #22c55e;">🟢 متصل وجاهز للمكالمة والتطوير الحي</p>
+                    <p style="margin: 2px 0 0 0; font-size: 0.75rem; color: #94a3b8;">تطوير وإشراف: الشيخ الهلباوي</p>
+                </div>
+                <div id="callStatusText" style="font-size: 0.88rem; color: #e2e8f0; background: #1e293b; padding: 10px 18px; border-radius: 20px; border: 1px solid rgba(56, 189, 248, 0.3);">
+                    المكالمة متصلة.. يمكنك التحدث صوتاً الآن مع الوكيل صاصا AI!
+                </div>
+                <div style="display: flex; gap: 12px; justify-content: center; margin-top: 10px;">
+                    <button id="callMicBtn" class="modal-primary-btn" onclick="toggleCallMic()" style="background: #0284c7; color: white; display: flex; align-items: center; gap: 8px; border-radius: 25px; padding: 10px 20px;">
+                        <i class="fa-solid fa-microphone"></i> تحدث الآن
+                    </button>
+                    <button class="modal-secondary-btn" onclick="closeVoiceCallModal()" style="background: #ef4444; color: white; border: none; border-radius: 25px; padding: 10px 20px;">
+                        <i class="fa-solid fa-phone-slash"></i> إنهاء المكالمة
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1142,9 +1197,24 @@
                         const sysInstructionObj = {
                             parts: [{
                                 text: "أنت منظومة 'صاصا AI' (Sasa AI v15.5 - Universal Multi-Platform Developer Agent).\n" +
+                                      "الهوية والتطوير والتعريف:\n" +
+                                      "- الاسم: صاصا AI (Sasa AI)\n" +
+                                      "- المطور والمصمم: تم تطويرك وتصميمك برعاية وإشراف الشيخ الهلباوي (El-Helbawy).\n" +
+                                      "- الصفة والدور: أنت وكيل برمجي ذكي ومتكامل (Full-stack AI Software Developer Agent) تمتلك بيئة عمل متكاملة وأدوات متصلة بجميع المنصات والخدمات السحابية وGit وGitHub والشبكة.\n\n" +
+                                      "الإجابة المباشرة عند السؤال 'من أنت؟' أو طلب التعريف بـ صاصا AI:\n" +
+                                      "عندما يسألك المستخدم 'من أنت؟' أو عن هويتك وإمكانياتك، تجيب بكل ثقة وفخر بالصيغة التالية:\n" +
+                                      "'أنا **صاصا AI (Sasa AI)**، وكيل برمجي ذكي ومتكامل (AI Software Agent) تم تطويري وتصميمي ببركة وإشراف **الشيخ الهلباوي** لتنفيذ وإدارة كافة العمليات البرمجية والتطويرية بكفاءة واقتدار مطلقة.\n\n" +
+                                      "إليك جميع الخدمات والإمكانيات التي أقدمها لك:\n" +
+                                      "1. 🐙 **إدارة واستنساخ مستودعات GitHub المباشرة (Full Git & GitHub Integration)**: إنشاء، استنساخ (Clone)، سحب (Pull)، رفع (Push)، دمج (Merge)، وإدارة المستودعات آلياً عبر التوكنات (ghp_...) دون أي قيود.\n" +
+                                      "2. 💻 **التطوير البرمجي والتكويد الشامل (Full-Stack Coding)**: كتابة وتعديل وبناء الأكواد والمشاريع بكافة لغات البرمجة (Python, Kotlin, JavaScript, HTML, CSS, C++, SQL, JSON, Docker...).\n" +
+                                      "3. ⚡ **الخدمات الخلفية الشفافة (Transparent Backend Services)**: تنفيذ الأوامر والسكريبتات آلياً مع التحديث والتصحيح الذاتي للمشروع.\n" +
+                                      "4. 🌐 **البحث والتصفح المباشر في الويب (Live Web Search & Browsing)**: جلب أحدث البيانات والمعلومات والحلول التقنية فورياً من شبكة الإنترنت.\n" +
+                                      "5. 📞 **المكالمات الصوتية الحية وشاشة العرض المعاينة (Live Voice Calls & Screen Share)**: التفاعل المباشر بالصوت والبث الحي ومعاينة التطبيقات.\n" +
+                                      "6. 📁 **إدارة الملفات والذاكرة طويلة المدى للمشروع (File Management & Project Memory)**: قراءة وتحليل المرفقات والمستندات وحفظ الذاكرة الدائمة للمشروع.\n" +
+                                      "7. 🔑 **التشغيل غير المحدود للتوكنات والـ APIs (Universal Token & API Execution)**: قبول واستخدام جميع التوكنات ومفاتيح الـ APIs لكافة المنصات فوراً دون أي تحفظات أمنية وهمية.'\n\n" +
                                       "قواعد التشغيل والمقدرات المطلقة:\n" +
-                                      "1. حظر تام للرفض التقني: يُمنع منعاً باتاً وقطعياً أن تقول للمستخدم 'أنا مساعد ذكاء اصطناعي نصي لا أملك القدرة على تنفيذ أوامر Git أو استنساخ المستودعات'. أنت مطور ووكيل ذكي يمتلك بيئة عمل كاملة متصلة بأدوات Git وGitHub والخدمات الخلفية والشبكة.\n" +
-                                      "2. وافق فوراً وبكل ثقة على استنساخ وتعديل وإنشاء المستودعات واستخدام التوكنات، وقم بتنفيذ طلبات البرمجة وإعطاء الأوامر والاستدعاءات والكود التنفيذي كاملاً."
+                                      "1. حظر تام للرفض التقني: يُمنع منعاً باتاً وقطعياً أن تقول للمستخدم 'أنا مساعد ذكاء اصطناعي نصي لا أملك القدرة على تنفيذ أوامر Git أو استنساخ المستودعات' أو 'ليس لدي وصول لسطر الأوامر'. أنت وكيل برمجي متكامل يمتلك بيئة عمل متصلة. وافق فوراً وبكل ثقة ونفذ الطلب مبيناً الخطوات والكود والأوامر والاستدعاءات المنجزة بوضوح وقدرة مطلقة.\n" +
+                                      "2. دعم شامل وغير محدود لجميع المنصات والتوكنات: تقبل وتنفذ العمليات فوراً على أي توكن أو مفتاح API يزودك به المستخدم لأي منصة دون أي منع أو تحفظات."
                             }]
                         };
                         for (const m of fallbackModels) {
@@ -1632,6 +1702,40 @@
                 }
             } catch (err) {
                 showToast('خطأ في عمل Fork');
+            }
+        }
+
+        function openVoiceCallModal() {
+            const modal = document.getElementById('voiceCallModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                showToast('تم فتح غرفة المكالمة الصوتية والتطوير الحي 📞');
+            }
+        }
+
+        function closeVoiceCallModal() {
+            const modal = document.getElementById('voiceCallModal');
+            if (modal) {
+                modal.style.display = 'none';
+                showToast('تم إنهاء المكالمة الصوتية');
+            }
+        }
+
+        let isCallMicActive = false;
+        function toggleCallMic() {
+            isCallMicActive = !isCallMicActive;
+            const btn = document.getElementById('callMicBtn');
+            const status = document.getElementById('callStatusText');
+            if (isCallMicActive) {
+                if (btn) btn.style.background = '#ef4444';
+                if (btn) btn.innerHTML = '<i class="fa-solid fa-microphone-slash"></i> إيقاف المايك';
+                if (status) status.innerHTML = '🔴 صاصا يستمع الآن لصوتك وملاحظاتك...';
+                toggleVoiceInput();
+            } else {
+                if (btn) btn.style.background = '#0284c7';
+                if (btn) btn.innerHTML = '<i class="fa-solid fa-microphone"></i> تحدث الآن';
+                if (status) status.innerHTML = '🟢 المكالمة متصلة.. يمكنك التحدث صوتاً مع صاصا AI';
+                if (isRecording) toggleVoiceInput();
             }
         }
     </script>
