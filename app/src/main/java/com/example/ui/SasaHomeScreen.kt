@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.Terminal
@@ -226,9 +227,11 @@ fun SasaHomeScreen(
             topBar = {
                 HeaderBar(
                     selectedModel = uiState.selectedModel,
+                    isWebSearchEnabled = uiState.isWebSearchEnabled,
                     onModelClick = { showModelMenu = true },
                     onPreviewClick = { showGlobalPreview = true },
                     onMemoryClick = { viewModel.setShowMemoryDialog(true) },
+                    onWebSearchToggle = { viewModel.toggleWebSearch() },
                     onCloudSettingsClick = { viewModel.setShowCloudWorkspaceSettings(true) },
                     onClearChatClick = { viewModel.onClearChat() }
                 )
@@ -430,9 +433,11 @@ fun SasaHomeScreen(
 @Composable
 fun HeaderBar(
     selectedModel: GeminiModel = GeminiModel.FLASH_3_6,
+    isWebSearchEnabled: Boolean = true,
     onModelClick: () -> Unit = {},
     onPreviewClick: () -> Unit = {},
     onMemoryClick: () -> Unit = {},
+    onWebSearchToggle: () -> Unit = {},
     onCloudSettingsClick: () -> Unit = {},
     onClearChatClick: () -> Unit = {}
 ) {
@@ -500,8 +505,26 @@ fun HeaderBar(
                 }
             }
 
-            // Top Action Buttons (Long-term Memory + Cloud Workspace Settings + Live Preview Screen)
+            // Top Action Buttons (Live Web Search + Long-term Memory + Cloud Workspace Settings + Live Preview Screen)
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // Live Web Search Button
+                IconButton(
+                    onClick = onWebSearchToggle,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(if (isWebSearchEnabled) SasaAccentGreen.copy(alpha = 0.25f) else SasaPrimary.copy(alpha = 0.15f))
+                        .border(1.dp, if (isWebSearchEnabled) SasaAccentGreen else SasaPrimary.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Public,
+                        contentDescription = "البحث المباشر في الويب (Live Web Search)",
+                        tint = if (isWebSearchEnabled) SasaAccentGreen else SasaTextSecondary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(6.dp))
+
                 // Long-Term Memory Button
                 IconButton(
                     onClick = onMemoryClick,

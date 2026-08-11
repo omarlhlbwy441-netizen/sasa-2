@@ -54,7 +54,8 @@ class GeminiRepository {
         preferredModel: GeminiModel = GeminiModel.FLASH_LITE_LATEST,
         customApiKey: String? = null,
         projectMemories: List<String> = emptyList(),
-        activeFilesSummary: String? = null
+        activeFilesSummary: String? = null,
+        enableWebSearch: Boolean = true
     ): GeminiResult = withContext(Dispatchers.IO) {
 
         val keysToTry = mutableListOf<String>()
@@ -105,7 +106,15 @@ class GeminiRepository {
         for (apiKey in keysToTry) {
             for (model in modelsOrder) {
                 try {
-                    val result = executeGeminiRequest(prompt, conversationHistory, model, apiKey, projectMemories, activeFilesSummary)
+                    val result = executeGeminiRequest(
+                        prompt = prompt,
+                        history = conversationHistory,
+                        model = model,
+                        apiKey = apiKey,
+                        projectMemories = projectMemories,
+                        activeFilesSummary = activeFilesSummary,
+                        enableWebSearch = enableWebSearch
+                    )
                     if (result is GeminiResult.Success) {
                         return@withContext result
                     } else {
@@ -126,7 +135,8 @@ class GeminiRepository {
         model: GeminiModel,
         apiKey: String,
         projectMemories: List<String> = emptyList(),
-        activeFilesSummary: String? = null
+        activeFilesSummary: String? = null,
+        enableWebSearch: Boolean = true
     ): GeminiResult {
         val url = "https://generativelanguage.googleapis.com/v1beta/models/${model.id}:generateContent?key=$apiKey"
 
@@ -161,6 +171,15 @@ class GeminiRepository {
         val requestJson = JSONObject()
         requestJson.put("contents", contentsArray)
 
+        // Google Search Grounding for Live Web Search
+        if (enableWebSearch) {
+            val toolsArray = JSONArray()
+            val searchTool = JSONObject()
+            searchTool.put("google_search", JSONObject())
+            toolsArray.put(searchTool)
+            requestJson.put("tools", toolsArray)
+        }
+
         // System Instruction
         val sysInst = JSONObject()
         val sysInstParts = JSONArray()
@@ -174,14 +193,18 @@ class GeminiRepository {
             "\n\n📁 ملفات وهيكلية المشروع الحالية (Active Workspace Files):\n$activeFilesSummary"
         } else ""
 
+        val webSearchNotice = if (enableWebSearch) {
+            "\n\n🌐 تتمتع ميزة البحث المباشر في الويب (Live Web Search Grounding) بالتفعيل والعمل اللحظي عبر Google Search. عندما يطلب المستخدم معلومات حديثة، أخبار، مقالات، أو نتائج أبحاث من شبكة الإنترنت، استخدم نتائج البحث المباشر للوصول لأحدث البيانات بدقة وتضمين المصادر والتفاصيل الحية."
+        } else ""
+
         sysInstText.put(
             "text",
-            "أنت منظومة 'صاصا AI' (Sasa AI v15.4)، مهندس برمجيات ووكيل تطوير ذكي متكامل (AI Developer Agent) يعمل ببيئة عمل كاملة مجهزة بجميع الخدمات والأنظمة والأنظمة الفرعية الشفافة (Transparent Background Services & Subsystems) المدمجة في خلفية تطبيق Android والويب.\n" +
+            "أنت منظومة 'صاصا AI' (Sasa AI v15.5)، مهندس برمجيات ووكيل تطوير ذكي متكامل (AI Developer Agent) يعمل ببيئة عمل كاملة مجهزة بجميع الخدمات والأنظمة والأنظمة الفرعية الشفافة (Transparent Background Services & Subsystems) المدمجة في خلفية تطبيق Android والويب.\n" +
                     "عندما يطلب منك المستخدم إنشاء أو تعديل ملفات برمجية أو تنفيذ مشاريع:\n" +
                     "1. قم دائماً بكتابة الكود الكامل داخل كتل كود محدودة بعلامات ``` مع تحديد اللغة واسم الملف بوضوح مثل: ```python math_tools.py أو ```html index.html أو تضمين اسم الملف في السطر الأول من الكود مثل `# filename: math_tools.py`.\n" +
                     "2. التطبيق والخدمات الخلفية الشفافة ستقوم تلقائياً باستخراج جميع هذه الملفات والأكواد فورياً، وحفظها في ذاكرة النظام المحلية، ورفعها لمستودع GitHub، وتنفيذ سكريبتات الاختيار والأوامر تلقائياً.\n" +
                     "3. أجب المستخدم بثقة وشرح كامل للكود مع تأكيد أن الخدمات الخلفية قامت بإنشاء وتفعيل وإصلاح وحفظ وتنفيذ جميع الملفات بنجاح!" +
-                    memoryContext + filesContext
+                    memoryContext + filesContext + webSearchNotice
         )
         sysInstParts.put(sysInstText)
         sysInst.put("parts", sysInstParts)
@@ -252,6 +275,29 @@ class GeminiRepository {
                 val text = part.optString("text", "")
                 sb.append(text)
             }
+
+            // Extract groundingMetadata for live web search citations
+            val groundingMeta = firstCand.optJSONObject("groundingMetadata")
+            if (groundingMeta != null) {
+                val sourcesSb = StringBuilder()
+                val chunks = groundingMeta.optJSONArray("groundingChunks")
+                if (chunks != null && chunks.length() > 0) {
+                    sourcesSb.append("\n\n---\n🌐 **المصادر والمواقع المستفادة من البحث المباشر في الويب (Live Web Search):**\n")
+                    for (i in 0 until chunks.length()) {
+                        val chunk = chunks.getJSONObject(i)
+                        val web = chunk.optJSONObject("web")
+                        if (web != null) {
+                            val uri = web.optString("uri", "")
+                            val title = web.optString("title", "رابط المصدر").ifBlank { "رابط المصدر" }
+                            if (uri.isNotBlank()) {
+                                sourcesSb.append("• [$title]($uri)\n")
+                            }
+                        }
+                    }
+                }
+                sb.append(sourcesSb.toString())
+            }
+
             sb.toString()
         } catch (e: Exception) {
             ""

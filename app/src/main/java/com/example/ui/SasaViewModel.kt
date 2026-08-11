@@ -65,7 +65,10 @@ data class SasaUiState(
 
     // Long-Term Memory State
     val projectMemories: List<String> = emptyList(),
-    val showMemoryDialog: Boolean = false
+    val showMemoryDialog: Boolean = false,
+
+    // Live Web Search State (Google Grounding)
+    val isWebSearchEnabled: Boolean = true
 )
 
 class SasaViewModel(
@@ -136,6 +139,14 @@ class SasaViewModel(
             memoryRepository?.clearMemories()
             _uiState.value = _uiState.value.copy(systemNotice = "تم مسح الذاكرة طويلة المدى للمشروع.")
         }
+    }
+
+    fun toggleWebSearch() {
+        val newStatus = !_uiState.value.isWebSearchEnabled
+        _uiState.value = _uiState.value.copy(
+            isWebSearchEnabled = newStatus,
+            systemNotice = if (newStatus) "🌐 تم تفعيل البحث المباشر والتصفح في الويب (Live Web Search)" else "🔒 تم إيقاف البحث المباشر في الويب"
+        )
     }
 
     private fun initCloudWorkspaceBackgroundService() {
@@ -398,7 +409,8 @@ class SasaViewModel(
                     preferredModel = _uiState.value.selectedModel,
                     customApiKey = _uiState.value.customApiKey,
                     projectMemories = _uiState.value.projectMemories,
-                    activeFilesSummary = treeSummary
+                    activeFilesSummary = treeSummary,
+                    enableWebSearch = _uiState.value.isWebSearchEnabled
                 )
 
                 val aiMessage = when (result) {
