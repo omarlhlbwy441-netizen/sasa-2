@@ -55,10 +55,12 @@ import com.example.ui.components.PreviewDialog
 import com.example.ui.components.CloudWorkspaceSettingsDialog
 import com.example.ui.components.MemoryDialog
 import com.example.ui.components.VoiceCallDialog
+import com.example.ui.components.GitHubManagerDialog
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Headset
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -237,6 +239,7 @@ fun SasaHomeScreen(
                     onWebSearchToggle = { viewModel.toggleWebSearch() },
                     onVoiceCallClick = { viewModel.setShowVoiceCallDialog(true) },
                     onCloudSettingsClick = { viewModel.setShowCloudWorkspaceSettings(true) },
+                    onGitHubClick = { viewModel.setShowGitHubDialog(true) },
                     onClearChatClick = { viewModel.onClearChat() }
                 )
             },
@@ -296,6 +299,24 @@ fun SasaHomeScreen(
                         onSaveConfig = { viewModel.updateCloudWorkspaceConfig(it) },
                         onTestConnection = { viewModel.testCloudWorkspaceExecution(it) },
                         onDismiss = { viewModel.setShowCloudWorkspaceSettings(false) }
+                    )
+                }
+
+                // GitHub Manager Dialog
+                if (uiState.showGitHubDialog) {
+                    GitHubManagerDialog(
+                        token = uiState.githubToken,
+                        onSaveToken = { viewModel.setGitHubToken(it) },
+                        userStatus = uiState.githubUserStatus,
+                        repos = uiState.githubRepos,
+                        selectedRepo = uiState.selectedRepo,
+                        repoTree = uiState.repoTree,
+                        selectedFile = uiState.selectedFile,
+                        isLoading = uiState.isLoadingGitHub,
+                        onSelectRepo = { viewModel.selectRepo(it) },
+                        onSelectFile = { viewModel.loadFileContent(it) },
+                        onCommitChanges = { path, content, msg -> viewModel.commitAndPushFile(path, content, msg) },
+                        onDismiss = { viewModel.setShowGitHubDialog(false) }
                     )
                 }
 
@@ -455,8 +476,11 @@ fun HeaderBar(
     onWebSearchToggle: () -> Unit = {},
     onVoiceCallClick: () -> Unit = {},
     onCloudSettingsClick: () -> Unit = {},
+    onGitHubClick: () -> Unit = {},
     onClearChatClick: () -> Unit = {}
 ) {
+    var showMoreMenu by remember { mutableStateOf(false) }
+
     Surface(
         color = SasaCardBackground,
         tonalElevation = 4.dp
@@ -510,7 +534,7 @@ fun HeaderBar(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "خدمات خلفية شفافة مفعلة",
+                                    text = "خدمات خلفية شفافة مفعلة 🟢",
                                     fontSize = 10.sp,
                                     color = SasaAccentGreen,
                                     fontWeight = FontWeight.Bold
@@ -521,7 +545,7 @@ fun HeaderBar(
                 }
             }
 
-            // Top Action Buttons (Voice Call + Live Web Search + Long-term Memory + Cloud Workspace Settings + Live Preview Screen)
+            // Top Primary Action Buttons (Voice Call + Live Preview Screen + Transparent Services Overflow Menu)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // Voice Call & Live Screen Share Button
                 IconButton(
@@ -541,60 +565,6 @@ fun HeaderBar(
 
                 Spacer(modifier = Modifier.width(6.dp))
 
-                // Live Web Search Button
-                IconButton(
-                    onClick = onWebSearchToggle,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (isWebSearchEnabled) SasaAccentGreen.copy(alpha = 0.25f) else SasaPrimary.copy(alpha = 0.15f))
-                        .border(1.dp, if (isWebSearchEnabled) SasaAccentGreen else SasaPrimary.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Public,
-                        contentDescription = "البحث المباشر في الويب (Live Web Search)",
-                        tint = if (isWebSearchEnabled) SasaAccentGreen else SasaTextSecondary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(6.dp))
-
-                // Long-Term Memory Button
-                IconButton(
-                    onClick = onMemoryClick,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(SasaPrimary.copy(alpha = 0.15f))
-                        .border(1.dp, SasaPrimary.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Psychology,
-                        contentDescription = "الذاكرة طويلة المدى",
-                        tint = SasaSecondary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(6.dp))
-
-                // Cloud Workspace Settings Button
-                IconButton(
-                    onClick = onCloudSettingsClick,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(SasaPrimary.copy(alpha = 0.15f))
-                        .border(1.dp, SasaPrimary.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CloudSync,
-                        contentDescription = "إعدادات البيئة السحابية (Codespaces)",
-                        tint = SasaPrimary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
                 // Preview Screen Button
                 IconButton(
                     onClick = onPreviewClick,
@@ -609,6 +579,84 @@ fun HeaderBar(
                         tint = SasaPrimary,
                         modifier = Modifier.size(20.dp)
                     )
+                }
+
+                Spacer(modifier = Modifier.width(6.dp))
+
+                // More Menu for Transparent Services & Tools
+                Box {
+                    IconButton(
+                        onClick = { showMoreMenu = true },
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(SasaPrimary.copy(alpha = 0.15f))
+                            .border(1.dp, SasaPrimary.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "قائمة الخدمات والأنظمة الخلفية",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = showMoreMenu,
+                        onDismissRequest = { showMoreMenu = false },
+                        modifier = Modifier
+                            .background(SasaCardBackground)
+                            .border(1.dp, SasaPrimary.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("🤖 تغيير نموذج الذكاء الاصطناعي", color = Color.White, fontSize = 13.sp) },
+                            onClick = {
+                                showMoreMenu = false
+                                onModelClick()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    if (isWebSearchEnabled) "🌐 البحث المباشر في الويب (مفعل خلفياً 🟢)" else "🌐 البحث المباشر في الويب (معطل 🔴)",
+                                    color = if (isWebSearchEnabled) SasaAccentGreen else Color.White,
+                                    fontSize = 13.sp
+                                )
+                            },
+                            onClick = {
+                                showMoreMenu = false
+                                onWebSearchToggle()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("🧠 الذاكرة طويلة المدى للمشروع (شغالة خلفياً)", color = Color.White, fontSize = 13.sp) },
+                            onClick = {
+                                showMoreMenu = false
+                                onMemoryClick()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("☁️ إعدادات وتراسل البيئة السحابية (Codespaces)", color = Color.White, fontSize = 13.sp) },
+                            onClick = {
+                                showMoreMenu = false
+                                onCloudSettingsClick()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("🐙 إعدادات ومستودعات GitHub API", color = Color.White, fontSize = 13.sp) },
+                            onClick = {
+                                showMoreMenu = false
+                                onGitHubClick()
+                            }
+                        )
+                        Divider(color = Color.White.copy(alpha = 0.1f))
+                        DropdownMenuItem(
+                            text = { Text("🗑️ مسح محادثة الجلسة الحالية", color = MaterialTheme.colorScheme.error, fontSize = 13.sp) },
+                            onClick = {
+                                showMoreMenu = false
+                                onClearChatClick()
+                            }
+                        )
+                    }
                 }
             }
         }
