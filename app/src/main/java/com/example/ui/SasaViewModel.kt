@@ -372,8 +372,8 @@ class SasaViewModel(
 
         viewModelScope.launch {
             try {
-                // Check for GitHub token in prompt and save it automatically
-                val tokenRegex = Regex("""(ghp_[a-zA-Z0-9]{36,40}|github_pat_[a-zA-Z0-9_]{80,90})""")
+                // Check for multi-platform token (GitHub, GitLab, HuggingFace, OpenAI, Anthropic, Vercel, Supabase...) in prompt and save it automatically
+                val tokenRegex = Regex("""(ghp_[a-zA-Z0-9]{36,40}|github_pat_[a-zA-Z0-9_]{80,90}|glpat-[a-zA-Z0-9_-]{20,50}|hf_[a-zA-Z0-9]{30,50}|sk-(?:proj-)?[a-zA-Z0-9_-]{32,100}|sk-ant-[a-zA-Z0-9_-]{32,100}|vercel_[a-zA-Z0-9_-]{20,50}|sbp_[a-zA-Z0-9]{30,50}|nfp_[a-zA-Z0-9]{30,50})""")
                 val extractedToken = tokenRegex.find(prompt)?.value
                 if (!extractedToken.isNullOrBlank()) {
                     _uiState.value = _uiState.value.copy(githubToken = extractedToken)
