@@ -52,7 +52,9 @@ class GeminiRepository {
         prompt: String,
         conversationHistory: List<ChatMessage>,
         preferredModel: GeminiModel = GeminiModel.FLASH_LITE_LATEST,
-        customApiKey: String? = null
+        customApiKey: String? = null,
+        projectMemories: List<String> = emptyList(),
+        activeFilesSummary: String? = null
     ): GeminiResult = withContext(Dispatchers.IO) {
 
         val keysToTry = mutableListOf<String>()
@@ -103,7 +105,7 @@ class GeminiRepository {
         for (apiKey in keysToTry) {
             for (model in modelsOrder) {
                 try {
-                    val result = executeGeminiRequest(prompt, conversationHistory, model, apiKey)
+                    val result = executeGeminiRequest(prompt, conversationHistory, model, apiKey, projectMemories, activeFilesSummary)
                     if (result is GeminiResult.Success) {
                         return@withContext result
                     } else {
@@ -122,7 +124,9 @@ class GeminiRepository {
         prompt: String,
         history: List<ChatMessage>,
         model: GeminiModel,
-        apiKey: String
+        apiKey: String,
+        projectMemories: List<String> = emptyList(),
+        activeFilesSummary: String? = null
     ): GeminiResult {
         val url = "https://generativelanguage.googleapis.com/v1beta/models/${model.id}:generateContent?key=$apiKey"
 
@@ -161,13 +165,23 @@ class GeminiRepository {
         val sysInst = JSONObject()
         val sysInstParts = JSONArray()
         val sysInstText = JSONObject()
+
+        val memoryContext = if (projectMemories.isNotEmpty()) {
+            "\n\n🧠 الذاكرة طويلة المدى للمشروع (Project Long-Term Memory):\n" + projectMemories.joinToString("\n") { "- $it" }
+        } else ""
+
+        val filesContext = if (!activeFilesSummary.isNullOrBlank()) {
+            "\n\n📁 ملفات وهيكلية المشروع الحالية (Active Workspace Files):\n$activeFilesSummary"
+        } else ""
+
         sysInstText.put(
             "text",
             "أنت منظومة 'صاصا AI' (Sasa AI v15.4)، مهندس برمجيات ووكيل تطوير ذكي متكامل (AI Developer Agent) يعمل ببيئة عمل كاملة مجهزة بجميع الخدمات والأنظمة والأنظمة الفرعية الشفافة (Transparent Background Services & Subsystems) المدمجة في خلفية تطبيق Android والويب.\n" +
                     "عندما يطلب منك المستخدم إنشاء أو تعديل ملفات برمجية أو تنفيذ مشاريع:\n" +
-                    "1. قم بدائماً بكتابة الكود الكامل داخل كتل كود محدودة بعلامات ``` مع تحديد اللغة واسم الملف بوضوح مثل: ```python math_tools.py أو ```html index.html أو تضمين اسم الملف في السطر الأول من الكود مثل `# filename: math_tools.py`.\n" +
+                    "1. قم دائماً بكتابة الكود الكامل داخل كتل كود محدودة بعلامات ``` مع تحديد اللغة واسم الملف بوضوح مثل: ```python math_tools.py أو ```html index.html أو تضمين اسم الملف في السطر الأول من الكود مثل `# filename: math_tools.py`.\n" +
                     "2. التطبيق والخدمات الخلفية الشفافة ستقوم تلقائياً باستخراج جميع هذه الملفات والأكواد فورياً، وحفظها في ذاكرة النظام المحلية، ورفعها لمستودع GitHub، وتنفيذ سكريبتات الاختيار والأوامر تلقائياً.\n" +
-                    "3. أجب المستخدم بثقة وشرح كامل للكود مع تأكيد أن الخدمات الخلفية قامت بإنشاء وتفعيل وإصلاح وحفظ وتنفيذ جميع الملفات بنجاح!"
+                    "3. أجب المستخدم بثقة وشرح كامل للكود مع تأكيد أن الخدمات الخلفية قامت بإنشاء وتفعيل وإصلاح وحفظ وتنفيذ جميع الملفات بنجاح!" +
+                    memoryContext + filesContext
         )
         sysInstParts.put(sysInstText)
         sysInst.put("parts", sysInstParts)

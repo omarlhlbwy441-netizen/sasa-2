@@ -52,6 +52,7 @@ import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.Visibility
 import com.example.ui.components.PreviewDialog
 import com.example.ui.components.CloudWorkspaceSettingsDialog
+import com.example.ui.components.MemoryDialog
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Card
@@ -227,6 +228,7 @@ fun SasaHomeScreen(
                     selectedModel = uiState.selectedModel,
                     onModelClick = { showModelMenu = true },
                     onPreviewClick = { showGlobalPreview = true },
+                    onMemoryClick = { viewModel.setShowMemoryDialog(true) },
                     onCloudSettingsClick = { viewModel.setShowCloudWorkspaceSettings(true) },
                     onClearChatClick = { viewModel.onClearChat() }
                 )
@@ -269,6 +271,17 @@ fun SasaHomeScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
+                // Long-Term Memory Dialog
+                if (uiState.showMemoryDialog) {
+                    MemoryDialog(
+                        memories = uiState.projectMemories,
+                        onDismiss = { viewModel.setShowMemoryDialog(false) },
+                        onAddMemory = { key, content -> viewModel.addProjectMemory(key, content) },
+                        onDeleteMemory = { key -> viewModel.deleteProjectMemory(key) },
+                        onClearAll = { viewModel.clearProjectMemories() }
+                    )
+                }
+
                 // Cloud Workspace Settings Dialog
                 if (uiState.showCloudWorkspaceSettings) {
                     CloudWorkspaceSettingsDialog(
@@ -419,6 +432,7 @@ fun HeaderBar(
     selectedModel: GeminiModel = GeminiModel.FLASH_3_6,
     onModelClick: () -> Unit = {},
     onPreviewClick: () -> Unit = {},
+    onMemoryClick: () -> Unit = {},
     onCloudSettingsClick: () -> Unit = {},
     onClearChatClick: () -> Unit = {}
 ) {
@@ -486,8 +500,26 @@ fun HeaderBar(
                 }
             }
 
-            // Top Action Buttons (Cloud Workspace Settings + Live Preview Screen)
+            // Top Action Buttons (Long-term Memory + Cloud Workspace Settings + Live Preview Screen)
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // Long-Term Memory Button
+                IconButton(
+                    onClick = onMemoryClick,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(SasaPrimary.copy(alpha = 0.15f))
+                        .border(1.dp, SasaPrimary.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Psychology,
+                        contentDescription = "الذاكرة طويلة المدى",
+                        tint = SasaSecondary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(6.dp))
+
                 // Cloud Workspace Settings Button
                 IconButton(
                     onClick = onCloudSettingsClick,

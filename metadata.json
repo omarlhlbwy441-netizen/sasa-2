@@ -1,6 +1,6 @@
 {
   "name": "Sasa AI",
-  "description": "Sasa AI v15.2 - منظومة صاصا الذكية للذكاء الاصطناعي والمساعد المتقدم مع نظام التنقل التلقائي بين النماذج ومفاتيح API",
+  "description": "An AI Studio development assistant app with code fixes, file generation, cloud workspace, and Gemini integration.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

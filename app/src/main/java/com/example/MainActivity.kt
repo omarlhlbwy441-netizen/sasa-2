@@ -11,7 +11,8 @@ import com.example.ui.theme.MyApplicationTheme
 
 class MainActivity : ComponentActivity() {
     private val viewModel: SasaViewModel by viewModels {
-        SasaViewModel.Factory((application as SasaApplication).chatRepository)
+        val app = application as SasaApplication
+        SasaViewModel.Factory(app.chatRepository, app.memoryRepository)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -34,6 +34,9 @@ import com.example.data.CloudWorkspaceConfig
 import com.example.data.CloudWorkspaceRepository
 import com.example.data.CloudWorkspaceTaskResult
 
+import com.example.data.local.MemoryLocalRepository
+import com.example.data.local.ProjectMemoryEntity
+
 data class SasaUiState(
     val messages: List<ChatMessage> = emptyList(),
     val selectedModel: GeminiModel = GeminiModel.FLASH_LITE_LATEST,
@@ -58,7 +61,11 @@ data class SasaUiState(
 
     // Cloud Workspace (Codespaces) State
     val cloudWorkspaceConfig: CloudWorkspaceConfig = CloudWorkspaceConfig(),
-    val showCloudWorkspaceSettings: Boolean = false
+    val showCloudWorkspaceSettings: Boolean = false,
+
+    // Long-Term Memory State
+    val projectMemories: List<String> = emptyList(),
+    val showMemoryDialog: Boolean = false
 )
 
 class SasaViewModel(
@@ -69,7 +76,8 @@ class SasaViewModel(
     private val codeFixRepo: CodeFixRepository = CodeFixRepository(),
     private val localInterpreterRepo: LocalInterpreterRepository = LocalInterpreterRepository(),
     private val cloudWorkspaceRepo: CloudWorkspaceRepository = CloudWorkspaceRepository(),
-    private val localRepository: ChatLocalRepository? = null
+    private val localRepository: ChatLocalRepository? = null,
+    private val memoryRepository: MemoryLocalRepository? = null
 ) : ViewModel() {
 
 
@@ -90,7 +98,44 @@ class SasaViewModel(
 
     init {
         observeSavedMessages()
+        observeSavedMemories()
         initCloudWorkspaceBackgroundService()
+    }
+
+    private fun observeSavedMemories() {
+        memoryRepository?.let { repo ->
+            viewModelScope.launch {
+                repo.allMemories.collect { memories ->
+                    val memoryStrings = memories.map { "${it.key}: ${it.content}" }
+                    _uiState.value = _uiState.value.copy(projectMemories = memoryStrings)
+                }
+            }
+        }
+    }
+
+    fun setShowMemoryDialog(show: Boolean) {
+        _uiState.value = _uiState.value.copy(showMemoryDialog = show)
+    }
+
+    fun addProjectMemory(key: String, content: String) {
+        if (key.isBlank() || content.isBlank()) return
+        viewModelScope.launch {
+            memoryRepository?.saveMemory(key.trim(), content.trim())
+            _uiState.value = _uiState.value.copy(systemNotice = "تم حفظ التفضيل/التعليمات في الذاكرة طويلة المدى بنجاح!")
+        }
+    }
+
+    fun deleteProjectMemory(key: String) {
+        viewModelScope.launch {
+            memoryRepository?.deleteMemoryByKey(key)
+        }
+    }
+
+    fun clearProjectMemories() {
+        viewModelScope.launch {
+            memoryRepository?.clearMemories()
+            _uiState.value = _uiState.value.copy(systemNotice = "تم مسح الذاكرة طويلة المدى للمشروع.")
+        }
     }
 
     private fun initCloudWorkspaceBackgroundService() {
@@ -334,11 +379,26 @@ class SasaViewModel(
                     enrichedPrompt = "$prompt\n\n$githubContext"
                 }
 
+                // Auto detect memory instruction in prompt e.g. "تذكر أن المشروع يعتمد على Vue 3" or "remember: use postgres"
+                if (prompt.contains("تذكر") || prompt.contains("احفظ في الذاكرة") || prompt.contains("remember:") || prompt.contains("memorize:")) {
+                    val cleanFact = prompt.replace(Regex("""(?i)^(تذكر|احفظ في الذاكرة|remember:|memorize:)\s*"""), "")
+                    if (cleanFact.isNotBlank()) {
+                        memoryRepository?.saveMemory("ملاحظة مشروع", cleanFact)
+                    }
+                }
+
+                // Active project workspace tree summary
+                val treeSummary = if (_uiState.value.repoTree.isNotEmpty()) {
+                    _uiState.value.repoTree.take(30).joinToString("\n") { "${it.type}: ${it.path}" }
+                } else null
+
                 val result = repository.generateContentWithFailover(
                     prompt = enrichedPrompt,
                     conversationHistory = existingHistory,
                     preferredModel = _uiState.value.selectedModel,
-                    customApiKey = _uiState.value.customApiKey
+                    customApiKey = _uiState.value.customApiKey,
+                    projectMemories = _uiState.value.projectMemories,
+                    activeFilesSummary = treeSummary
                 )
 
                 val aiMessage = when (result) {
@@ -825,11 +885,15 @@ class SasaViewModel(
 
 
     class Factory(
-        private val localRepository: ChatLocalRepository
+        private val localRepository: ChatLocalRepository,
+        private val memoryRepository: MemoryLocalRepository? = null
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return SasaViewModel(localRepository = localRepository) as T
+            return SasaViewModel(
+                localRepository = localRepository,
+                memoryRepository = memoryRepository
+            ) as T
         }
     }
 }
