@@ -10,7 +10,7 @@ RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools &&     wget -q https://dl.google.
 
 RUN wget -q https://services.gradle.org/distributions/gradle-9.3.1-bin.zip -O /tmp/gradle.zip &&     unzip -q /tmp/gradle.zip -d /opt &&     rm /tmp/gradle.zip
 
-RUN yes | sdkmanager --licenses &&     sdkmanager "platforms;android-36" "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+RUN yes | sdkmanager --licenses &&     sdkmanager "platforms;android-36" "platforms;android-35" "platforms;android-34" "build-tools;36.0.0" "build-tools;35.0.0" "build-tools;34.0.0" "platform-tools" &&     yes | sdkmanager --licenses
 
 WORKDIR /workspace
 COPY . .
@@ -19,7 +19,13 @@ COPY . .
 ARG GEMINI_API_KEY
 RUN if [ -n "$GEMINI_API_KEY" ]; then echo "GEMINI_API_KEY=${GEMINI_API_KEY}" > /workspace/.env; else echo "GEMINI_API_KEY=your_api_key_here" > /workspace/.env; fi
 
+RUN echo "sdk.dir=/opt/android-sdk" > /workspace/local.properties
+
 RUN if [ -f debug.keystore.base64 ]; then base64 -d debug.keystore.base64 > debug.keystore; fi
+RUN if [ ! -f debug.keystore ]; then keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"; fi
+
+ENV ANDROID_HOME=/opt/android-sdk
+ENV GRADLE_OPTS="-Dorg.gradle.jvmargs=\"-Xmx1536m -XX:MaxMetaspaceSize=512m\" -Dorg.gradle.parallel=false"
 RUN gradle assembleDebug --no-daemon
 
 # Stage 2: Serve Web page & APK download link

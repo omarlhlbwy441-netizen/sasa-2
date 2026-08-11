@@ -66,6 +66,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -306,16 +307,17 @@ fun SasaHomeScreen(
                 if (uiState.showGitHubDialog) {
                     GitHubManagerDialog(
                         token = uiState.githubToken,
-                        onSaveToken = { viewModel.setGitHubToken(it) },
                         userStatus = uiState.githubUserStatus,
                         repos = uiState.githubRepos,
                         selectedRepo = uiState.selectedRepo,
                         repoTree = uiState.repoTree,
                         selectedFile = uiState.selectedFile,
                         isLoading = uiState.isLoadingGitHub,
-                        onSelectRepo = { viewModel.selectRepo(it) },
-                        onSelectFile = { viewModel.loadFileContent(it) },
-                        onCommitChanges = { path, content, msg -> viewModel.commitAndPushFile(path, content, msg) },
+                        onTokenSave = { viewModel.setGitHubToken(it) },
+                        onSelectRepo = { viewModel.setSelectedRepo(it) },
+                        onOpenFile = { owner, repo, path, branch -> viewModel.openRepoFile(owner, repo, path, branch) },
+                        onCommitFile = { owner, repo, path, content, msg, sha, branch -> viewModel.commitFileChanges(owner, repo, path, content, msg, sha, branch) },
+                        onForkRepo = { owner, repo -> viewModel.forkRepo(owner, repo) },
                         onDismiss = { viewModel.setShowGitHubDialog(false) }
                     )
                 }
@@ -648,7 +650,7 @@ fun HeaderBar(
                                 onGitHubClick()
                             }
                         )
-                        Divider(color = Color.White.copy(alpha = 0.1f))
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
                         DropdownMenuItem(
                             text = { Text("🗑️ مسح محادثة الجلسة الحالية", color = MaterialTheme.colorScheme.error, fontSize = 13.sp) },
                             onClick = {
