@@ -54,6 +54,9 @@ import androidx.compose.material.icons.filled.Visibility
 import com.example.ui.components.PreviewDialog
 import com.example.ui.components.CloudWorkspaceSettingsDialog
 import com.example.ui.components.MemoryDialog
+import com.example.ui.components.VoiceCallDialog
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Headset
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Card
@@ -232,6 +235,7 @@ fun SasaHomeScreen(
                     onPreviewClick = { showGlobalPreview = true },
                     onMemoryClick = { viewModel.setShowMemoryDialog(true) },
                     onWebSearchToggle = { viewModel.toggleWebSearch() },
+                    onVoiceCallClick = { viewModel.setShowVoiceCallDialog(true) },
                     onCloudSettingsClick = { viewModel.setShowCloudWorkspaceSettings(true) },
                     onClearChatClick = { viewModel.onClearChat() }
                 )
@@ -292,6 +296,17 @@ fun SasaHomeScreen(
                         onSaveConfig = { viewModel.updateCloudWorkspaceConfig(it) },
                         onTestConnection = { viewModel.testCloudWorkspaceExecution(it) },
                         onDismiss = { viewModel.setShowCloudWorkspaceSettings(false) }
+                    )
+                }
+
+                // Voice Call & Live Screen Share Dialog
+                if (uiState.showVoiceCallDialog) {
+                    VoiceCallDialog(
+                        isOpen = uiState.showVoiceCallDialog,
+                        onDismiss = { viewModel.setShowVoiceCallDialog(false) },
+                        activeWorkspaceSummary = "مشروع صاصا AI (صاصا v15.5) - متصل ومجهز بتراسل الخدمات الشفافة وبث شاشة المعاينة الحية",
+                        onExecutePrompt = { prompt -> viewModel.onSendMessage(prompt) },
+                        isProcessingMessage = uiState.isGenerating
                     )
                 }
 
@@ -438,6 +453,7 @@ fun HeaderBar(
     onPreviewClick: () -> Unit = {},
     onMemoryClick: () -> Unit = {},
     onWebSearchToggle: () -> Unit = {},
+    onVoiceCallClick: () -> Unit = {},
     onCloudSettingsClick: () -> Unit = {},
     onClearChatClick: () -> Unit = {}
 ) {
@@ -505,8 +521,26 @@ fun HeaderBar(
                 }
             }
 
-            // Top Action Buttons (Live Web Search + Long-term Memory + Cloud Workspace Settings + Live Preview Screen)
+            // Top Action Buttons (Voice Call + Live Web Search + Long-term Memory + Cloud Workspace Settings + Live Preview Screen)
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // Voice Call & Live Screen Share Button
+                IconButton(
+                    onClick = onVoiceCallClick,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(SasaPrimary.copy(alpha = 0.25f))
+                        .border(1.dp, SasaSecondary, RoundedCornerShape(10.dp))
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Call,
+                        contentDescription = "مكالمة صوتية وتطوير حي مباشر",
+                        tint = SasaSecondary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(6.dp))
+
                 // Live Web Search Button
                 IconButton(
                     onClick = onWebSearchToggle,

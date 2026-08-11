@@ -68,7 +68,10 @@ data class SasaUiState(
     val showMemoryDialog: Boolean = false,
 
     // Live Web Search State (Google Grounding)
-    val isWebSearchEnabled: Boolean = true
+    val isWebSearchEnabled: Boolean = true,
+
+    // Voice Call & Live Screen Share State
+    val showVoiceCallDialog: Boolean = false
 )
 
 class SasaViewModel(
@@ -147,6 +150,10 @@ class SasaViewModel(
             isWebSearchEnabled = newStatus,
             systemNotice = if (newStatus) "🌐 تم تفعيل البحث المباشر والتصفح في الويب (Live Web Search)" else "🔒 تم إيقاف البحث المباشر في الويب"
         )
+    }
+
+    fun setShowVoiceCallDialog(show: Boolean) {
+        _uiState.value = _uiState.value.copy(showVoiceCallDialog = show)
     }
 
     private fun initCloudWorkspaceBackgroundService() {
