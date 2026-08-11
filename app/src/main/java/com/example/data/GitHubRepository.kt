@@ -33,6 +33,14 @@ data class GitHubFileContent(
     val htmlUrl: String?
 )
 
+data class GitHubUserProfile(
+    val login: String,
+    val name: String?,
+    val publicRepos: Int,
+    val totalPrivateRepos: Int,
+    val htmlUrl: String
+)
+
 sealed class GitHubResult<out T> {
     data class Success<out T>(val data: T) : GitHubResult<T>()
     data class Error(val message: String) : GitHubResult<Nothing>()
@@ -81,6 +89,30 @@ class GitHubRepository {
             }
         } catch (e: Exception) {
             GitHubResult.Error("خطأ في الاتصال بـ GitHub: ${e.message}")
+        }
+    }
+
+    suspend fun getUserProfile(token: String): GitHubResult<GitHubUserProfile> = withContext(Dispatchers.IO) {
+        try {
+            val req = buildRequest("https://api.github.com/user", token)
+            client.newCall(req).execute().use { resp ->
+                val bodyStr = resp.body?.string() ?: ""
+                if (resp.isSuccessful) {
+                    val json = JSONObject(bodyStr)
+                    val profile = GitHubUserProfile(
+                        login = json.optString("login", ""),
+                        name = json.optString("name", null),
+                        publicRepos = json.optInt("public_repos", 0),
+                        totalPrivateRepos = json.optInt("total_private_repos", json.optInt("owned_private_repos", 0)),
+                        htmlUrl = json.optString("html_url", "")
+                    )
+                    GitHubResult.Success(profile)
+                } else {
+                    GitHubResult.Error("فشل جلب ملف المستخدم (${resp.code})")
+                }
+            }
+        } catch (e: Exception) {
+            GitHubResult.Error("خطأ في الاتصال: ${e.message}")
         }
     }
 
@@ -281,19 +313,33 @@ class GitHubRepository {
                 }
             }
 
-            // If token provided without specific repo URL, fetch user repos list as background context
+            // If token provided without specific repo URL, fetch user profile and repos list as background context
             if (token.isNotBlank()) {
                 val sb = StringBuilder()
-                when (val reposRes = getUserRepos(token)) {
+                sb.appendLine("--- 🗝️ تم توثيق رمز GitHub PAT تلقائياً واستخدام خدمات GitHub API الشفافة ---")
+
+                when (val profileRes = getUserProfile(token)) {
                     is GitHubResult.Success -> {
-                        val repoNames = reposRes.data.take(15).joinToString("\n") { "  - ${it.fullName} (${if (it.isPrivate) "خاص 🔒" else "عام 🌐"})" }
-                        sb.appendLine("--- 🗝️ تم توثيق رمز GitHub PAT تلقائياً والوصول للخدمات الخلفية ---")
-                        sb.appendLine("📁 [المستودعات المرتبطة بالحساب]:\n$repoNames")
-                        sb.appendLine("----------------------------------------------------------------------")
-                        return@withContext sb.toString()
+                        val prof = profileRes.data
+                        val totalCount = prof.publicRepos + prof.totalPrivateRepos
+                        sb.appendLine("👤 [بيانات حساب GitHub للمستخدم]:")
+                        sb.appendLine("  • اسم الحساب: ${prof.login} ${if (!prof.name.isNullOrBlank()) "(${prof.name})" else ""}")
+                        sb.appendLine("  • إجمالي عدد المستودعات في الحساب: $totalCount مستودع (${prof.publicRepos} عام 🌐، ${prof.totalPrivateRepos} خاص 🔒)")
+                        sb.appendLine("  • رابط الحساب: ${prof.htmlUrl}")
                     }
                     else -> {}
                 }
+
+                when (val reposRes = getUserRepos(token)) {
+                    is GitHubResult.Success -> {
+                        val repoNames = reposRes.data.take(40).joinToString("\n") { "  - ${it.fullName} (${if (it.isPrivate) "خاص 🔒" else "عام 🌐"}) - الفرع الافتراضي: ${it.defaultBranch}" }
+                        sb.appendLine("📁 [قائمة المستودعات المجلوبة فاعلياً من GitHub API (عدد المستودعات المجلوبة: ${reposRes.data.size})]:\n$repoNames")
+                    }
+                    else -> {}
+                }
+
+                sb.appendLine("----------------------------------------------------------------------")
+                return@withContext sb.toString()
             }
             return@withContext null
         }
