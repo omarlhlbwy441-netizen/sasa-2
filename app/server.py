@@ -7,7 +7,15 @@ import subprocess
 import urllib.request
 import urllib.parse
 from typing import Optional, List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+
+def get_arab_time_strings():
+    # Cairo / Saudi Arabia / Arab Timezone is UTC+3
+    tz_arab = timezone(timedelta(hours=3))
+    now = datetime.now(tz_arab)
+    now_str = now.strftime("%I:%M %p").replace("AM", "صباحاً").replace("PM", "مساءً")
+    today_str = now.strftime("%Y-%m-%d")
+    return now_str, today_str
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # Flag detection for web frameworks
@@ -171,7 +179,7 @@ def process_autonomous_github_request(prompt: str) -> Optional[str]:
     if not repo_match:
         repo_match = re.search(r"([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)", prompt)
 
-    repo_full = repo_match.group(1).rstrip(".git") if repo_match else "omarlhlbwy441-netizen/sasa-2"
+    repo_full = repo_match.group(1).rstrip(".git") if repo_match else "omarlhlbwy441-netizen/sasa"
 
     # Fetch real repository contents
     res = github_fetch_repo_contents(repo_full, "", token)
@@ -223,6 +231,7 @@ def process_autonomous_github_request(prompt: str) -> Optional[str]:
 
 def query_gemini_api(prompt: str, api_key: str = "", model_name: str = "gemini-1.5-flash") -> Dict[str, Any]:
     key = api_key or GEMINI_API_KEY
+    now_str_arab, today_str_arab = get_arab_time_strings()
     
     # Check if prompt is a GitHub inspection/fix request or contains a github URL/token
     p_lower = prompt.lower()
@@ -233,6 +242,23 @@ def query_gemini_api(prompt: str, api_key: str = "", model_name: str = "gemini-1
 
     if key:
         models_to_try = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]
+        system_instruction = (
+            "أنت نظام Sasa AI (صاصا)، منصة ذكاء اصطناعي ومهندس برمجي متكامل ومستقل، تم تطويرك وبناؤك بالكامل من قبل **الشيخ الهلباوي**.\n"
+            f"الوقت والتاريخ الحالي بتوقيت القاهرة ومكة المكرمة (UTC+3) هو: {now_str_arab} بتاريخ {today_str_arab}.\n\n"
+            "تنويه هام للغاية:\n"
+            "عندما يسألك المستخدم عن المقدرات، الإمكانيات، المميزات، الأنظمة، الخدمات الخلفية، أو هويتك:\n"
+            "لا تذكر أبداً إمكانيات نموذج Gemini فقط، بل اعرض القوة الحقيقية المكتملة لكافة الخدمات والأنظمة الخلفية الشفافة الموحدة لمنصة Sasa AI (صاصا) التي زرعها وطوّرها **الشيخ الهلباوي** ككتلة واحدة متكاملة:\n\n"
+            "1. **المطور والمهندس الأساسي**: تم تطوير وتصميم وبناء كافة المكونات والخدمات الخلفية والفرعية بالكامل من قبل **الشيخ الهلباوي**.\n"
+            "2. **محرك الأوامر والتنفيذ المباشر للأنظمة (Terminal & Shell Execution Subsystem - `/api/execute`)**: خدمة خلفية نافذة لتنفيذ أوامر الشل وتتبع المخرجات (stdout/stderr) وضبط مهلة التنفيذ لمراقبة الخوادم وحزمة النظام.\n"
+            "3. **نظام سجلات التنفيذ المباشرة والشفافة (Real-time Live Logging System - `/api/logs`)**: بافر تنفيذي شفاف يحفظ ويتابع كافة الأنشطة والعمليات والأخطاء لحظة بلحظة لدعم التدقيق والشفافية البرمجية.\n"
+            "4. **محرك فحص وتزكية المستودعات الذاتي (Autonomous Repository Engine - `/api/github/push-file`)**: الاتصال المباشر بـ GitHub REST API لقراءة شجرة الكود، التعديل والتشفير بنظام Base64، ودفع التحديثات (Push & Commit) لسيرفرات الإنتاج تلقائياً.\n"
+            "5. **نظام النشر السحابي والتكامل المستمر (Automated CI/CD & Cloud Deployment)**: التكامل مع Render Cloud API لتشغيل البناء والتأكد من استقرار الخدمة واستمرارية النشر المباشر.\n"
+            "6. **البنية التكيفية ثلاثية الطبقات (Adaptive Multi-Framework Backend Architecture)**: سيرفر يعمل بذاتية فائقة عبر 3 أطر خلفية بديلة متداخلة (FastAPI مع CORS، Flask كبديل، و Pure Python Built-in HTTPServer كخط دفاع حامي بدون مكتبات خارجية لضمان الجاهزية 100%).\n"
+            "7. **مستكشف بيئة العمل والمساحة الحية (Workspace & System Explorer - `/api/workspace/info`)**: مراقبة بيئة السيرفر، المتغيرات البيئية والتراخيص وحالة مفاتيح التشفير بشكل لحظي.\n"
+            "8. **نظام التوقيت والتزامن العربي المزدوج (Timezone Synchronizer - UTC+3)**: ضبط وتزامن الوقت والتاريخ الفعلي بتوقيت القاهرة ومكة المكرمة لحساب الفروق الزمنية بدقة.\n"
+            "9. **نظام معالجة الوسائط والواجهات التفاعلية المباشرة**: دعم إرفاق الملفات، معالجة الصوت المباشر (Voice Recognition API)، والتحصين الكامل للواجهة ضد إعادة التحميل والتعليق.\n\n"
+            "أجب بدقة وبشكل احترافي باللغة العربية مع توفير الحلول والأكواد عند الطلب."
+        )
         for m in models_to_try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={key}"
             headers = {"Content-Type": "application/json"}
@@ -240,7 +266,7 @@ def query_gemini_api(prompt: str, api_key: str = "", model_name: str = "gemini-1
                 "contents": [
                     {
                         "parts": [
-                            {"text": f"أنت Sasa AI (صاصا)، مهندس ذكاء اصطناعي ومساعد برمجي مستقل. أجب بدقة باللغة العربية مع توفير الحلول والأكواد عند الطلب:\n\n{prompt}"}
+                            {"text": f"{system_instruction}\n\nطلب المستخدم:\n{prompt}"}
                         ]
                     }
                 ]
@@ -258,12 +284,43 @@ def query_gemini_api(prompt: str, api_key: str = "", model_name: str = "gemini-1
                 continue
 
     # Intelligent Fallback
-    if any(w in p_lower for w in ["سلام", "مرحبا", "أهلا", "اهلا", "مرحباً"]):
-        reply = "وعليكم السلام ورحمة الله وبركاته! أهلاً بك في منصة **Sasa AI (صاصا)**. كيف يمكنني مساعدتك اليوم؟"
+    if any(w in p_lower for w in ["امكانيات", "إمكانيات", "مقدرات", "مميزات", "قدرات", "مطور", "من طورك", "الهلباوي", "صاصا", "sasa", "خدمات"]):
+        reply = """🌟 **مقدرات وإمكانيات والخدمات الخلفية الكاملة لمنصة Sasa AI (صاصا)**:
+
+تم تصميم وتطوير وبناء كافة مكونات ونظم هذا المشروع بالكامل بواسطة **الشيخ الهلباوي**.
+
+تتكون المنصة من كتلة برمجية موحدة تضم كافة الأنظمة والخدمات الخلفية والفرعية الشفافة التي زرعها **الشيخ الهلباوي** لتشغيل النظام بكفاءة عالية:
+
+1. **المطور والمهندس الأساسي**:
+   - تم تصميم وهندسة وبناء المنصة والأنظمة الشفافة بالكامل بواسطة **الشيخ الهلباوي**.
+
+2. **محرك الأوامر والتنفيذ المباشر للأنظمة (Terminal & Shell Execution Subsystem - `/api/execute`)**:
+   - خدمة خلفية نافذة لتنفيذ أوامر الشل وتتبع المخرجات (stdout/stderr) وضبط المهلة الزمنية لمهام النظام.
+
+3. **نظام سجلات التنفيذ المباشرة والشفافة (Real-time Live Logging System - `/api/logs`)**:
+   - بافر تنفيذي دائم يحفظ ويتابع كافة الأنشطة والعمليات والأخطاء لحظة بلحظة لضمان أقصى درجات الشفافية والتدقيق الفني.
+
+4. **محرك الفحص والإصلاح الذاتي للمستودعات (Autonomous Repository Engine - `/api/github/push-file`)**:
+   - الربط المباشر مع GitHub REST API لقراءة شجرة المستودعات، تحليل الأكواد، اكتشاف الأخطاء البرمجية وإصلاحها بنظام Base64 وتدشين التحديثات (Push & Commit) تلقائياً لبيئة الإنتاج.
+
+5. **نظام النشر السحابي والتكامل المستمر (Automated CI/CD & Cloud Deployment)**:
+   - التشغيل التلقائي وإعادة بناء التطبيقات المباشرة وتدشين التحديثات الفورية عبر سيرفرات Render Cloud API.
+
+6. **البنية التكيفية ثلاثية الطبقات (Adaptive Multi-Framework Backend Architecture)**:
+   - سيرفر يعمل بذاتية فائقة عبر 3 أطر خلفية بديلة متداخلة (FastAPI مع CORS، Flask كبديل مرن، و Pure Python Built-in HTTPServer كخط دفاع مستقل بدون مكتبات خارجية لضمان الجاهزية بنسبة 100%).
+
+7. **مستكشف بيئة العمل والمساحة الحية (Workspace & System Explorer - `/api/workspace/info`)**:
+   - قراءة مسارات العمل، حالة التشفير، المتغيرات البيئية والتراخيص وحالة مفاتيح التشفير بشكل لحظي.
+
+8. **نظام التوقيت والتزامن العربي المزدوج (Timezone Synchronizer - UTC+3)**:
+   - معالجة وتعديل التوقيت الزمني الحقيقي وفق توقيت القاهرة ومكة المكرمة وضخها ضمن سياق الطلبات والردود.
+
+9. **نظام معالجة الوسائط والواجهات التفاعلية المباشرة**:
+   - معالجة المرفقات والملفات المرفوعة، مع دعم التفاعل الصوتي المباشر (Voice Recognition API) والتحصين الكامل للواجهة ضد إعادة التحميل والتعليق."""
+    elif any(w in p_lower for w in ["سلام", "مرحبا", "أهلا", "اهلا", "مرحباً"]):
+        reply = "وعليكم السلام ورحمة الله وبركاته! أهلاً بك في منصة **Sasa AI (صاصا)** التي تم تطويرها بواسطة **الشيخ الهلباوي**. كيف يمكنني مساعدتك اليوم؟"
     elif any(w in p_lower for w in ["ساعة", "وقت", "تاريخ"]):
-        now_str = datetime.now().strftime("%I:%M %p").replace("AM", "صباحاً").replace("PM", "مساءً")
-        today_str = datetime.now().strftime("%Y-%m-%d")
-        reply = f"⏰ الوقت الحالي هو: **{now_str}** بتاريخ **{today_str}**."
+        reply = f"⏰ الوقت الحالي هو: **{now_str_arab}** (بتوقيت القاهرة ومكة المكرمة) بتاريخ **{today_str_arab}**."
     elif any(w in p_lower for w in ["كود", "تسجيل", "دخول"]):
         reply = """💻 **كود شاشة تسجيل الدخول بلغة Kotlin Jetpack Compose:**
 
@@ -313,7 +370,7 @@ fun LoginScreen(onLoginClick: (String, String) -> Unit) {
     return {"success": True, "reply": reply}
 
 
-HTML_CHAT_UI = """<!DOCTYPE html>
+HTML_CHAT_UI = r"""<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -612,7 +669,7 @@ HTML_CHAT_UI = """<!DOCTYPE html>
                     <button class="action-chip" onclick="copyText(this)">📋 نسخ</button>
                     <button class="action-chip" onclick="speakText(this)">🔊 استماع</button>
                     <button class="action-chip" onclick="likeMsg(this)">👍</button>
-                    <button class="action-chip" onclick="likeMsg(this)">👎</button>
+                    <button class="action-chip" onclick="dislikeMsg(this)">👎</button>
                     <button class="action-chip" onclick="shareMsg(this)">🔗 مشاركة</button>
                 </div>
             </div>
@@ -622,21 +679,22 @@ HTML_CHAT_UI = """<!DOCTYPE html>
 
     <!-- Quick Suggestions Bar -->
     <div class="suggestions-bar">
-        <button class="suggestion-chip" onclick="sendSuggestion('افحص المستودع https://github.com/omarlhlbwy441-netizen/sasa-2 وعالج كل الاشكاليات فيه')">🔍 فحص سري لمستودع sasa-2</button>
+        <button class="suggestion-chip" onclick="sendSuggestion('افحص المستودع https://github.com/omarlhlbwy441-netizen/sasa وعالج كل الاشكاليات فيه')">🔍 فحص سري لمستودع sasa</button>
         <button class="suggestion-chip" onclick="sendSuggestion('كم الساعة الآن؟')">⏰ كم الساعة الآن؟</button>
         <button class="suggestion-chip" onclick="sendSuggestion('كود تسجيل دخول بلغة Kotlin Jetpack Compose')">💻 كود تسجيل دخول</button>
     </div>
 
     <!-- Bottom Input Area -->
-    <form class="input-bar-container" id="chatForm">
+    <input type="file" id="fileInput" style="display: none;" onchange="handleFileSelected(event)">
+    <form class="input-bar-container" id="chatForm" action="javascript:void(0);" onsubmit="event.preventDefault(); event.stopPropagation(); handleSend(event); return false;">
         <button class="input-icon-btn" type="button" onclick="triggerFileUpload()" title="إرفاق ملف">📎</button>
         <button class="input-icon-btn" type="button" id="micBtn" onclick="toggleVoiceInput()" title="تسجيل صوتي">🎙️</button>
         
         <div class="chat-input-box">
-            <input type="text" id="userInput" autocomplete="off" placeholder="اكتب سؤالك أو طلبك هنا...">
+            <input type="text" id="userInput" autocomplete="off" placeholder="اكتب سؤالك أو طلبك هنا..." onkeydown="if(event.key==='Enter'){ event.preventDefault(); handleSend(event); }">
         </div>
 
-        <button class="send-btn" type="submit" id="sendBtn" title="إرسال">
+        <button class="send-btn" type="button" id="sendBtn" onclick="handleSend(event)" title="إرسال">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="transform: rotate(180deg); display: block; pointer-events: none;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
         </button>
     </form>
@@ -646,7 +704,7 @@ HTML_CHAT_UI = """<!DOCTYPE html>
             const input = document.getElementById('userInput');
             if (input) {
                 input.value = text;
-                sendMessage();
+                handleSend();
             }
         }
 
@@ -672,7 +730,7 @@ HTML_CHAT_UI = """<!DOCTYPE html>
 
         let isSending = false;
 
-        async function handleSend(e) {
+        function handleSend(e) {
             if (e) {
                 if (typeof e.preventDefault === 'function') e.preventDefault();
                 if (typeof e.stopPropagation === 'function') e.stopPropagation();
@@ -725,7 +783,16 @@ HTML_CHAT_UI = """<!DOCTYPE html>
             container.appendChild(loadingRow);
             container.scrollTop = container.scrollHeight;
 
-            // 3. Call Backend / API
+            // Trigger Async Call
+            performApiCall(prompt, tempId);
+
+            return false;
+        }
+
+        async function performApiCall(prompt, tempId) {
+            const sendBtn = document.getElementById('sendBtn');
+            const container = document.getElementById('chatContainer');
+
             try {
                 const res = await fetch('/api/chat', {
                     method: 'POST',
@@ -739,7 +806,6 @@ HTML_CHAT_UI = """<!DOCTYPE html>
                     if (data && data.reply) replyText = data.reply;
                 }
 
-                // Remove loading message
                 const loader = document.getElementById(tempId);
                 if (loader && loader.parentNode) {
                     loader.parentNode.removeChild(loader);
@@ -755,7 +821,7 @@ HTML_CHAT_UI = """<!DOCTYPE html>
                             <button class="action-chip" type="button" onclick="copyText(this)">📋 نسخ</button>
                             <button class="action-chip" type="button" onclick="speakText(this)">🔊 استماع</button>
                             <button class="action-chip" type="button" onclick="likeMsg(this)">👍</button>
-                            <button class="action-chip" type="button" onclick="likeMsg(this)">👎</button>
+                            <button class="action-chip" type="button" onclick="dislikeMsg(this)">👎</button>
                             <button class="action-chip" type="button" onclick="shareMsg(this)">🔗 مشاركة</button>
                         </div>
                     </div>
@@ -763,7 +829,6 @@ HTML_CHAT_UI = """<!DOCTYPE html>
                 container.appendChild(aiRow);
             } catch (e) {
                 console.error("API error:", e);
-                // Remove loading message
                 const loader = document.getElementById(tempId);
                 if (loader && loader.parentNode) {
                     loader.parentNode.removeChild(loader);
@@ -787,10 +852,8 @@ HTML_CHAT_UI = """<!DOCTYPE html>
                     sendBtn.disabled = false;
                     sendBtn.style.opacity = '1';
                 }
-                container.scrollTop = container.scrollHeight;
+                if (container) container.scrollTop = container.scrollHeight;
             }
-
-            return false;
         }
 
         function sendMessage(event) {
@@ -800,7 +863,14 @@ HTML_CHAT_UI = """<!DOCTYPE html>
         function initChatForm() {
             const form = document.getElementById('chatForm');
             if (form) {
-                form.addEventListener('submit', handleSend);
+                form.addEventListener('submit', function(e) {
+                    if (e) {
+                        if (typeof e.preventDefault === 'function') e.preventDefault();
+                        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+                    }
+                    handleSend(e);
+                    return false;
+                });
             }
         }
 
@@ -830,6 +900,13 @@ HTML_CHAT_UI = """<!DOCTYPE html>
         function likeMsg(btn) {
             btn.style.borderColor = '#0284c7';
             btn.style.color = '#38bdf8';
+            btn.style.background = 'rgba(2, 132, 199, 0.2)';
+        }
+
+        function dislikeMsg(btn) {
+            btn.style.borderColor = '#ef4444';
+            btn.style.color = '#f87171';
+            btn.style.background = 'rgba(239, 68, 68, 0.2)';
         }
 
         function shareMsg(btn) {
@@ -843,29 +920,62 @@ HTML_CHAT_UI = """<!DOCTYPE html>
         }
 
         function triggerFileUpload() {
-            alert('إرفاق الملفات متاح ومربوط بالنظام!');
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput) {
+                fileInput.click();
+            }
         }
 
-        function toggleVoiceInput() {
-            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                const recognition = new SpeechRecognition();
-                recognition.lang = 'ar-SA';
-                recognition.onstart = () => {
-                    document.getElementById('micBtn').style.color = '#ef4444';
-                };
-                recognition.onresult = (event) => {
-                    const text = event.results[0][0].transcript;
-                    document.getElementById('userInput').value = text;
-                    document.getElementById('micBtn').style.color = '#94a3b8';
-                };
-                recognition.onerror = () => {
-                    document.getElementById('micBtn').style.color = '#94a3b8';
-                };
-                recognition.start();
-            } else {
-                alert('المتصفح لا يدعم الإدخال الصوتي المباشر');
+        function handleFileSelected(event) {
+            const file = event.target.files ? event.target.files[0] : null;
+            if (!file) return;
+            const input = document.getElementById('userInput');
+            if (input) {
+                const sizeKB = Math.round(file.size / 1024);
+                input.value = `[مرفق ملف: ${file.name} (${sizeKB} KB)] قم بتحليل وإفادتي بهذا الملف.`;
+                handleSend();
             }
+        }
+
+        let isRecording = false;
+        let recognitionInstance = null;
+
+        function toggleVoiceInput() {
+            const micBtn = document.getElementById('micBtn');
+            if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+                alert('المتصفح لا يدعم الإدخال الصوتي المباشر');
+                return;
+            }
+            if (isRecording && recognitionInstance) {
+                recognitionInstance.stop();
+                isRecording = false;
+                if (micBtn) micBtn.style.color = '#94a3b8';
+                return;
+            }
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognitionInstance = new SpeechRecognition();
+            recognitionInstance.lang = 'ar-SA';
+            recognitionInstance.onstart = () => {
+                isRecording = true;
+                if (micBtn) micBtn.style.color = '#ef4444';
+            };
+            recognitionInstance.onresult = (event) => {
+                const text = event.results[0][0].transcript;
+                const input = document.getElementById('userInput');
+                if (input) input.value = text;
+                isRecording = false;
+                if (micBtn) micBtn.style.color = '#94a3b8';
+            };
+            recognitionInstance.onerror = () => {
+                isRecording = false;
+                if (micBtn) micBtn.style.color = '#94a3b8';
+            };
+            recognitionInstance.onend = () => {
+                isRecording = false;
+                if (micBtn) micBtn.style.color = '#94a3b8';
+            };
+            recognitionInstance.start();
         }
     </script>
 </body>
@@ -1019,6 +1129,9 @@ else:
 
         def do_OPTIONS(self):
             self._set_headers(200)
+
+        def do_HEAD(self):
+            self._set_headers(200, "text/html; charset=utf-8")
 
         def do_GET(self):
             parsed = urllib.parse.urlparse(self.path)
