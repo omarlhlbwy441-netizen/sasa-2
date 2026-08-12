@@ -628,15 +628,15 @@ HTML_CHAT_UI = """<!DOCTYPE html>
     </div>
 
     <!-- Bottom Input Area -->
-    <form class="input-bar-container" id="chatForm" onsubmit="return sendMessage(event);">
+    <form class="input-bar-container" id="chatForm" onsubmit="sendMessage(event); return false;">
         <button class="input-icon-btn" type="button" onclick="triggerFileUpload()" title="إرفاق ملف">📎</button>
         <button class="input-icon-btn" type="button" id="micBtn" onclick="toggleVoiceInput()" title="تسجيل صوتي">🎙️</button>
         
         <div class="chat-input-box">
-            <input type="text" id="userInput" autocomplete="off" placeholder="اكتب سؤالك أو طلبك هنا...">
+            <input type="text" id="userInput" autocomplete="off" placeholder="اكتب سؤالك أو طلبك هنا..." onkeydown="if(event.key==='Enter'){ sendMessage(event); }">
         </div>
 
-        <button class="send-btn" type="submit" id="sendBtn" title="إرسال">
+        <button class="send-btn" type="button" id="sendBtn" onclick="sendMessage(event)" title="إرسال">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="transform: rotate(180deg); display: block; pointer-events: none;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
         </button>
     </form>
@@ -650,7 +650,18 @@ HTML_CHAT_UI = """<!DOCTYPE html>
             }
         }
 
+        function escapeHtml(text) {
+            if (text === null || text === undefined) return "";
+            return String(text)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
         function formatMarkdown(text) {
+            if (!text) return "";
             let html = escapeHtml(text);
             html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
             html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
@@ -660,8 +671,9 @@ HTML_CHAT_UI = """<!DOCTYPE html>
         }
 
         async function sendMessage(event) {
-            if (event && event.preventDefault) {
-                event.preventDefault();
+            if (event) {
+                if (typeof event.preventDefault === 'function') event.preventDefault();
+                if (typeof event.stopPropagation === 'function') event.stopPropagation();
             }
             const input = document.getElementById('userInput');
             const sendBtn = document.getElementById('sendBtn');
@@ -669,13 +681,14 @@ HTML_CHAT_UI = """<!DOCTYPE html>
             if (!prompt) return false;
 
             // Clear input & disable send button during processing
-            input.value = '';
+            if (input) input.value = '';
             if (sendBtn) {
                 sendBtn.disabled = true;
                 sendBtn.style.opacity = '0.5';
             }
 
             const container = document.getElementById('chatContainer');
+            if (!container) return false;
 
             // 1. Append User Message
             const userRow = document.createElement('div');
@@ -712,9 +725,9 @@ HTML_CHAT_UI = """<!DOCTYPE html>
                 });
 
                 let replyText = 'أهلاً بك! تم استلام رسالتك بنجاح.';
-                if (res.ok) {
+                if (res && res.ok) {
                     const data = await res.json();
-                    replyText = data.reply || replyText;
+                    replyText = (data && data.reply) ? data.reply : replyText;
                 }
 
                 // Remove loading message
@@ -751,7 +764,7 @@ HTML_CHAT_UI = """<!DOCTYPE html>
                 aiRow.innerHTML = `
                     <div class="msg-avatar">ص</div>
                     <div class="msg-bubble-wrap">
-                        <div class="msg-bubble">تم استلام طلبك: **"${escapeHtml(prompt)}"** وجاري المعالجة بنجاح.</div>
+                        <div class="msg-bubble">${formatMarkdown("تم استلام طلبك: **" + prompt + "** وجاري المعالجة بنجاح.")}</div>
                         <div class="msg-actions">
                             <button class="action-chip" type="button" onclick="copyText(this)">📋 نسخ</button>
                         </div>
@@ -768,6 +781,23 @@ HTML_CHAT_UI = """<!DOCTYPE html>
 
             return false;
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('chatForm');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    sendMessage(e);
+                });
+            }
+            const sendBtn = document.getElementById('sendBtn');
+            if (sendBtn) {
+                sendBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    sendMessage(e);
+                });
+            }
+        });
 
         function copyText(btn) {
             const bubble = btn.closest('.msg-bubble-wrap').querySelector('.msg-bubble');
