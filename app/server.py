@@ -628,15 +628,15 @@ HTML_CHAT_UI = """<!DOCTYPE html>
     </div>
 
     <!-- Bottom Input Area -->
-    <form class="input-bar-container" id="chatForm" onsubmit="sendMessage(event); return false;">
+    <form class="input-bar-container" id="chatForm">
         <button class="input-icon-btn" type="button" onclick="triggerFileUpload()" title="إرفاق ملف">📎</button>
         <button class="input-icon-btn" type="button" id="micBtn" onclick="toggleVoiceInput()" title="تسجيل صوتي">🎙️</button>
         
         <div class="chat-input-box">
-            <input type="text" id="userInput" autocomplete="off" placeholder="اكتب سؤالك أو طلبك هنا..." onkeydown="if(event.key==='Enter'){ sendMessage(event); }">
+            <input type="text" id="userInput" autocomplete="off" placeholder="اكتب سؤالك أو طلبك هنا...">
         </div>
 
-        <button class="send-btn" type="button" id="sendBtn" onclick="sendMessage(event)" title="إرسال">
+        <button class="send-btn" type="submit" id="sendBtn" title="إرسال">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="transform: rotate(180deg); display: block; pointer-events: none;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
         </button>
     </form>
@@ -670,37 +670,46 @@ HTML_CHAT_UI = """<!DOCTYPE html>
             return html;
         }
 
-        async function sendMessage(event) {
-            if (event) {
-                if (typeof event.preventDefault === 'function') event.preventDefault();
-                if (typeof event.stopPropagation === 'function') event.stopPropagation();
+        let isSending = false;
+
+        async function handleSend(e) {
+            if (e) {
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
             }
+            if (isSending) return false;
+
             const input = document.getElementById('userInput');
             const sendBtn = document.getElementById('sendBtn');
-            const prompt = input ? input.value.trim() : '';
+            const container = document.getElementById('chatContainer');
+
+            if (!input || !container) return false;
+
+            const prompt = input.value ? input.value.trim() : '';
             if (!prompt) return false;
 
-            // Clear input & disable send button during processing
-            if (input) input.value = '';
+            isSending = true;
+            input.value = '';
             if (sendBtn) {
                 sendBtn.disabled = true;
                 sendBtn.style.opacity = '0.5';
             }
 
-            const container = document.getElementById('chatContainer');
-            if (!container) return false;
-
             // 1. Append User Message
-            const userRow = document.createElement('div');
-            userRow.className = 'message-row user';
-            userRow.innerHTML = `
-                <div class="msg-avatar">أنت</div>
-                <div class="msg-bubble-wrap">
-                    <div class="msg-bubble">${escapeHtml(prompt)}</div>
-                </div>
-            `;
-            container.appendChild(userRow);
-            container.scrollTop = container.scrollHeight;
+            try {
+                const userRow = document.createElement('div');
+                userRow.className = 'message-row user';
+                userRow.innerHTML = `
+                    <div class="msg-avatar">أنت</div>
+                    <div class="msg-bubble-wrap">
+                        <div class="msg-bubble">${escapeHtml(prompt)}</div>
+                    </div>
+                `;
+                container.appendChild(userRow);
+                container.scrollTop = container.scrollHeight;
+            } catch (err) {
+                console.error("User message render error:", err);
+            }
 
             // 2. Append Immediate Loading Indicator Bubble
             const tempId = 'loading_' + Math.random().toString(36).substring(2);
@@ -727,7 +736,7 @@ HTML_CHAT_UI = """<!DOCTYPE html>
                 let replyText = 'أهلاً بك! تم استلام رسالتك بنجاح.';
                 if (res && res.ok) {
                     const data = await res.json();
-                    replyText = (data && data.reply) ? data.reply : replyText;
+                    if (data && data.reply) replyText = data.reply;
                 }
 
                 // Remove loading message
@@ -753,6 +762,7 @@ HTML_CHAT_UI = """<!DOCTYPE html>
                 `;
                 container.appendChild(aiRow);
             } catch (e) {
+                console.error("API error:", e);
                 // Remove loading message
                 const loader = document.getElementById(tempId);
                 if (loader && loader.parentNode) {
@@ -772,6 +782,7 @@ HTML_CHAT_UI = """<!DOCTYPE html>
                 `;
                 container.appendChild(aiRow);
             } finally {
+                isSending = false;
                 if (sendBtn) {
                     sendBtn.disabled = false;
                     sendBtn.style.opacity = '1';
@@ -782,22 +793,22 @@ HTML_CHAT_UI = """<!DOCTYPE html>
             return false;
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        function sendMessage(event) {
+            return handleSend(event);
+        }
+
+        function initChatForm() {
             const form = document.getElementById('chatForm');
             if (form) {
-                form.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    sendMessage(e);
-                });
+                form.addEventListener('submit', handleSend);
             }
-            const sendBtn = document.getElementById('sendBtn');
-            if (sendBtn) {
-                sendBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    sendMessage(e);
-                });
-            }
-        });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initChatForm);
+        } else {
+            initChatForm();
+        }
 
         function copyText(btn) {
             const bubble = btn.closest('.msg-bubble-wrap').querySelector('.msg-bubble');
@@ -855,10 +866,6 @@ HTML_CHAT_UI = """<!DOCTYPE html>
             } else {
                 alert('المتصفح لا يدعم الإدخال الصوتي المباشر');
             }
-        }
-
-        function escapeHtml(text) {
-            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
     </script>
 </body>
