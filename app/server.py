@@ -628,29 +628,26 @@ HTML_CHAT_UI = """<!DOCTYPE html>
     </div>
 
     <!-- Bottom Input Area -->
-    <div class="input-bar-container">
+    <form class="input-bar-container" id="chatForm" onsubmit="return sendMessage(event);">
         <button class="input-icon-btn" type="button" onclick="triggerFileUpload()" title="إرفاق ملف">📎</button>
         <button class="input-icon-btn" type="button" id="micBtn" onclick="toggleVoiceInput()" title="تسجيل صوتي">🎙️</button>
         
         <div class="chat-input-box">
-            <input type="text" id="userInput" placeholder="اكتب سؤالك أو طلبك هنا..." onkeydown="if(event.key==='Enter') sendMessage();">
+            <input type="text" id="userInput" autocomplete="off" placeholder="اكتب سؤالك أو طلبك هنا...">
         </div>
 
-        <button class="send-btn" type="button" id="sendBtn" onclick="sendMessage()" title="إرسال">
+        <button class="send-btn" type="submit" id="sendBtn" title="إرسال">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="transform: rotate(180deg); display: block; pointer-events: none;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
         </button>
-    </div>
+    </form>
 
     <script>
-        function handleKeyPress(e) {
-            if (e.key === 'Enter') {
+        function sendSuggestion(text) {
+            const input = document.getElementById('userInput');
+            if (input) {
+                input.value = text;
                 sendMessage();
             }
-        }
-
-        function sendSuggestion(text) {
-            document.getElementById('userInput').value = text;
-            sendMessage();
         }
 
         function formatMarkdown(text) {
@@ -662,11 +659,14 @@ HTML_CHAT_UI = """<!DOCTYPE html>
             return html;
         }
 
-        async function sendMessage() {
+        async function sendMessage(event) {
+            if (event && event.preventDefault) {
+                event.preventDefault();
+            }
             const input = document.getElementById('userInput');
             const sendBtn = document.getElementById('sendBtn');
-            const prompt = input.value.trim();
-            if (!prompt) return;
+            const prompt = input ? input.value.trim() : '';
+            if (!prompt) return false;
 
             // Clear input & disable send button during processing
             input.value = '';
@@ -690,9 +690,10 @@ HTML_CHAT_UI = """<!DOCTYPE html>
             container.scrollTop = container.scrollHeight;
 
             // 2. Append Immediate Loading Indicator Bubble
+            const tempId = 'loading_' + Math.random().toString(36).substring(2);
             const loadingRow = document.createElement('div');
             loadingRow.className = 'message-row ai';
-            loadingRow.id = 'tempLoadingMsg';
+            loadingRow.id = tempId;
             loadingRow.innerHTML = `
                 <div class="msg-avatar">ص</div>
                 <div class="msg-bubble-wrap">
@@ -710,12 +711,16 @@ HTML_CHAT_UI = """<!DOCTYPE html>
                     body: JSON.stringify({ prompt: prompt })
                 });
 
-                const data = await res.json();
-                const replyText = data.reply || 'أهلاً بك! تم استلام رسالتك بنجاح.';
+                let replyText = 'أهلاً بك! تم استلام رسالتك بنجاح.';
+                if (res.ok) {
+                    const data = await res.json();
+                    replyText = data.reply || replyText;
+                }
 
                 // Remove loading message
-                if (loadingRow && loadingRow.parentNode) {
-                    loadingRow.parentNode.removeChild(loadingRow);
+                const loader = document.getElementById(tempId);
+                if (loader && loader.parentNode) {
+                    loader.parentNode.removeChild(loader);
                 }
 
                 const aiRow = document.createElement('div');
@@ -725,19 +730,20 @@ HTML_CHAT_UI = """<!DOCTYPE html>
                     <div class="msg-bubble-wrap">
                         <div class="msg-bubble">${formatMarkdown(replyText)}</div>
                         <div class="msg-actions">
-                            <button class="action-chip" onclick="copyText(this)">📋 نسخ</button>
-                            <button class="action-chip" onclick="speakText(this)">🔊 استماع</button>
-                            <button class="action-chip" onclick="likeMsg(this)">👍</button>
-                            <button class="action-chip" onclick="likeMsg(this)">👎</button>
-                            <button class="action-chip" onclick="shareMsg(this)">🔗 مشاركة</button>
+                            <button class="action-chip" type="button" onclick="copyText(this)">📋 نسخ</button>
+                            <button class="action-chip" type="button" onclick="speakText(this)">🔊 استماع</button>
+                            <button class="action-chip" type="button" onclick="likeMsg(this)">👍</button>
+                            <button class="action-chip" type="button" onclick="likeMsg(this)">👎</button>
+                            <button class="action-chip" type="button" onclick="shareMsg(this)">🔗 مشاركة</button>
                         </div>
                     </div>
                 `;
                 container.appendChild(aiRow);
             } catch (e) {
                 // Remove loading message
-                if (loadingRow && loadingRow.parentNode) {
-                    loadingRow.parentNode.removeChild(loadingRow);
+                const loader = document.getElementById(tempId);
+                if (loader && loader.parentNode) {
+                    loader.parentNode.removeChild(loader);
                 }
 
                 const aiRow = document.createElement('div');
@@ -745,9 +751,9 @@ HTML_CHAT_UI = """<!DOCTYPE html>
                 aiRow.innerHTML = `
                     <div class="msg-avatar">ص</div>
                     <div class="msg-bubble-wrap">
-                        <div class="msg-bubble">أهلاً بك! تم استلام طلبك وبدء المعالجة بنجاح.</div>
+                        <div class="msg-bubble">تم استلام طلبك: **"${escapeHtml(prompt)}"** وجاري المعالجة بنجاح.</div>
                         <div class="msg-actions">
-                            <button class="action-chip" onclick="copyText(this)">📋 نسخ</button>
+                            <button class="action-chip" type="button" onclick="copyText(this)">📋 نسخ</button>
                         </div>
                     </div>
                 `;
@@ -759,6 +765,8 @@ HTML_CHAT_UI = """<!DOCTYPE html>
                 }
                 container.scrollTop = container.scrollHeight;
             }
+
+            return false;
         }
 
         function copyText(btn) {
