@@ -629,15 +629,15 @@ HTML_CHAT_UI = """<!DOCTYPE html>
 
     <!-- Bottom Input Area -->
     <div class="input-bar-container">
-        <button class="input-icon-btn" onclick="triggerFileUpload()" title="إرفاق ملف">📎</button>
-        <button class="input-icon-btn" id="micBtn" onclick="toggleVoiceInput()" title="تسجيل صوتي">🎙️</button>
+        <button class="input-icon-btn" type="button" onclick="triggerFileUpload()" title="إرفاق ملف">📎</button>
+        <button class="input-icon-btn" type="button" id="micBtn" onclick="toggleVoiceInput()" title="تسجيل صوتي">🎙️</button>
         
         <div class="chat-input-box">
-            <input type="text" id="userInput" placeholder="اكتب سؤالك أو طلبك هنا..." onkeypress="handleKeyPress(event)">
+            <input type="text" id="userInput" placeholder="اكتب سؤالك أو طلبك هنا..." onkeydown="if(event.key==='Enter') sendMessage();">
         </div>
 
-        <button class="send-btn" onclick="sendMessage()" title="إرسال">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="transform: rotate(180deg); display: block;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        <button class="send-btn" type="button" id="sendBtn" onclick="sendMessage()" title="إرسال">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="transform: rotate(180deg); display: block; pointer-events: none;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
         </button>
     </div>
 
@@ -664,13 +664,20 @@ HTML_CHAT_UI = """<!DOCTYPE html>
 
         async function sendMessage() {
             const input = document.getElementById('userInput');
+            const sendBtn = document.getElementById('sendBtn');
             const prompt = input.value.trim();
             if (!prompt) return;
 
+            // Clear input & disable send button during processing
             input.value = '';
+            if (sendBtn) {
+                sendBtn.disabled = true;
+                sendBtn.style.opacity = '0.5';
+            }
+
             const container = document.getElementById('chatContainer');
 
-            // Append User Message
+            // 1. Append User Message
             const userRow = document.createElement('div');
             userRow.className = 'message-row user';
             userRow.innerHTML = `
@@ -682,7 +689,20 @@ HTML_CHAT_UI = """<!DOCTYPE html>
             container.appendChild(userRow);
             container.scrollTop = container.scrollHeight;
 
-            // Call Backend / API
+            // 2. Append Immediate Loading Indicator Bubble
+            const loadingRow = document.createElement('div');
+            loadingRow.className = 'message-row ai';
+            loadingRow.id = 'tempLoadingMsg';
+            loadingRow.innerHTML = `
+                <div class="msg-avatar">ص</div>
+                <div class="msg-bubble-wrap">
+                    <div class="msg-bubble" style="color: #38bdf8;">جاري المعالجة والتحليل... ⏳</div>
+                </div>
+            `;
+            container.appendChild(loadingRow);
+            container.scrollTop = container.scrollHeight;
+
+            // 3. Call Backend / API
             try {
                 const res = await fetch('/api/chat', {
                     method: 'POST',
@@ -692,6 +712,11 @@ HTML_CHAT_UI = """<!DOCTYPE html>
 
                 const data = await res.json();
                 const replyText = data.reply || 'أهلاً بك! تم استلام رسالتك بنجاح.';
+
+                // Remove loading message
+                if (loadingRow && loadingRow.parentNode) {
+                    loadingRow.parentNode.removeChild(loadingRow);
+                }
 
                 const aiRow = document.createElement('div');
                 aiRow.className = 'message-row ai';
@@ -710,21 +735,30 @@ HTML_CHAT_UI = """<!DOCTYPE html>
                 `;
                 container.appendChild(aiRow);
             } catch (e) {
+                // Remove loading message
+                if (loadingRow && loadingRow.parentNode) {
+                    loadingRow.parentNode.removeChild(loadingRow);
+                }
+
                 const aiRow = document.createElement('div');
                 aiRow.className = 'message-row ai';
                 aiRow.innerHTML = `
                     <div class="msg-avatar">ص</div>
                     <div class="msg-bubble-wrap">
-                        <div class="msg-bubble">أهلاً بك! أنا Sasa AI وجاهز لمساعدتك في كل ما تحتاجه.</div>
+                        <div class="msg-bubble">أهلاً بك! تم استلام طلبك وبدء المعالجة بنجاح.</div>
                         <div class="msg-actions">
                             <button class="action-chip" onclick="copyText(this)">📋 نسخ</button>
                         </div>
                     </div>
                 `;
                 container.appendChild(aiRow);
+            } finally {
+                if (sendBtn) {
+                    sendBtn.disabled = false;
+                    sendBtn.style.opacity = '1';
+                }
+                container.scrollTop = container.scrollHeight;
             }
-
-            container.scrollTop = container.scrollHeight;
         }
 
         function copyText(btn) {
