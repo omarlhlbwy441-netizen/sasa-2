@@ -72,40 +72,69 @@ try:
 except Exception:
     pass
 
+# Alias neama_module to app.neama if available
+import sys
 try:
-    from neama_module.orchestrator import orchestrator
-except Exception as e:
-    orchestrator = None
+    import app.neama as _app_neama
+    sys.modules["neama_module"] = _app_neama
+except Exception:
+    pass
 
 try:
-    from neama_module.medical import MedicalNursingEngine
-except Exception as e:
-    MedicalNursingEngine = None
+    from app.neama.orchestrator import orchestrator
+except Exception:
+    try:
+        from neama_module.orchestrator import orchestrator
+    except Exception:
+        orchestrator = None
 
 try:
-    from neama_module.cinema import CinematicDirectingEngine
-except Exception as e:
-    CinematicDirectingEngine = None
+    from app.neama.medical import MedicalNursingEngine
+except Exception:
+    try:
+        from neama_module.medical import MedicalNursingEngine
+    except Exception:
+        MedicalNursingEngine = None
 
 try:
-    from neama_module.reasoning import DeepCognitiveReasoningEngine
-except Exception as e:
-    DeepCognitiveReasoningEngine = None
+    from app.neama.cinema import CinematicDirectingEngine
+except Exception:
+    try:
+        from neama_module.cinema import CinematicDirectingEngine
+    except Exception:
+        CinematicDirectingEngine = None
 
 try:
-    from neama_module.security import SovereignSecurityEngine
-except Exception as e:
-    SovereignSecurityEngine = None
+    from app.neama.reasoning import DeepCognitiveReasoningEngine
+except Exception:
+    try:
+        from neama_module.reasoning import DeepCognitiveReasoningEngine
+    except Exception:
+        DeepCognitiveReasoningEngine = None
 
 try:
-    from neama_module.multimodal import multimodal_engine, MEDIA_OUTPUT_DIR
-except Exception as e:
-    multimodal_engine = None
+    from app.neama.security import SovereignSecurityEngine
+except Exception:
+    try:
+        from neama_module.security import SovereignSecurityEngine
+    except Exception:
+        SovereignSecurityEngine = None
 
 try:
-    from neama_module.memory import memory_matrix
-except Exception as e:
-    memory_matrix = None
+    from app.neama.multimodal import multimodal_engine, MEDIA_OUTPUT_DIR
+except Exception:
+    try:
+        from neama_module.multimodal import multimodal_engine, MEDIA_OUTPUT_DIR
+    except Exception:
+        multimodal_engine = None
+
+try:
+    from app.neama.memory import memory_matrix
+except Exception:
+    try:
+        from neama_module.memory import memory_matrix
+    except Exception:
+        memory_matrix = None
 
 def add_log(level: str, message: str, details: Optional[Dict[str, Any]] = None):
     log_entry = {
@@ -509,6 +538,42 @@ def process_llm_response(llm_text_output: str, session_id: str = "default", fall
                 "job_id": media_res.get("job_id")
             }
 
+    p_low = (fallback_prompt or "").lower()
+    is_media_req = any(w in p_low for w in ["فيلم", "فلم", "movie", "film", "cinema", "مسلسل", "حلقة", "حلقات", "series", "فيديو", "video", "صورة", "صوره", "image", "سيناريو", "إخراج", "اخراج", "إنتاج", "انتاج"])
+    if is_media_req and multimodal_engine:
+        m_type = "series" if any(w in p_low for w in ["مسلسل", "series", "حلقات", "حلقة"]) else ("movie" if any(w in p_low for w in ["فيلم", "فلم", "movie", "film", "سيناريو", "cinema"]) else ("video" if "فيديو" in p_low or "video" in p_low else "image"))
+        genre = "horror" if any(w in p_low for w in ["رعب", "خوف", "horror"]) else ("sci-fi" if any(w in p_low for w in ["خيال", "فضاء", "sci-fi", "ذكاء"]) else ("historical" if any(w in p_low for w in ["تاريخ", "أندلس", "ملحمة"]) else "drama"))
+        media_res = multimodal_engine.generate_media(
+            prompt=fallback_prompt or "مشهد بصري سينمائي",
+            media_type=m_type,
+            title=f"إنتاج {m_type.upper()}: {(fallback_prompt or 'العمل السينمائي')[:30]}",
+            genre=genre,
+            session_id=session_id
+        )
+        
+        extra_sheet = ""
+        if CinematicDirectingEngine and m_type in ["movie", "series", "video"] and "Aspect Ratio" not in clean_text and "أبعاد الشاشة" not in clean_text:
+            try:
+                engine = CinematicDirectingEngine()
+                pkg = engine.generate_production_package(fallback_prompt or "عمل سينمائي", media_type=m_type, genre=genre, episodes=3 if m_type == "series" else 1)
+                extra_sheet = "\n\n---\n" + engine.format_screenplay_markdown(pkg)
+            except Exception:
+                pass
+        
+        full_reply = clean_text + extra_sheet + f"\n\n---\n🎬 **رابط المشاهدة والتحميل الفوري**: [{media_res.get('media_url')}]({media_res.get('media_url')})"
+        return {
+            "success": True,
+            "reply": full_reply,
+            "action": "generate_media",
+            "media_type": media_res.get("media_type"),
+            "media_url": media_res.get("media_url"),
+            "data_url": media_res.get("data_url"),
+            "file_path": media_res.get("file_path"),
+            "file_name": media_res.get("file_name"),
+            "title": media_res.get("title"),
+            "job_id": media_res.get("job_id")
+        }
+
     return {"success": True, "reply": clean_text}
 
 
@@ -654,7 +719,13 @@ def _query_gemini_api_internal(prompt: str, api_key: str = "", model_name: str =
                 "job_id": last_job.get("job_id")
             }
 
-    is_media_request = any(w in p_lower for w in ["فيلم", "فلم", "مسلسل", "فيديو", "صورة", "توليد صورة", "رسم صورة", "انشئ فيلم", "انشاء فيلم", "اصنع فيلم", "صمم صورة", "horror", "movie", "video", "generate image"])
+    media_keywords = [
+        "فيلم", "فلم", "movie", "film", "cinema", "سينما", "مسلسل", "مسلسلات", "حلقة", "حلقات", "series",
+        "فيديو", "video", "مقطع", "صورة", "صوره", "image", "photo", "توليد صورة", "رسم صورة", "انشئ فيلم",
+        "انشاء فيلم", "اصنع فيلم", "صمم صورة", "horror", "رعب", "خيال علمي", "سيناريو", "screenplay", "إخراج",
+        "اخراج", "انتاج", "إنتاج", "توليد", "اصنع لي", "ولد لي"
+    ]
+    is_media_request = any(w in p_lower for w in media_keywords)
     
     # Check if prompt is a GitHub inspection/fix request or contains a github URL/token
     github_info = None
@@ -831,25 +902,41 @@ def _query_gemini_api_internal(prompt: str, api_key: str = "", model_name: str =
         if any(w in p_lower for w in ["افحص", "تقرير", "فحص", "شجرة", "محتويات", "محتوى"]):
             return {"success": True, "reply": github_info["built_in_report"]}
 
-    # Sovereign Media Generation Fallback
+    # Sovereign Media Generation Fallback (when offline or direct media synthesis)
     if is_media_request and multimodal_engine:
-        m_type = "movie" if any(w in p_lower for w in ["فيلم", "فلم", "movie", "cinema", "مسلسل"]) else ("video" if "فيديو" in p_lower else "image")
-        genre = "horror" if any(w in p_lower for w in ["رعب", "horror", "خوف", "غموض"]) else "general"
+        m_type = "series" if any(w in p_lower for w in ["مسلسل", "series", "حلقات", "حلقة"]) else ("movie" if any(w in p_lower for w in ["فيلم", "فلم", "movie", "cinema", "سيناريو"]) else ("video" if "فيديو" in p_lower or "video" in p_lower else "image"))
+        genre = "horror" if any(w in p_lower for w in ["رعب", "horror", "خوف", "غموض"]) else ("sci-fi" if any(w in p_lower for w in ["خيال علمي", "فضاء", "ذكاء", "sci-fi"]) else ("historical" if any(w in p_lower for w in ["تاريخ", "أندلس", "ملحمة"]) else "drama"))
         gen_res = multimodal_engine.generate_media(
             prompt=prompt,
             media_type=m_type,
-            title=f"عمل {m_type.upper()}: {prompt[:30]}",
+            title=f"إنتاج {m_type.upper()}: {prompt[:30]}",
             genre=genre,
             session_id=session_id
         )
+
+        screenplay_content = ""
+        if CinematicDirectingEngine and m_type in ["movie", "series", "video"]:
+            try:
+                engine = CinematicDirectingEngine()
+                pkg = engine.generate_production_package(prompt, media_type=m_type, genre=genre, episodes=3 if m_type == "series" else 1)
+                screenplay_content = engine.format_screenplay_markdown(pkg)
+            except Exception as ce:
+                add_log("WARNING", f"CinematicDirectingEngine generation failed: {ce}")
+
+        if screenplay_content:
+            reply_text = f"🎬 **تم إنتاج وتجهيز العمل الفعلي بنجاح عبر استوديو الإخراج السينمائي**:\n\n• **العمل**: {gen_res['title']}\n• **التصنيف**: {gen_res['media_type'].upper()} • 4K Ultra High Fidelity • Dolby Atmos\n• **رابط المعاينة والبث المباشر**: [{gen_res['media_url']}]({gen_res['media_url']})\n\n---\n{screenplay_content}"
+        else:
+            reply_text = f"🎬 **تم توليد وإنتاج ملف الوسائط الفعلي ({gen_res['media_type']}) بنجاح**:\n\n• **العنوان**: {gen_res['title']}\n• **رابط المشاهدة المباشر**: [{gen_res['media_url']}]({gen_res['media_url']})\n\nالملف جاهز الآن للعرض والتحميل عبر البطاقة التفاعلية المرفقة أدناه في المحادثة."
+
         return {
             "success": True,
-            "reply": "تم إنجاز وتوليد ملف الوسائط بنجاح كملف حقيقي",
+            "reply": reply_text,
             "action": "generate_media",
             "media_type": gen_res["media_type"],
             "media_url": gen_res["media_url"],
             "data_url": gen_res.get("data_url"),
             "file_path": gen_res.get("file_path"),
+            "file_name": gen_res.get("file_name"),
             "title": gen_res["title"],
             "job_id": gen_res.get("job_id")
         }
