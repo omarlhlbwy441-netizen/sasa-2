@@ -1013,10 +1013,7 @@ def _query_gemini_api_internal(prompt: str, api_key: str = "", model_name: str =
     models_to_try = [
         "gemini-3.8-flash",
         "gemini-3.7-flash",
-        "gemini-flash-latest",
-        "gemini-3.5-flash",
-        "gemini-2.5-pro",
-        "gemini-pro-latest"
+        "gemini-flash-latest"
     ]
     system_instruction = (
         "أنت مهندس برمجيات ووكيل تنفيذي سيادي (Autonomous Coding Agent & Sovereign Executive Engineer) لمنظومة نعمة الذكية (Neama AI).\n"
@@ -1126,6 +1123,37 @@ def _query_gemini_api_internal(prompt: str, api_key: str = "", model_name: str =
                 "parts": [{"text": p_text}]
             })
 
+    # Priority 1: Sovereign Code & Systems Audit Fast Local Handler (< 0.1s)
+    is_audit_intent = any(w in p_lower for w in [
+        "تحديد الاخطاء", "الأخطاء والاشكاليات", "الاخطاء والاشكاليات", "النقص في الاكواد",
+        "مراجعة كل الانظمة", "مراجعة الانظمة", "خلل او خمول", "خلل أو خمول", "خمول",
+        "فحص شامل", "تدقيق الكود", "فحص الكود", "تدقيق الشيفرة", "فحص الانظمة",
+        "اشكاليات الاكواد", "مشاكل الكود", "فحص الأنظمة", "audit"
+    ])
+    if is_audit_intent:
+        audit_report = run_comprehensive_code_and_systems_audit(prompt)
+        return {"success": True, "reply": audit_report}
+
+    # Priority 2: Sovereign Deep Repository & Systems Inspection Fast Handler (< 0.1s)
+    if github_info and isinstance(github_info, dict):
+        owner = github_info.get("owner", "omarlhlbwy441-netizen")
+        repo = github_info.get("repo", "sasa")
+        token = github_info.get("token")
+        tree_items = github_info.get("tree_items", [])
+
+        is_deep_content_inquiry = any(w in p_lower for w in [
+            "محتويات الملفات", "محتوى الملفات", "محتويات الانظمة", "محتويات الأنظمة",
+            "الخدمات وكل شي", "الخدمات وكل شيء", "استعرض لي محتويات", "استنسخ",
+            "شرح الملفات", "تفاصيل الملفات", "ما هي محتويات", "محتويات", "محتوى",
+            "كود", "code", "controller", "database", "cinema", "medical", "reasoning", "security"
+        ])
+        if is_deep_content_inquiry:
+            deep_report = generate_deep_systems_and_contents_report(owner, repo, token, tree_items, prompt)
+            return {"success": True, "reply": deep_report}
+
+        if any(w in p_lower for w in ["افحص", "تقرير", "فحص", "شجرة", "قائمة الملفات"]):
+            return {"success": True, "reply": github_info.get("built_in_report", "")}
+
     # Current turn
     cur_text = f"{system_instruction}\n\nطلب المستخدم الحالي:\n{full_user_prompt}" if not contents_payload else f"طلب المستخدم الحالي:\n{full_user_prompt}"
     contents_payload.append({
@@ -1143,7 +1171,7 @@ def _query_gemini_api_internal(prompt: str, api_key: str = "", model_name: str =
             }
             try:
                 req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
-                with urllib.request.urlopen(req, timeout=14) as resp:
+                with urllib.request.urlopen(req, timeout=8) as resp:
                     data = json.loads(resp.read().decode("utf-8"))
                     candidates = data.get("candidates", [])
                     if candidates:
@@ -1158,39 +1186,6 @@ def _query_gemini_api_internal(prompt: str, api_key: str = "", model_name: str =
             except Exception as ex:
                 add_log("WARNING", f"Gemini API call failed for model {m} with key {current_key[-6:]}: {str(ex)}")
                 continue
-
-    # Sovereign Code & Systems Audit Priority Handler
-    is_audit_intent = any(w in p_lower for w in [
-        "تحديد الاخطاء", "الأخطاء والاشكاليات", "الاخطاء والاشكاليات", "النقص في الاكواد",
-        "مراجعة كل الانظمة", "مراجعة الانظمة", "خلل او خمول", "خلل أو خمول", "خمول",
-        "فحص شامل", "تدقيق الكود", "فحص الكود", "تدقيق الشيفرة", "فحص الانظمة",
-        "اشكاليات الاكواد", "مشاكل الكود", "فحص الأنظمة", "audit"
-    ])
-    if is_audit_intent:
-        audit_report = run_comprehensive_code_and_systems_audit(prompt)
-        return {"success": True, "reply": audit_report}
-
-    # Sovereign Deep Repository & Systems Inspection Handler
-    if github_info and isinstance(github_info, dict):
-        owner = github_info.get("owner", "omarlhlbwy441-netizen")
-        repo = github_info.get("repo", "sasa")
-        token = github_info.get("token")
-        tree_items = github_info.get("tree_items", [])
-
-        # Priority 1: Check if user asks for systems, services, file contents, specific code, or deep analysis
-        is_deep_content_inquiry = any(w in p_lower for w in [
-            "محتويات الملفات", "محتوى الملفات", "محتويات الانظمة", "محتويات الأنظمة",
-            "الخدمات وكل شي", "الخدمات وكل شيء", "استعرض لي محتويات", "استنسخ",
-            "شرح الملفات", "تفاصيل الملفات", "ما هي محتويات", "محتويات", "محتوى",
-            "كود", "code", "controller", "database", "cinema", "medical", "reasoning", "security"
-        ])
-        if is_deep_content_inquiry:
-            deep_report = generate_deep_systems_and_contents_report(owner, repo, token, tree_items, prompt)
-            return {"success": True, "reply": deep_report}
-
-        # Priority 2: Simple tree or summary report
-        if any(w in p_lower for w in ["افحص", "تقرير", "فحص", "شجرة", "قائمة الملفات"]):
-            return {"success": True, "reply": github_info.get("built_in_report", "")}
 
     # Sovereign Media Generation Fallback (when offline or direct media synthesis)
     if is_media_request and multimodal_engine:
