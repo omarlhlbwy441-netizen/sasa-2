@@ -775,6 +775,24 @@
         </div>
     </div>
 
+    <!-- Media Viewer Modal -->
+    <div class="modal-overlay" id="mediaViewerModal">
+        <div class="modal-box" style="max-width:850px; background:#070e1e; border:1px solid #1e293b;">
+            <div class="modal-header" style="border-bottom:1px solid #1e293b;">
+                <h3 id="mediaViewerTitle" style="color:#38bdf8;">🎬 استعراض العمل السينمائي</h3>
+                <button class="modal-close-btn" onclick="closeModal('mediaViewerModal')">✕</button>
+            </div>
+            <div class="modal-body" style="padding:16px; text-align:center;">
+                <div id="mediaViewerContent" style="width:100%; min-height:300px; display:flex; align-items:center; justify-content:center; background:#020617; border-radius:12px; overflow:hidden; border:1px solid #1e293b;">
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px;">
+                    <span style="font-size:12px; color:#94a3b8;">4K Ultra High Fidelity • Vector Render</span>
+                    <a id="mediaViewerDownloadBtn" href="#" download="neama_media.svg" class="header-btn" style="background:#0284c7; color:#fff; text-decoration:none; padding:8px 18px;">⬇️ تنزيل الملف كاملاً</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Floating Toast -->
     <div class="toast-msg" id="toastMsg"></div>
 
@@ -1229,6 +1247,63 @@
             }
         }
 
+        // Media Rendering & Directing Studio Player
+        function renderMediaCard(data) {
+            if (!data) return '';
+            const mediaUrl = data.data_url || data.media_url;
+            if (!mediaUrl) return '';
+            const mediaType = (data.media_type || 'MEDIA').toUpperCase();
+            const title = data.title || 'إنتاج استوديو نعمة السينمائي';
+            const isVideoOrMovie = mediaType.includes('VIDEO') || mediaType.includes('MOVIE') || mediaType.includes('FILM') || mediaType.includes('SERIES');
+            const badgeIcon = isVideoOrMovie ? '🎬' : '🎨';
+            const specs = isVideoOrMovie ? '4K Ultra HDR • 60 FPS • Dolby Atmos' : '1024x1024 • High-Fidelity Vector Render';
+            const fileName = data.file_name || ('neama_' + mediaType.toLowerCase() + '.svg');
+
+            return `
+                <div class="chat-media-card" style="margin-top: 14px; background: #0b1329; border: 1px solid #1e293b; border-radius: 14px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.5);">
+                    <div style="padding: 10px 16px; background: rgba(56, 189, 248, 0.08); border-bottom: 1px solid rgba(56, 189, 248, 0.15); display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 13px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
+                            ${badgeIcon} ${escapeHtml(mediaType)}: ${escapeHtml(title)}
+                        </span>
+                        <span style="font-size: 11px; color: #94a3b8; background: #0f172a; padding: 3px 10px; border-radius: 12px; border: 1px solid #334155;">${specs}</span>
+                    </div>
+                    <div style="position: relative; background: #020617; cursor: pointer; text-align: center; padding: 12px 0;" onclick="previewMediaModal('${mediaUrl}', '${escapeHtml(title)}')">
+                        <img src="${mediaUrl}" alt="${escapeHtml(title)}" style="width: 100%; max-height: 420px; object-fit: contain; display: block; margin: 0 auto;" />
+                        ${isVideoOrMovie ? `
+                        <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); transition: all 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='rgba(0,0,0,0.2)'">
+                            <div style="width: 58px; height: 58px; border-radius: 50%; background: #38bdf8; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 25px rgba(56,189,248,0.8);">
+                                <svg width="26" height="26" viewBox="0 0 24 24" fill="#0f172a"><polygon points="8,5 19,12 8,19"/></svg>
+                            </div>
+                        </div>` : ''}
+                    </div>
+                    <div style="padding: 10px 16px; display: flex; gap: 10px; align-items: center; justify-content: flex-end; background: #070e1e; border-top: 1px solid #1e293b;">
+                        <a href="${mediaUrl}" download="${fileName}" style="text-decoration: none; font-size: 12px; font-weight: bold; background: #1e293b; color: #f8fafc; padding: 7px 14px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid #334155;">
+                            ⬇️ تحميل الملف
+                        </a>
+                        <button type="button" onclick="previewMediaModal('${mediaUrl}', '${escapeHtml(title)}')" style="font-size: 12px; font-weight: bold; background: #0284c7; color: #ffffff; padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                            🔍 تكبير ومشاهدة
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function previewMediaModal(mediaUrl, title) {
+            const modal = document.getElementById('mediaViewerModal');
+            const titleEl = document.getElementById('mediaViewerTitle');
+            const contentEl = document.getElementById('mediaViewerContent');
+            const dlBtn = document.getElementById('mediaViewerDownloadBtn');
+            if (!modal || !contentEl) return;
+
+            if (titleEl) titleEl.textContent = '🎬 ' + (title || 'استعراض العمل السينمائي');
+            if (dlBtn) {
+                dlBtn.href = mediaUrl;
+                dlBtn.download = (title || 'neama_production').replace(/\s+/g, '_') + '.svg';
+            }
+            contentEl.innerHTML = `<img src="${mediaUrl}" style="max-width: 100%; max-height: 520px; object-fit: contain; margin: 0 auto; display: block;" />`;
+            openModal('mediaViewerModal');
+        }
+
         function handleSend(e) {
             if (e && e.preventDefault) e.preventDefault();
             const input = document.getElementById('userInput');
@@ -1311,12 +1386,20 @@
                 const loader = document.getElementById(tempId);
                 if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
 
+                let mediaCardHtml = '';
+                if (data && (data.action === 'generate_media' || data.media_url || data.data_url)) {
+                    mediaCardHtml = renderMediaCard(data);
+                }
+
                 const aiRow = document.createElement('div');
                 aiRow.className = 'message-row ai';
                 aiRow.innerHTML = `
                     <div class="msg-avatar">ن</div>
                     <div class="msg-bubble-wrap">
-                        <div class="msg-bubble">${formatMarkdown(replyText)}</div>
+                        <div class="msg-bubble">
+                            ${formatMarkdown(replyText)}
+                            ${mediaCardHtml}
+                        </div>
                         <div class="msg-actions">
                             <button class="action-chip" type="button" onclick="copyText(this)">📋 نسخ</button>
                             <button class="action-chip" type="button" onclick="speakText(this)">🔊 استماع</button>
