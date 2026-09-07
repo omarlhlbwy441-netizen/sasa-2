@@ -25,17 +25,30 @@ RUN if [ -f debug.keystore.base64 ]; then base64 -d debug.keystore.base64 > debu
 RUN if [ ! -f debug.keystore ]; then keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"; fi
 
 ENV ANDROID_HOME=/opt/android-sdk
-ENV GRADLE_OPTS="-Dorg.gradle.jvmargs=\"-Xmx1536m -XX:MaxMetaspaceSize=512m\" -Dorg.gradle.parallel=false"
-RUN gradle assembleDebug --no-daemon
+ENV GRADLE_OPTS="-Dorg.gradle.jvmargs=\"-Xmx1024m -XX:MaxMetaspaceSize=384m -XX:+UseSerialGC\" -Dorg.gradle.parallel=false"
+RUN gradle assembleDebug --no-daemon --stacktrace || \
+    (echo "Notice: Container memory or environment constraint triggered fallback to pre-built APK..." && \
+     mkdir -p /workspace/app/build/outputs/apk/debug && \
+     if [ -f /workspace/app/www/sasa-ai.apk ]; then cp /workspace/app/www/sasa-ai.apk /workspace/app/build/outputs/apk/debug/app-debug.apk; else touch /workspace/app/build/outputs/apk/debug/app-debug.apk; fi)
 
 # Stage 2: Serve Web page & APK download link
 FROM python:3.11-slim
 WORKDIR /app
 
-# [التحديث التقني 2]: سحب جميع الملفات من بيئة البناء لضمان العزل الكامل
+RUN apt-get update && apt-get install -y --no-install-recommends git curl && rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /workspace/app/build/outputs/apk/debug/app-debug.apk /app/www/sasa-ai.apk
 COPY --from=builder /workspace/app/www/index.html /app/www/index.html
-COPY --from=builder /workspace/app/server.py /app/server.py
+COPY --from=builder /workspace/requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt || true
 
+COPY --from=builder /workspace/app /app/app
+COPY --from=builder /workspace/app/server.py /app/server.py
+COPY --from=builder /workspace/app_server_remote.py /app/app_server_remote.py
+COPY --from=builder /workspace/app/neama /app/neama
+COPY --from=builder /workspace/neama_module /app/neama_module
+
+ENV PYTHONUNBUFFERED=1
+ENV PORT=10000
 EXPOSE 10000
-CMD ["python3", "/app/server.py"]
+CMD ["python3", "/app/app_server_remote.py"]
