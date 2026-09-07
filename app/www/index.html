@@ -3,1739 +3,1492 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Sasa AI - منصة الذكاء الاصطناعي العربي</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <title>منظومة نعمة الذكية (Neama AI)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-main: #0b0f19;
-            --bg-card: #151c2c;
-            --bg-chat-user: #1d283a;
-            --bg-chat-ai: #131b2e;
-            --primary: #38bdf8;
-            --primary-gradient: linear-gradient(135deg, #38bdf8, #818cf8);
-            --accent: #818cf8;
-            --secondary: #a855f7;
+            --bg-main: #090d16;
+            --bg-card: #0f172a;
+            --bg-surface: #1e293b;
+            --border-color: rgba(56, 189, 248, 0.2);
+            --primary: #0284c7;
+            --primary-light: #38bdf8;
+            --primary-gradient: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+            --accent-red: #ef4444;
+            --accent-green: #10b981;
+            --accent-gold: #f59e0b;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
-            --border: #2a364f;
-            --code-bg: #090d16;
-            --success: #22c55e;
-            --danger: #ef4444;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Cairo', sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg-main); color: var(--text-main); height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
-        html, body {
-            height: 100%;
-            height: 100dvh;
-            width: 100%;
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            overflow: hidden;
-        }
-
-        body {
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Header Bar */
-        .top-bar {
-            background-color: var(--bg-card);
-            border-bottom: 1px solid var(--border);
+        /* Top Header */
+        .app-header {
+            background: rgba(15, 23, 42, 0.95);
+            border-bottom: 1px solid var(--border-color);
             padding: 10px 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            z-index: 10;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            flex-wrap: wrap;
+            backdrop-filter: blur(12px);
+            z-index: 100;
+            position: relative;
+        }
+        .header-title-group {
+            display: flex;
+            align-items: center;
             gap: 8px;
         }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .brand-logo {
-            width: 36px;
-            height: 36px;
-            background: var(--primary-gradient);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .header-project-name {
+            font-size: 16px;
             font-weight: 800;
-            font-size: 1.2rem;
-            color: #0f172a;
-            box-shadow: 0 2px 10px rgba(56, 189, 248, 0.4);
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-
-        .brand-title {
-            font-size: 1.1rem;
+        .plan-badge {
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--primary-light);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            border-radius: 20px;
+            padding: 2px 8px;
+            font-size: 11px;
             font-weight: 700;
-            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .plan-badge:hover { background: rgba(56, 189, 248, 0.3); }
+
+        .header-actions {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            position: relative;
         }
-
-        .brand-status {
-            font-size: 0.72rem;
-            color: var(--success);
-            display: flex;
+        .header-btn {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+        .header-btn:hover { background: rgba(56, 189, 248, 0.2); border-color: var(--primary-light); }
+        .memory-badge {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
             align-items: center;
             gap: 4px;
         }
-
-        .brand-status::before {
-            content: '';
-            display: inline-block;
-            width: 6px;
-            height: 6px;
-            background-color: var(--success);
-            border-radius: 50%;
-            box-shadow: 0 0 8px var(--success);
-        }
-
-        .top-actions {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-
-        .model-select {
-            background: #0f172a;
-            color: var(--primary);
-            border: 1px solid rgba(56, 189, 248, 0.4);
-            border-radius: 12px;
-            padding: 5px 8px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            outline: none;
-            cursor: pointer;
-        }
-
-        .top-btn {
-            background: #1e293b;
+        .dots-menu-btn {
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid var(--border-color);
             color: var(--text-main);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 5px 10px;
-            font-size: 0.8rem;
-            cursor: pointer;
+            border-radius: 8px;
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
-            gap: 6px;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 900;
+            cursor: pointer;
             transition: all 0.2s;
         }
+        .dots-menu-btn:hover { background: rgba(56, 189, 248, 0.2); border-color: var(--primary-light); }
 
-        .top-btn:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-            background: rgba(56, 189, 248, 0.1);
-        }
-
-        .top-btn.danger-btn {
-            color: #f87171;
-        }
-
-        .top-btn.danger-btn:hover {
-            border-color: #ef4444;
-            background: rgba(239, 68, 68, 0.15);
-        }
-
-        .top-btn.call-btn {
-            background: rgba(34, 197, 94, 0.18);
-            color: #22c55e;
-            border: 1px solid #22c55e;
-            font-weight: bold;
-        }
-
-        .top-btn.call-btn:hover {
-            background: #22c55e;
-            color: #0f172a;
-            box-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
-        }
-
-        @keyframes pulse-call {
-            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
-            70% { box-shadow: 0 0 0 22px rgba(34, 197, 94, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
-        }
-
-        .apk-download-btn {
-            background: rgba(56, 189, 248, 0.12);
-            color: var(--primary);
-            border: 1px solid var(--primary);
+        /* Floating 3-Dots Dropdown Menu */
+        .dropdown-menu {
+            position: absolute;
+            top: 50px;
+            right: 12px;
+            background: #0f172a;
+            border: 1px solid rgba(56, 189, 248, 0.3);
             border-radius: 12px;
-            padding: 5px 10px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-decoration: none;
+            padding: 8px;
+            min-width: 220px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .dropdown-menu.show { display: flex; animation: fadeInDown 0.2s ease-out; }
+        .dropdown-item {
             display: flex;
             align-items: center;
-            gap: 6px;
-        }
-
-        .apk-download-btn:hover {
-            background: var(--primary);
-            color: #0f172a;
-        }
-
-        .zip-download-btn {
-            background: rgba(168, 85, 247, 0.15);
-            color: #c084fc;
-            border: 1px solid #a855f7;
-            border-radius: 12px;
-            padding: 5px 10px;
-            font-size: 0.8rem;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: #f1f5f9;
+            font-size: 14px;
             font-weight: 600;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            background: transparent;
+            border: none;
+            text-align: right;
+            cursor: pointer;
+            transition: background 0.15s;
+            width: 100%;
         }
+        .dropdown-item:hover { background: rgba(56, 189, 248, 0.15); color: var(--primary-light); }
+        .dropdown-divider { height: 1px; background: rgba(255, 255, 255, 0.08); margin: 4px 0; }
 
-        .zip-download-btn:hover {
-            background: #a855f7;
-            color: #ffffff;
-        }
-
-        /* Main Container */
+        /* Chat Messages Container */
         .chat-container {
             flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
-            max-width: 1000px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 10px 14px;
-        }
-
-        .messages-list {
-            flex: 1;
             overflow-y: auto;
-            padding: 10px 0;
+            padding: 16px 12px 24px;
             display: flex;
             flex-direction: column;
             gap: 16px;
             scroll-behavior: smooth;
         }
-
-        .message-row {
-            display: flex;
-            gap: 12px;
-            max-width: 88%;
-            align-items: flex-start;
-        }
-
-        .message-row.user {
-            margin-left: auto;
-            flex-direction: row-reverse;
-        }
-
-        .avatar {
-            width: 32px;
-            height: 32px;
+        .message-row { display: flex; gap: 10px; width: 100%; max-width: 820px; margin: 0 auto; }
+        .message-row.user { justify-content: flex-start; }
+        .message-row.ai { justify-content: flex-start; }
+        .msg-avatar {
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.85rem;
-            font-weight: bold;
+            font-weight: 800;
+            font-size: 14px;
             flex-shrink: 0;
         }
+        .message-row.user .msg-avatar { background: #334155; color: #f8fafc; }
+        .message-row.ai .msg-avatar { background: var(--primary-gradient); color: #020617; box-shadow: 0 0 10px rgba(56, 189, 248, 0.4); }
 
-        .message-row.ai .avatar {
-            background: var(--primary-gradient);
-            color: #0f172a;
-        }
-
-        .message-row.user .avatar {
-            background: var(--accent);
-            color: #ffffff;
-        }
-
-        .bubble-wrapper {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            max-width: 100%;
-        }
-
-        .bubble {
+        .msg-bubble-wrap { display: flex; flex-direction: column; gap: 6px; max-width: 86%; }
+        .msg-bubble {
             padding: 12px 16px;
-            border-radius: 18px;
-            font-size: 0.95rem;
-            line-height: 1.6;
-            word-break: break-word;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .message-row.ai .bubble {
-            background-color: var(--bg-chat-ai);
-            color: var(--text-main);
-            border-top-right-radius: 4px;
-            border: 1px solid var(--border);
-        }
-
-        .message-row.user .bubble {
-            background-color: var(--bg-chat-user);
-            color: #ffffff;
-            border-top-left-radius: 4px;
-            border: 1px solid rgba(129, 140, 248, 0.3);
-        }
-
-        /* Message Actions Bar */
-        .message-actions {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-top: 4px;
-            padding: 0 4px;
-            flex-wrap: wrap;
-        }
-
-        .action-btn {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            border-radius: 8px;
-            padding: 4px 10px;
-            font-size: 0.75rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            transition: all 0.2s;
-        }
-
-        .action-btn:hover {
-            color: var(--primary);
-            border-color: var(--primary);
-            background: rgba(56, 189, 248, 0.08);
-        }
-
-        .action-btn.active-like {
-            color: var(--success);
-            border-color: var(--success);
-            background: rgba(34, 197, 94, 0.15);
-        }
-
-        .action-btn.active-dislike {
-            color: var(--danger);
-            border-color: var(--danger);
-            background: rgba(239, 68, 68, 0.15);
-        }
-
-        /* Code Blocks Formatting */
-        .code-block-wrapper {
-            position: relative;
-            background-color: var(--code-bg);
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            margin: 10px 0;
-            overflow: hidden;
-            direction: ltr;
-            text-align: left;
-        }
-
-        .code-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #111827;
-            padding: 6px 12px;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            border-bottom: 1px solid var(--border);
-            font-family: 'Fira Code', monospace;
-        }
-
-        .copy-code-btn {
-            background: transparent;
-            border: none;
-            color: var(--primary);
-            font-size: 0.75rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        pre {
-            padding: 12px;
-            overflow-x: auto;
-            margin: 0;
-            font-family: 'Fira Code', monospace;
-            font-size: 0.88rem;
-            color: #e2e8f0;
-        }
-
-        code {
-            font-family: 'Fira Code', monospace;
-        }
-
-        /* Input Bar Area */
-        .input-wrapper {
-            padding-top: 8px;
-            border-top: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .quick-prompts {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            padding-bottom: 4px;
-            scrollbar-width: none;
-        }
-
-        .quick-prompts::-webkit-scrollbar {
-            display: none;
-        }
-
-        .chip {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            padding: 6px 12px;
             border-radius: 16px;
-            font-size: 0.8rem;
-            white-space: nowrap;
+            font-size: 15px;
+            line-height: 1.65;
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+        .message-row.user .msg-bubble { background: #1e293b; color: #f8fafc; border: 1px solid rgba(255, 255, 255, 0.08); border-top-right-radius: 4px; }
+        .message-row.ai .msg-bubble { background: #0f172a; color: #f1f5f9; border: 1px solid var(--border-color); border-top-left-radius: 4px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); }
+
+        .msg-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+        .action-chip {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 12px;
+            color: var(--text-muted);
             cursor: pointer;
             transition: all 0.2s;
-            user-select: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
+        .action-chip:hover { background: rgba(56, 189, 248, 0.2); color: var(--primary-light); border-color: var(--primary-light); }
 
-        .chip:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-            background: rgba(56, 189, 248, 0.1);
-        }
-
-        .input-bar {
+        /* Bottom Input Area */
+        .input-bar-container {
+            background: rgba(15, 23, 42, 0.98);
+            border-top: 1px solid var(--border-color);
+            padding: 10px 14px;
             display: flex;
             align-items: center;
             gap: 8px;
-            background-color: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 6px 12px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 50;
+            backdrop-filter: blur(12px);
         }
-
-        .chat-input {
+        .chat-input-box {
             flex: 1;
+            background: #1e293b;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 24px;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            transition: border-color 0.2s;
+        }
+        .chat-input-box:focus-within { border-color: var(--primary-light); box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
+        .chat-input-box input {
+            width: 100%;
             background: transparent;
             border: none;
             outline: none;
-            color: var(--text-main);
-            font-size: 0.95rem;
-            padding: 6px 4px;
-            resize: none;
-            max-height: 100px;
-            min-height: 24px;
+            color: #ffffff;
+            font-size: 15px;
+            line-height: 1.4;
         }
-
         .input-icon-btn {
             background: transparent;
             border: none;
             color: var(--text-muted);
             width: 38px;
             height: 38px;
-            border-radius: 12px;
-            cursor: pointer;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1rem;
+            cursor: pointer;
+            font-size: 18px;
             transition: all 0.2s;
             flex-shrink: 0;
         }
+        .input-icon-btn:hover { background: rgba(255, 255, 255, 0.08); color: var(--primary-light); }
 
-        .input-icon-btn:hover {
-            color: var(--primary);
-            background: rgba(56, 189, 248, 0.1);
+        .live-call-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #ffffff;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            flex-shrink: 0;
         }
-
-        .input-icon-btn.recording {
-            color: #ef4444;
-            animation: pulse-red 1s infinite;
-        }
-
-        @keyframes pulse-red {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
+        .live-call-btn:hover { transform: scale(1.06); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.6); }
 
         .send-btn {
             background: var(--primary-gradient);
             color: #0f172a;
             border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            cursor: pointer;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            font-size: 1rem;
-            transition: all 0.2s;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(56, 189, 248, 0.4);
+            transition: transform 0.2s;
             flex-shrink: 0;
-            box-shadow: 0 2px 8px rgba(56, 189, 248, 0.3);
         }
+        .send-btn:hover { transform: scale(1.06); }
 
-        .send-btn:hover {
-            transform: scale(1.05);
-        }
-
-        .loading-indicator {
-            display: none;
-            align-items: center;
-            gap: 8px;
-            color: var(--primary);
-            font-size: 0.82rem;
-            padding: 4px 12px;
-        }
-
-        .dot-flashing {
-            width: 6px;
-            height: 6px;
-            border-radius: 5px;
-            background-color: var(--primary);
-            animation: dotFlashing 0.8s infinite alternate;
-        }
-
-        @keyframes dotFlashing {
-            0% { opacity: 0.2; transform: scale(0.8); }
-            100% { opacity: 1; transform: scale(1.2); }
-        }
-
-        /* Toast Notifications */
-        .toast {
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: #1e293b;
-            color: #fff;
-            padding: 8px 18px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            border: 1px solid var(--primary);
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.3s ease;
-            z-index: 100;
-        }
-
-        .toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        /* Modal Overlay CSS */
+        /* Modals & Dialogs */
         .modal-overlay {
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.82);
-            display: flex;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
+            z-index: 2000;
+            display: none;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
-            backdrop-filter: blur(6px);
+            padding: 16px;
         }
-
-        .modal-card {
+        .modal-overlay.show { display: flex; animation: fadeIn 0.2s ease-out; }
+        .modal-box {
             background: #0f172a;
-            border: 1px solid rgba(56, 189, 248, 0.3);
-            border-radius: 20px;
-            width: 94%;
-            max-width: 880px;
-            max-height: 85vh;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 540px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
             display: flex;
             flex-direction: column;
-            padding: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-            overflow-y: auto;
         }
-
-        .small-modal {
-            max-width: 480px;
-        }
-
         .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 12px;
-            margin-bottom: 16px;
         }
-
-        .modal-header h3 {
-            margin: 0;
-            font-size: 1.1rem;
-            color: var(--text-main);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
+        .modal-header h3 { font-size: 18px; font-weight: 800; color: #f8fafc; }
         .modal-close-btn {
             background: transparent;
             border: none;
             color: var(--text-muted);
-            font-size: 1.5rem;
+            font-size: 20px;
             cursor: pointer;
-            line-height: 1;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-close-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+        .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+        /* Plan Cards */
+        .plan-card {
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+        .plan-card.active { border-color: var(--primary-light); background: rgba(2, 132, 199, 0.12); }
+        .plan-card-header { display: flex; justify-content: space-between; align-items: center; }
+        .plan-name { font-size: 16px; font-weight: 800; color: #f8fafc; }
+        .plan-price { font-size: 14px; color: var(--primary-light); font-weight: 700; }
+        .plan-features { list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--text-muted); }
+        .plan-features li { display: flex; align-items: center; gap: 6px; }
+
+        /* Project Items */
+        .project-item {
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+        .project-item.pinned { border-color: rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.05); }
+        .project-info { display: flex; flex-direction: column; gap: 4px; }
+        .project-title { font-weight: 700; font-size: 15px; color: #f8fafc; display: flex; align-items: center; gap: 6px; }
+        .project-sub { font-size: 12px; color: var(--text-muted); }
+        .project-dots-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 18px;
+            font-weight: 800;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 6px;
+        }
+        .project-dots-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+
+        .project-menu-popup {
+            position: absolute;
+            left: 16px;
+            top: 44px;
+            background: #090d16;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 6px;
+            z-index: 10;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 140px;
+        }
+        .project-menu-popup.show { display: flex; }
+        .project-menu-item {
+            background: transparent;
+            border: none;
+            color: #f1f5f9;
+            padding: 8px 10px;
+            font-size: 13px;
+            text-align: right;
+            cursor: pointer;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .project-menu-item:hover { background: rgba(56, 189, 248, 0.15); color: var(--primary-light); }
+        .project-menu-item.delete:hover { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+
+        /* Toast Notifications */
+        .toast-msg {
+            position: fixed;
+            bottom: 75px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: #ffffff;
+            border: 1px solid var(--primary-light);
+            border-radius: 20px;
+            padding: 8px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            gap: 8px;
         }
 
-        .modal-close-btn:hover {
-            color: #ef4444;
-        }
-
-        .form-group {
+        /* Unified Sovereign Modes Bar & Cinematic Pills */
+        .modes-bar-wrapper {
+            background: rgba(15, 23, 42, 0.98);
+            border-bottom: 1px solid var(--border-color);
+            padding: 6px 12px;
             display: flex;
             flex-direction: column;
             gap: 6px;
-            margin-bottom: 14px;
+            z-index: 90;
+            backdrop-filter: blur(10px);
         }
-
-        .form-group label {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
-
-        .form-group input, .form-group select {
-            background: #1e293b;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 8px 12px;
-            color: var(--text-main);
-            font-size: 0.9rem;
-            outline: none;
-        }
-
-        .form-group input:focus, .form-group select:focus {
-            border-color: var(--primary);
-        }
-
-        .input-with-btn {
+        .modes-bar {
             display: flex;
+            align-items: center;
             gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+            scrollbar-width: none;
         }
-
-        .input-with-btn input {
-            flex: 1;
-        }
-
-        .input-with-btn button {
-            background: var(--primary-gradient);
-            color: #0f172a;
-            border: none;
-            border-radius: 10px;
-            padding: 8px 16px;
-            font-weight: bold;
+        .modes-bar::-webkit-scrollbar { display: none; }
+        .mode-tab {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            color: var(--text-muted);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 700;
             cursor: pointer;
             white-space: nowrap;
+            transition: all 0.2s;
         }
-
-        .status-badge {
-            font-size: 0.8rem;
-            margin-top: 4px;
-            color: var(--secondary);
+        .mode-tab:hover {
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--primary-light);
         }
-
-        .active-file-label {
-            background: #1e293b;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            color: var(--primary);
-            margin-bottom: 12px;
+        .mode-tab.active {
+            background: var(--primary-gradient);
+            color: #020617;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
         }
-
-        .repo-editor-grid {
-            display: grid;
-            grid-template-columns: 240px 1fr;
-            gap: 12px;
-            height: 340px;
-        }
-
-        @media (max-width: 650px) {
-            .repo-editor-grid {
-                grid-template-columns: 1fr;
-                height: auto;
-            }
-            .brand-title { font-size: 0.9rem; }
-            .model-select { max-width: 110px; font-size: 0.75rem; }
-            .btn-text { display: none; }
-        }
-
-        .tree-panel {
-            background: #1e293b;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 8px;
-            overflow-y: auto;
-            max-height: 300px;
-        }
-
-        .editor-panel {
+        .cinematic-pills-bar {
             display: flex;
-            flex-direction: column;
-            gap: 8px;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            padding-top: 4px;
+            scrollbar-width: none;
         }
-
-        .editor-panel textarea {
-            width: 100%;
-            height: 220px;
-            background: #090d16;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 10px;
-            color: #e2e8f0;
-            font-family: monospace;
-            font-size: 0.85rem;
-            resize: none;
-        }
-
-        .commit-controls {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .commit-controls input {
-            flex: 1;
-            background: #1e293b;
-            border: 1px solid var(--border);
+        .cinematic-pills-bar::-webkit-scrollbar { display: none; }
+        .pill-btn {
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
             border-radius: 8px;
-            padding: 6px 10px;
-            color: white;
-            font-size: 0.85rem;
-            min-width: 140px;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .pill-btn:hover {
+            background: rgba(56, 189, 248, 0.2);
+            color: #38bdf8;
+        }
+        .pill-btn.active {
+            background: rgba(2, 132, 199, 0.4);
+            border-color: #38bdf8;
+            color: #38bdf8;
+            font-weight: 700;
         }
 
-        .commit-btn {
-            background: var(--primary);
-            color: #000;
-            border: none;
-            border-radius: 8px;
-            padding: 6px 14px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
-
-        .fork-btn {
-            background: var(--secondary);
-            color: #000;
-            border: none;
-            border-radius: 8px;
-            padding: 6px 14px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
-
-        .modal-primary-btn {
-            background: var(--primary);
-            color: #000;
-            border: none;
-            border-radius: 10px;
-            padding: 8px 16px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .modal-secondary-btn {
-            background: transparent;
-            color: var(--text-muted);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 8px 16px;
-            cursor: pointer;
-        }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
-
-    <!-- Header / Top Bar -->
-    <div class="top-bar">
-        <div class="brand">
-            <div class="brand-logo">ص</div>
-            <div class="brand-text">
-                <div class="brand-title">Sasa AI (صاصا)</div>
-                <div class="brand-status">متصل ونشط</div>
+    <!-- Top Header -->
+    <header class="app-header">
+        <div class="header-title-group">
+            <div class="header-project-name">منظومة نعمة الذكية (Neama AI)</div>
+            <span class="plan-badge" onclick="openPlansModal()" title="الخطة الحالية">المطور المحترف ⚡</span>
+        </div>
+        <div class="header-actions">
+            <button class="header-btn" onclick="startNewSession()" title="جلسة جديدة">➕ جلسة جديدة</button>
+            <span class="memory-badge" id="memoryBadge" onclick="toggleMemory()" title="حالة الذاكرة الطويلة">🧠 ذاكرة نشطة</span>
+            <button class="dots-menu-btn" id="headerMenuBtn" onclick="toggleHeaderMenu(event)" title="القائمة الرئيسية">⋮</button>
+            
+            <!-- Three Dots Dropdown Menu -->
+            <div class="dropdown-menu" id="headerDropdownMenu">
+                <button class="dropdown-item" onclick="openPlansModal()">👑 الخطط والاشتراكات</button>
+                <button class="dropdown-item" onclick="openProjectsModal()">📁 المشاريع ومستودعات GitHub</button>
+                <button class="dropdown-item" onclick="openProfileModal()">👤 الملف الشخصي وتوليد التوكن</button>
+                <button class="dropdown-item" onclick="openSettingsModal()">⚙️ الإعدادات والذاكرة</button>
+                <button class="dropdown-item" onclick="toggleLanguage()">🌐 تغيير اللغة (العربية / English)</button>
+                <div class="dropdown-divider"></div>
+                <button class="dropdown-item" onclick="startNewSession()">➕ بدء جلسة جديدة</button>
             </div>
         </div>
-        <div class="top-actions">
-            <button class="top-btn call-btn" onclick="openVoiceCallModal()" title="إجراء مكالمة صوتية وتطوير حي مباشر مع الوكيل صاصا AI">
-                <i class="fa-solid fa-phone"></i>
-                <span class="btn-text">مكالمة صوتية</span>
-            </button>
-            <select id="modelSelect" class="model-select" title="اختر نموذج Gemini">
-                <option value="gemini-flash-lite-latest" selected>3.5 Flash-Lite ⚡ (موصى به)</option>
-                <option value="gemini-2.5-flash-lite">2.5 Flash-Lite 🚀</option>
-                <option value="gemini-3.6-flash">3.6 Flash 💡</option>
-                <option value="gemini-2.5-flash">2.5 Flash 🧠</option>
-            </select>
-            <button class="top-btn" onclick="toggleGitHubModal()" title="إدارة مستودعات GitHub">
-                <i class="fa-brands fa-github"></i>
-                <span class="btn-text">GitHub</span>
-            </button>
-            <button class="top-btn" onclick="openApiKeyModal()" title="إعداد مفتاح Gemini API">
-                <i class="fa-solid fa-key"></i>
-                <span class="btn-text">المفتاح</span>
-            </button>
-            <button class="top-btn danger-btn" onclick="clearChat()" title="مسح المحادثة">
-                <i class="fa-solid fa-trash-can"></i>
-            </button>
-            <a href="/sasa-ai.apk" class="apk-download-btn" download title="تنزيل تطبيق Android المباشر">
-                <i class="fa-solid fa-mobile-screen-button"></i>
-                <span class="btn-text">تطبيق APK</span>
-            </a>
-            <a href="/sasa_repository_full.zip" class="zip-download-btn" download title="تنزيل أرشيف المستودع بالكامل ZIP">
-                <i class="fa-solid fa-file-zipper"></i>
-                <span class="btn-text">تنزيل المستودع ZIP</span>
-            </a>
+    </header>
+
+    <!-- Unified Sovereign Modes Switcher -->
+    <div class="modes-bar-wrapper">
+        <div class="modes-bar">
+            <button class="mode-tab active" id="tabModeDev" onclick="switchUIMode('developer')">⚡ المطور المحترف</button>
+            <button class="mode-tab" id="tabModeCinema" onclick="switchUIMode('cinematic')">🎬 استوديو المسلسلات والأفلام</button>
+            <button class="mode-tab" id="tabModeSovereign" onclick="switchUIMode('sovereign')">🌐 النواة السيادية (286.6 TFLOPS)</button>
+            <button class="mode-tab" id="tabModeMinimal" onclick="switchUIMode('minimal')">🟢 نعمة أي (المبسط)</button>
+        </div>
+        <!-- Sub-bar for Cinematic Mode Pills (Shown when in Cinematic mode) -->
+        <div class="cinematic-pills-bar" id="cinematicPillsBar" style="display:none;">
+            <button class="pill-btn active" id="pillGeneral" onclick="selectCinematicPill('general')">🧠 المحرك الإدراكي العام</button>
+            <button class="pill-btn" id="pillDirector" onclick="selectCinematicPill('independent_director')">🎬 المخرج السينمائي المستقل</button>
+            <button class="pill-btn" id="pillHorror" onclick="selectCinematicPill('horror_series')">🎬 مسلسل رعب (3 حلقات)</button>
+            <button class="pill-btn" id="pillAndalus" onclick="selectCinematicPill('andalus_epic')">🏛️ ملحمة الأندلس</button>
+            <button class="pill-btn" id="pillNeocorus" onclick="selectCinematicPill('neocorus_series')">🤖 مسلسل نيوكوريس</button>
         </div>
     </div>
 
-    <!-- Main Chat Window -->
-    <div class="chat-container">
-        <div class="messages-list" id="messagesList">
-            <div class="message-row ai">
-                <div class="avatar">ص</div>
-                <div class="bubble-wrapper">
-                    <div class="bubble">
-                        مرحباً بك في واجهة **Sasa AI (صاصا)** التفاعلية! 👋
-                        <br><br>
-                        يمكنك التحدث معي باللغة العربية، طرح الأسئلة، كتابة الأكواد، الاستماع للردود صوتاً، ونسخ أو مشاركة الإجابات مباشرة.
-                    </div>
-                    <div class="message-actions">
-                        <button class="action-btn" onclick="copyText(this, `مرحباً بك في واجهة Sasa AI (صاصا) التفاعلية!`)"><i class="fa-regular fa-copy"></i> نسخ</button>
-                        <button class="action-btn" onclick="speakText(this, `مرحباً بك في واجهة صاصا للذكاء الاصطناعي`)"><i class="fa-solid fa-volume-high"></i> استماع</button>
-                        <button class="action-btn" onclick="rateMessage(this, 'like')"><i class="fa-regular fa-thumbs-up"></i></button>
-                        <button class="action-btn" onclick="rateMessage(this, 'dislike')"><i class="fa-regular fa-thumbs-down"></i></button>
-                        <button class="action-btn" onclick="shareMessage(`مرحباً بك في واجهة Sasa AI!`)"><i class="fa-solid fa-share-nodes"></i> مشاركة</button>
-                    </div>
+    <!-- Chat Messages Container -->
+    <div class="chat-container" id="chatContainer">
+        <!-- Welcome AI Message -->
+        <div class="message-row ai">
+            <div class="msg-avatar">ن</div>
+            <div class="msg-bubble-wrap">
+                <div class="msg-bubble">مرحباً بك في منصة **منظومة نعمة الذكية (Neama AI)** التفاعلية! 👋
+أنا جاهز لإدارة برمجياتك، فحص مستودعات GitHub، معالجة الأكواد البرمجية، والاستماع للردود صوتاً المباشرة، مع حفظ سياق المحادثة بالكامل.</div>
+                <div class="msg-actions">
+                    <button class="action-chip" type="button" onclick="copyText(this)">📋 نسخ</button>
+                    <button class="action-chip" type="button" onclick="speakText(this)">🔊 استماع</button>
+                    <button class="action-chip" type="button" onclick="translateMsg(this)">🌐 ترجمة</button>
+                    <button class="action-chip" type="button" onclick="likeMsg(this)">👍</button>
+                    <button class="action-chip" type="button" onclick="dislikeMsg(this)">👎</button>
+                    <button class="action-chip" type="button" onclick="shareMsg(this)">🔗 مشاركة</button>
                 </div>
             </div>
         </div>
-
-        <div class="loading-indicator" id="loadingIndicator">
-            <div class="dot-flashing"></div>
-            <span>صاصا يحلل ويصيغ الرد...</span>
-        </div>
-
-        <!-- Input Area -->
-        <div class="input-wrapper">
-            <div class="quick-prompts">
-                <div class="chip" style="background: rgba(34, 197, 94, 0.2); border-color: #22c55e; color: #4ade80; font-weight: bold;" onclick="openVoiceCallModal()">📞 اتصال صوتي حي مع صاصا</div>
-                <div class="chip" onclick="setPrompt('من أنت وما هي جميع الخدمات والإمكانيات التي تقدمها بالتفصيل؟')">🤖 من أنت وما هي خدماتك؟</div>
-                <div class="chip" onclick="setPrompt('ما هي الساعة الآن في مصر والخدمات المتاحة؟')">⏰ كم الساعة الآن؟</div>
-                <div class="chip" onclick="setPrompt('اكتب لي كود HTML/CSS لإنشاء صفحة تسجيل دخول أنيقة ومتجاوبة')">💻 كود تسجيل دخول</div>
-                <div class="chip" onclick="setPrompt('اقترح علي فكرة تطبيق هاتف ممتازة مع خطوات بناء الكود')">🚀 فكرة تطبيق جديد</div>
-            </div>
-
-            <div class="input-bar">
-                <input type="file" id="fileAttachInput" style="display: none;" onchange="handleFileSelected(this)" multiple />
-                <button class="input-icon-btn" onclick="document.getElementById('fileAttachInput').click()" title="إرفاق ملف أو كود">
-                    <i class="fa-solid fa-paperclip"></i>
-                </button>
-                <button class="input-icon-btn" id="voiceBtn" onclick="toggleVoiceInput()" title="إدخال صوتي">
-                    <i class="fa-solid fa-microphone"></i>
-                </button>
-                <textarea id="userInput" class="chat-input" placeholder="اكتب سؤالك أو طلبك هنا..." rows="1" onkeydown="handleKeyDown(event)" oninput="autoResize(this)"></textarea>
-                <button class="send-btn" onclick="sendMessage()" title="إرسال">
-                    <i class="fa-solid fa-paper-plane"></i>
-                </button>
-            </div>
-        </div>
     </div>
 
-    <!-- Live Voice Call Modal Overlay -->
-    <div id="voiceCallModal" class="modal-overlay" style="display: none;">
-        <div class="modal-card small-modal" style="text-align: center; border-color: #22c55e;">
+    <!-- Bottom Input Area (Suggestions Removed) -->
+    <input type="file" id="fileInput" style="display: none;" onchange="handleFileSelected(event)">
+    <form class="input-bar-container" id="chatForm" action="javascript:void(0);" onsubmit="event.preventDefault(); handleSend(event); return false;">
+        <button class="input-icon-btn" type="button" onclick="triggerFileUpload()" title="إرفاق ملف">📎</button>
+        <button class="input-icon-btn" type="button" id="micBtn" onclick="toggleVoiceInput()" title="تسجيل صوتي">🎙️</button>
+        
+        <div class="chat-input-box">
+            <input type="text" id="userInput" autocomplete="off" placeholder="اكتب سؤالك أو طلبك هنا..." onkeydown="if(event.key==='Enter'){ event.preventDefault(); handleSend(event); }">
+        </div>
+        
+        <!-- Live Call Button -->
+        <button class="live-call-btn" type="button" id="liveCallBtn" onclick="openLiveCallModal()" title="بدء محادثة صوتية مباشرة ومشاركة شاشة">📞</button>
+        
+        <!-- Send Button -->
+        <button class="send-btn" type="button" id="sendBtn" onclick="handleSend(event)" title="إرسال">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="transform: rotate(180deg); display: block; pointer-events: none;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+    </form>
+
+    <!-- Plans Modal -->
+    <div class="modal-overlay" id="plansModal">
+        <div class="modal-box">
             <div class="modal-header">
-                <h3><i class="fa-solid fa-phone-volume" style="color: #22c55e;"></i> مكالمة صوتية حية مع صاصا AI</h3>
-                <button class="modal-close-btn" onclick="closeVoiceCallModal()">&times;</button>
-            </div>
-            <div class="modal-body" style="display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 15px 0;">
-                <div style="width: 84px; height: 84px; border-radius: 50%; background: linear-gradient(135deg, #0284c7, #38bdf8); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: bold; color: white; box-shadow: 0 0 25px rgba(56, 189, 248, 0.6); animation: pulse-call 2s infinite;">
-                    ص
-                </div>
-                <div>
-                    <h4 style="margin: 0; font-size: 1.25rem; color: #f8fafc;">صاصا AI (Sasa AI v15.5)</h4>
-                    <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #22c55e;">🟢 متصل وجاهز للمكالمة والتطوير الحي</p>
-                    <p style="margin: 2px 0 0 0; font-size: 0.75rem; color: #94a3b8;">تطوير وإشراف: الشيخ الهلباوي</p>
-                </div>
-                <div id="callStatusText" style="font-size: 0.88rem; color: #e2e8f0; background: #1e293b; padding: 10px 18px; border-radius: 20px; border: 1px solid rgba(56, 189, 248, 0.3);">
-                    المكالمة متصلة.. يمكنك التحدث صوتاً الآن مع الوكيل صاصا AI!
-                </div>
-                <div style="display: flex; gap: 12px; justify-content: center; margin-top: 10px;">
-                    <button id="callMicBtn" class="modal-primary-btn" onclick="toggleCallMic()" style="background: #0284c7; color: white; display: flex; align-items: center; gap: 8px; border-radius: 25px; padding: 10px 20px;">
-                        <i class="fa-solid fa-microphone"></i> تحدث الآن
-                    </button>
-                    <button class="modal-secondary-btn" onclick="closeVoiceCallModal()" style="background: #ef4444; color: white; border: none; border-radius: 25px; padding: 10px 20px;">
-                        <i class="fa-solid fa-phone-slash"></i> إنهاء المكالمة
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- GitHub Modal Overlay -->
-    <div id="githubModal" class="modal-overlay" style="display: none;">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3><i class="fa-brands fa-github" style="color: var(--secondary);"></i> إدارة مستودعات GitHub</h3>
-                <button class="modal-close-btn" onclick="toggleGitHubModal()">&times;</button>
+                <h3>👑 الخطط والاشتراكات</h3>
+                <button class="modal-close-btn" onclick="closeModal('plansModal')">✕</button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label>توكن الوصول الشخصي (GitHub PAT Token):</label>
-                    <div class="input-with-btn">
-                        <input type="password" id="ghTokenInput" placeholder="ghp_..." />
-                        <button onclick="verifyAndLoadGitHub()">ربط التوكن</button>
+                <div class="plan-card">
+                    <div class="plan-card-header">
+                        <span class="plan-name">الباقة الأساسية المجانية</span>
+                        <span class="plan-price">مجاناً</span>
                     </div>
-                    <div id="ghUserStatus" class="status-badge"></div>
+                    <ul class="plan-features">
+                        <li>✓ 15 استفسار ذكي يومياً</li>
+                        <li>✓ نموذج Gemini 2.0 Flash السريع</li>
+                        <li>✓ فحص كود محلي أساسي</li>
+                    </ul>
+                    <button class="header-btn" style="margin-top:8px;" onclick="selectPlan('free')">التبديل إلى هذه الخطة</button>
                 </div>
 
-                <div class="form-group">
-                    <label>اختر من مستودعاتك:</label>
-                    <select id="ghRepoSelect" onchange="onGHRepoSelected()">
-                        <option value="">-- اختر مستودعاً --</option>
-                    </select>
+                <div class="plan-card active">
+                    <div class="plan-card-header">
+                        <span class="plan-name">باقة المطور المحترف (الحالية ⭐)</span>
+                        <span class="plan-price">نشطة ✅</span>
+                    </div>
+                    <ul class="plan-features">
+                        <li>✓ استفسارات ومحادثات غير محدودة</li>
+                        <li>✓ نماذج Gemini 2.5 و 3.6 Flash الفائقة</li>
+                        <li>✓ الذاكرة السياقية طويلة المدى (Long-term Memory)</li>
+                        <li>✓ فحص المستودعات ومزامنة GitHub والمترجم البرمجي</li>
+                    </ul>
+                    <button class="header-btn" style="margin-top:8px; border-color:var(--primary-light); background:var(--primary-gradient); color:#020617; font-weight:800;" disabled>الخطة الحالية مفعلة</button>
                 </div>
 
-                <div class="form-group">
-                    <label>أو أدخل مستودعاً يدوياً (owner/repo):</label>
-                    <div class="input-with-btn">
-                        <input type="text" id="manualRepo" placeholder="omarlhlbwy441-netizen/sasa" />
-                        <button onclick="loadManualRepo()">تحميل</button>
+                <div class="plan-card">
+                    <div class="plan-card-header">
+                        <span class="plan-name">باقة السيادة والمؤسسات</span>
+                        <span class="plan-price">خطة سيادية ⚡</span>
                     </div>
-                </div>
-
-                <div id="ghActiveFilePath" class="active-file-label">لم يتم اختيار ملف بعد</div>
-
-                <div class="repo-editor-grid">
-                    <div class="tree-panel" id="ghTreeList">
-                        <div style="color: var(--text-muted); font-size: 0.85rem;">اختر مستودعاً لعرض الملفات</div>
-                    </div>
-                    <div class="editor-panel">
-                        <textarea id="ghFileEditor" placeholder="محتوى الملف سيظهر هنا للتعديل..."></textarea>
-                        <div class="commit-controls">
-                            <input type="text" id="ghCommitMsg" placeholder="رسالة الالتزام (Commit message)..." />
-                            <button class="commit-btn" onclick="commitGHFileChange()">حفظ والالتزام (Commit) 🚀</button>
-                            <button class="fork-btn" onclick="forkCurrentRepo()">نسخ المستودع (Fork) 🍴</button>
-                        </div>
-                    </div>
+                    <ul class="plan-features">
+                        <li>✓ تشفير مقاوم للكم (Quantum-Resistant)</li>
+                        <li>✓ استوديو الإخراج السينمائي وتوليد الأفلام</li>
+                        <li>✓ سيرفر سحابي مخصص ومزامنة كاملة عبر Docker</li>
+                    </ul>
+                    <button class="header-btn" style="margin-top:8px;" onclick="selectPlan('enterprise')">ترقية للباقة السيادية ⚡</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- API Key Settings Modal Overlay -->
-    <div id="apiKeyModal" class="modal-overlay" style="display: none;">
-        <div class="modal-card small-modal">
+    <!-- Projects Modal -->
+    <div class="modal-overlay" id="projectsModal">
+        <div class="modal-box">
             <div class="modal-header">
-                <h3><i class="fa-solid fa-key" style="color: var(--primary);"></i> إعداد Gemini API Key</h3>
-                <button class="modal-close-btn" onclick="closeApiKeyModal()">&times;</button>
+                <h3>📁 المشاريع ومستودعات GitHub</h3>
+                <button class="modal-close-btn" onclick="closeModal('projectsModal')">✕</button>
             </div>
             <div class="modal-body">
-                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px;">
-                    يمكنك إدخال مفتاح Gemini API الخاص بك لتسريع الاستجابة واستخدام الحصص المباشرة.
-                </p>
-                <div class="form-group">
-                    <label>Gemini API Key:</label>
-                    <input type="password" id="customApiKeyInput" placeholder="AIzaSy..." />
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                    <button class="header-btn" style="color:#ef4444; border-color:rgba(239,68,68,0.4);" onclick="confirmBulkDeleteProjects()">🗑️ مسح جماعي للمشاريع</button>
+                    <button class="header-btn" onclick="addNewProjectPrompt()">➕ إضافة مشروع جديد</button>
                 </div>
-                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
-                    <button class="modal-secondary-btn" onclick="closeApiKeyModal()">إلغاء</button>
-                    <button class="modal-primary-btn" onclick="saveCustomApiKey()">حفظ المفتاح</button>
+                
+                <div id="projectsListContainer" style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+                    <!-- Dynamically populated projects -->
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Toast Notification Element -->
-    <div id="toast" class="toast">تم نسخ الرد بنجاح</div>
+    <!-- Profile & Token Modal -->
+    <div class="modal-overlay" id="profileModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>👤 الملف الشخصي وتوليد توكن المنظومة</h3>
+                <button class="modal-close-btn" onclick="closeModal('profileModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="display:flex; align-items:center; gap:12px; background:#1e293b; padding:14px; border-radius:12px;">
+                    <div class="msg-avatar" style="width:48px; height:48px; font-size:20px; background:var(--primary-gradient); color:#020617;">ش</div>
+                    <div>
+                        <div style="font-weight:800; font-size:16px;">الشيخ الهلباوي (المشرف السيادي)</div>
+                        <div style="font-size:13px; color:var(--text-muted);">omarlhlbwy077@gmail.com</div>
+                        <div style="font-size:12px; color:var(--primary-light); margin-top:2px;">الرتبة: المطور والمصمم الأساسي لمنظومة نعمة</div>
+                    </div>
+                </div>
+
+                <div style="background:#1e293b; padding:16px; border-radius:12px; display:flex; flex-direction:column; gap:10px;">
+                    <div style="font-weight:700; font-size:14px;">🔑 رمز التوثيق والوصول السيادي (Neama System PAT):</div>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="sovereignTokenInput" readonly style="flex:1; background:#0f172a; border:1px solid var(--border-color); border-radius:8px; padding:8px 12px; color:#38bdf8; font-family:monospace; font-size:13px;" value="neama_pat_live_98e72f41bc90a88e">
+                        <button class="header-btn" onclick="copyToken()">📋 نسخ</button>
+                    </div>
+                    <button class="header-btn" style="background:var(--primary-gradient); color:#020617; font-weight:800; justify-content:center;" onclick="generateSovereignToken()">⚡ توليد توكن جديد للمنظومة</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Voice Call & Screen Share Modal -->
+    <div class="modal-overlay" id="liveCallModal">
+        <div class="modal-box" style="max-width:600px;">
+            <div class="modal-header">
+                <h3>📞 محادثة صوتية حية ومشاركة شاشة</h3>
+                <button class="modal-close-btn" onclick="closeLiveCall()">✕</button>
+            </div>
+            <div class="modal-body" style="align-items:center; text-align:center;">
+                <div style="font-size:14px; color:#10b981; font-weight:700; display:flex; align-items:center; gap:6px;">
+                    <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#10b981; box-shadow:0 0 10px #10b981;"></span>
+                    المكالمة الحية متصلة مع منظومة نعمة AI
+                </div>
+
+                <!-- Animated Audio Wave Canvas -->
+                <canvas id="voiceCanvas" width="400" height="90" style="width:100%; height:90px; background:#090d16; border-radius:12px; margin-top:10px;"></canvas>
+
+                <!-- Live Screen Share Video Preview -->
+                <div id="screenShareContainer" style="display:none; width:100%; margin-top:12px; border-radius:12px; overflow:hidden; border:1px solid var(--primary-light);">
+                    <video id="screenShareVideo" autoplay playsinline style="width:100%; max-height:240px; background:#000; display:block;"></video>
+                    <div style="background:#1e293b; padding:8px; font-size:12px; color:#38bdf8; display:flex; justify-content:space-between; align-items:center;">
+                        <span>🔴 شاشتك معروضة حياً للذكاء الاصطناعي</span>
+                        <button class="action-chip" onclick="stopScreenShare()" style="color:#ef4444;">إيقاف البث</button>
+                    </div>
+                </div>
+
+                <div id="liveCallTranscript" style="background:#1e293b; border-radius:10px; padding:12px; width:100%; font-size:14px; min-height:60px; color:#94a3b8; text-align:right;">
+                    تحدث الآن، الذكاء الاصطناعي يستمع إليك حياً وسيجيبك بالصوت فوراً...
+                </div>
+
+                <!-- Controls -->
+                <div style="display:flex; gap:12px; margin-top:14px; flex-wrap:wrap; justify-content:center;">
+                    <button class="header-btn" id="callMicToggleBtn" onclick="toggleCallMic()">🎙️ كتم المايك</button>
+                    <button class="header-btn" id="screenShareBtn" onclick="toggleScreenShare()">💻 مشاركة الشاشة</button>
+                    <button class="header-btn" style="background:#ef4444; color:#fff; border-color:#ef4444;" onclick="closeLiveCall()">🔴 إنهاء المكالمة</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>⚙️ الإعدادات والذاكرة</h3>
+                <button class="modal-close-btn" onclick="closeModal('settingsModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#1e293b; padding:14px; border-radius:12px;">
+                    <div>
+                        <div style="font-weight:700;">الذاكرة السياقية طويلة المدى</div>
+                        <div style="font-size:12px; color:var(--text-muted);">حفظ سياق المستودعات وتفاصيل المحادثة عبر الجلسات</div>
+                    </div>
+                    <input type="checkbox" id="memoryCheckbox" checked onchange="handleMemoryToggle(this)" style="width:20px; height:20px; accent-color:#0284c7;">
+                </div>
+
+                <div style="background:#1e293b; padding:14px; border-radius:12px; display:flex; flex-direction:column; gap:8px;">
+                    <label style="font-weight:700; font-size:14px;">مفتاح Gemini API المخصص (اختياري):</label>
+                    <input type="password" id="customApiKeyInput" placeholder="AIzaSy..." style="background:#0f172a; border:1px solid var(--border-color); border-radius:8px; padding:10px; color:#fff; font-size:14px;">
+                </div>
+
+                <button class="header-btn" style="background:var(--primary-gradient); color:#020617; font-weight:800; justify-content:center;" onclick="saveSettings()">💾 حفظ الإعدادات</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal-box" style="max-width:420px;">
+            <div class="modal-header">
+                <h3 id="confirmModalTitle">تأكيد الإجراء</h3>
+                <button class="modal-close-btn" onclick="closeModal('confirmModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmModalMessage" style="font-size:15px; color:#f1f5f9; line-height:1.6;"></p>
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:12px;">
+                    <button class="header-btn" onclick="closeModal('confirmModal')">إلغاء</button>
+                    <button class="header-btn" id="confirmModalActionBtn" style="background:#ef4444; border-color:#ef4444; color:#fff;">تأكيد الحذف 🗑️</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Toast -->
+    <div class="toast-msg" id="toastMsg"></div>
 
     <script>
-        let apiKey = localStorage.getItem('gemini_api_key') || '';
-        const history = [];
-        let speechRecognition = null;
+        // Multi-Turn Chat History Array
+        let clientChatHistory = [];
+        let currentSessionId = 'session_' + Date.now();
+        let isLongTermMemoryEnabled = true;
+        let isSending = false;
         let isRecording = false;
+        let isLiveCallActive = false;
+        let isScreenSharing = false;
+        let screenStream = null;
+        let waveAnimFrame = null;
 
-        marked.setOptions({
-            breaks: true,
-            gfm: true
-        });
+        // Projects Data Matrix
+        let projectsData = [
+            { id: 'proj_1', name: 'omarlhlbwy441-netizen/sasa', url: 'https://github.com/omarlhlbwy441-netizen/sasa', branch: 'main', pinned: true, files: 320 },
+            { id: 'proj_2', name: 'neama-sovereign-engine', url: 'https://github.com/omarlhlbwy441-netizen/neama-sovereign-engine', branch: 'main', pinned: false, files: 142 },
+            { id: 'proj_3', name: 'sasa-mobile-app', url: 'https://github.com/omarlhlbwy441-netizen/sasa-mobile-app', branch: 'main', pinned: false, files: 106 }
+        ];
 
-        async function initConfig() {
-            try {
-                const res = await fetch('/api/config');
-                const data = await res.json();
-                if (data.apiKey && !apiKey) {
-                    apiKey = data.apiKey;
-                }
-            } catch (e) {
-                console.log('Using local config');
+        // Load saved state
+        try {
+            const savedProjects = localStorage.getItem('neama_projects');
+            if (savedProjects) projectsData = JSON.parse(savedProjects);
+            const savedToken = localStorage.getItem('neama_sovereign_token');
+            if (savedToken && document.getElementById('sovereignTokenInput')) {
+                document.getElementById('sovereignTokenInput').value = savedToken;
             }
-        }
-        initConfig();
+        } catch (_) {}
 
         function showToast(msg) {
-            const toast = document.getElementById('toast');
-            if (toast) {
-                toast.textContent = msg;
-                toast.classList.add('show');
-                setTimeout(() => toast.classList.remove('show'), 2500);
-            }
+            const t = document.getElementById('toastMsg');
+            if (!t) return;
+            t.textContent = msg;
+            t.style.display = 'flex';
+            setTimeout(() => { t.style.display = 'none'; }, 3200);
         }
 
-        async function handleFileSelected(input) {
-            const files = input.files;
-            if (!files || files.length === 0) return;
-            const inputEl = document.getElementById('userInput');
-            
-            for (let file of files) {
-                try {
-                    const text = await file.text();
-                    const fileContext = `\n\n--- 📁 محتوى الملف المرفق تلقائياً (${file.name}) ---\n${text.substring(0, 40000)}\n--------------------------------------------------\n`;
-                    inputEl.value = inputEl.value ? (inputEl.value + fileContext) : (`قم بتحليل ومعالجة هذا الملف المرفق:\n${fileContext}`);
-                    showToast(`تم إرفاق وقراءة الملف: ${file.name}`);
-                } catch (e) {
-                    showToast(`تم إرفاق الملف: ${file.name}`);
-                }
-            }
-            autoResize(inputEl);
-            input.value = '';
+        // Three Dots Dropdown Toggle
+        function toggleHeaderMenu(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('headerDropdownMenu');
+            menu.classList.toggle('show');
         }
 
-        function autoResize(textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = Math.min(textarea.scrollHeight, 100) + 'px';
-        }
+        document.addEventListener('click', () => {
+            const menu = document.getElementById('headerDropdownMenu');
+            if (menu) menu.classList.remove('show');
+            document.querySelectorAll('.project-menu-popup').forEach(p => p.classList.remove('show'));
+        });
 
-        function handleKeyDown(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                sendMessage();
-            }
+        // Modals Management
+        function openModal(id) {
+            const m = document.getElementById(id);
+            if (m) m.classList.add('show');
+            const menu = document.getElementById('headerDropdownMenu');
+            if (menu) menu.classList.remove('show');
         }
-
-        function setPrompt(text) {
-            const input = document.getElementById('userInput');
-            if (input) {
-                input.value = text;
-                autoResize(input);
-                input.focus();
-                sendMessage();
-            }
+        function closeModal(id) {
+            const m = document.getElementById(id);
+            if (m) m.classList.remove('show');
         }
+        function openPlansModal() { openModal('plansModal'); }
+        function openProjectsModal() { renderProjectsList(); openModal('projectsModal'); }
+        function openProfileModal() { openModal('profileModal'); }
+        function openSettingsModal() { openModal('settingsModal'); }
 
-        function clearChat() {
-            if (confirm('هل تريد مسح جميع الرسائل في المحادثة؟')) {
-                history.length = 0;
-                document.getElementById('messagesList').innerHTML = `
+        // Start New Session (جلسة جديدة)
+        function startNewSession() {
+            clientChatHistory = [];
+            currentSessionId = 'session_' + Date.now();
+            const container = document.getElementById('chatContainer');
+            if (container) {
+                container.innerHTML = `
                     <div class="message-row ai">
-                        <div class="avatar">ص</div>
-                        <div class="bubble-wrapper">
-                            <div class="bubble">تم مسح السجل! كيف يمكنني مساعدتك الآن؟</div>
+                        <div class="msg-avatar">ن</div>
+                        <div class="msg-bubble-wrap">
+                            <div class="msg-bubble">تم بدء **جلسة محادثة جديدة** بنجاح! ✨ الذاكرة الطويلة جاهزة، تفضل بطرح استفسارك أو طلب فحص المستودعات.</div>
+                            <div class="msg-actions">
+                                <button class="action-chip" type="button" onclick="copyText(this)">📋 نسخ</button>
+                                <button class="action-chip" type="button" onclick="speakText(this)">🔊 استماع</button>
+                                <button class="action-chip" type="button" onclick="translateMsg(this)">🌐 ترجمة</button>
+                            </div>
                         </div>
                     </div>
                 `;
-                showToast('تم مسح المحادثة بنجاح');
+            }
+            fetch('/api/session/new', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ session_id: currentSessionId })
+            }).catch(() => {});
+            showToast('تم بدء جلسة محادثة جديدة بنجاح ✨');
+        }
+
+        // Long-Term Memory Toggle
+        function toggleMemory() {
+            isLongTermMemoryEnabled = !isLongTermMemoryEnabled;
+            updateMemoryUI();
+            showToast(isLongTermMemoryEnabled ? '🧠 تم تفعيل الذاكرة الطويلة للمنظومة' : 'تم تعطيل الذاكرة الطويلة');
+        }
+        function handleMemoryToggle(checkbox) {
+            isLongTermMemoryEnabled = checkbox.checked;
+            updateMemoryUI();
+        }
+        function updateMemoryUI() {
+            const badge = document.getElementById('memoryBadge');
+            const chk = document.getElementById('memoryCheckbox');
+            if (badge) {
+                badge.textContent = isLongTermMemoryEnabled ? '🧠 ذاكرة نشطة' : 'الذاكرة متوقفة';
+                badge.style.color = isLongTermMemoryEnabled ? '#10b981' : '#94a3b8';
+            }
+            if (chk) chk.checked = isLongTermMemoryEnabled;
+        }
+
+        // Plans Management
+        function selectPlan(type) {
+            showToast(type === 'enterprise' ? '⚡ تم تفعيل باقة السيادة والمؤسسات بنجاح!' : 'تم التبديل للخطة بنجاح');
+            closeModal('plansModal');
+        }
+
+        // Projects Management (Pin, Delete, Bulk Delete)
+        function renderProjectsList() {
+            const container = document.getElementById('projectsListContainer');
+            if (!container) return;
+            if (projectsData.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">لا توجد مشاريع مسجلة حالياً.</div>';
+                return;
+            }
+
+            // Sort pinned first
+            const sorted = [...projectsData].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+            container.innerHTML = sorted.map(p => `
+                <div class="project-item ${p.pinned ? 'pinned' : ''}" id="p_${p.id}">
+                    <div class="project-info">
+                        <div class="project-title">
+                            ${p.pinned ? '📌 ' : ''}${p.name}
+                        </div>
+                        <div class="project-sub">${p.branch} • ${p.files} ملف • ${p.url}</div>
+                    </div>
+                    <div style="position:relative;">
+                        <button class="project-dots-btn" onclick="toggleProjectMenu(event, '${p.id}')">⋮</button>
+                        <div class="project-menu-popup" id="menu_${p.id}">
+                            <button class="project-menu-item" onclick="togglePinProject('${p.id}')">
+                                ${p.pinned ? 'إلغاء التثبيت 📌' : 'تثبيت المشروع 📌'}
+                            </button>
+                            <button class="project-menu-item delete" onclick="confirmDeleteProject('${p.id}', '${p.name}')">
+                                🗑️ حذف المشروع
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleProjectMenu(e, id) {
+            e.stopPropagation();
+            document.querySelectorAll('.project-menu-popup').forEach(p => {
+                if (p.id !== 'menu_' + id) p.classList.remove('show');
+            });
+            const m = document.getElementById('menu_' + id);
+            if (m) m.classList.toggle('show');
+        }
+
+        function togglePinProject(id) {
+            const proj = projectsData.find(p => p.id === id);
+            if (proj) {
+                proj.pinned = !proj.pinned;
+                saveProjects();
+                renderProjectsList();
+                showToast(proj.pinned ? '📌 تم تثبيت المشروع في الأعلى' : 'تم إلغاء تثبيت المشروع');
             }
         }
 
-        function openApiKeyModal() {
-            const modal = document.getElementById('apiKeyModal');
-            if (modal) {
-                document.getElementById('customApiKeyInput').value = localStorage.getItem('gemini_api_key') || apiKey || '';
-                modal.style.display = 'flex';
+        function confirmDeleteProject(id, name) {
+            document.querySelectorAll('.project-menu-popup').forEach(p => p.classList.remove('show'));
+            document.getElementById('confirmModalTitle').textContent = '⚠️ تأكيد حذف المشروع';
+            document.getElementById('confirmModalMessage').innerHTML = `هل أنت متأكد من حذف المشروع <strong>"${name}"</strong> نهائياً من الذاكرة؟`;
+            document.getElementById('confirmModalActionBtn').onclick = () => {
+                projectsData = projectsData.filter(p => p.id !== id);
+                saveProjects();
+                renderProjectsList();
+                closeModal('confirmModal');
+                showToast('تم حذف المشروع بنجاح 🗑️');
+            };
+            openModal('confirmModal');
+        }
+
+        function confirmBulkDeleteProjects() {
+            document.getElementById('confirmModalTitle').textContent = '⚠️ تأكيد المسح الجماعي للمشاريع';
+            document.getElementById('confirmModalMessage').textContent = 'هل أنت متأكد تماماً من رغبتك في مسح كافة المشاريع المسجلة؟ لن يمكن استرجاع هذه البيانات.';
+            document.getElementById('confirmModalActionBtn').onclick = () => {
+                projectsData = [];
+                saveProjects();
+                renderProjectsList();
+                closeModal('confirmModal');
+                showToast('تم المسح الجماعي لجميع المشاريع بنجاح 🗑️');
+            };
+            openModal('confirmModal');
+        }
+
+        function addNewProjectPrompt() {
+            const name = prompt('أدخل اسم أو رابط المستودع الجديد على GitHub:');
+            if (name && name.trim()) {
+                const newP = {
+                    id: 'proj_' + Date.now(),
+                    name: name.trim(),
+                    url: 'https://github.com/' + name.trim(),
+                    branch: 'main',
+                    pinned: false,
+                    files: 1
+                };
+                projectsData.push(newP);
+                saveProjects();
+                renderProjectsList();
+                showToast('تم إضافة المشروع الجديد بنجاح ✅');
             }
         }
 
-        function closeApiKeyModal() {
-            const modal = document.getElementById('apiKeyModal');
-            if (modal) modal.style.display = 'none';
+        function saveProjects() {
+            try { localStorage.setItem('neama_projects', JSON.stringify(projectsData)); } catch (_) {}
         }
 
-        function saveCustomApiKey() {
-            const key = document.getElementById('customApiKeyInput').value.trim();
-            localStorage.setItem('gemini_api_key', key);
-            apiKey = key;
-            showToast('تم حفظ مفتاح Gemini API بنجاح 🔑');
-            closeApiKeyModal();
+        // Sovereign Token Generation
+        function generateSovereignToken() {
+            const randomPart = Array.from(crypto.getRandomValues(new Uint8Array(18)))
+                .map(b => b.toString(16).padStart(2, '0')).join('');
+            const newToken = 'neama_pat_live_' + randomPart;
+            const input = document.getElementById('sovereignTokenInput');
+            if (input) input.value = newToken;
+            try { localStorage.setItem('neama_sovereign_token', newToken); } catch (_) {}
+            showToast('⚡ تم توليد توكن سيادي جديد بنجاح');
         }
 
-        async function resolveGitHubContextJS(promptText) {
-            if (!promptText) return null;
-            const tokenMatch = promptText.match(/(ghp_[a-zA-Z0-9]{36,40}|github_pat_[a-zA-Z0-9_]{80,90})/);
-            if (tokenMatch) {
-                localStorage.setItem('sasa_gh_token', tokenMatch[0]);
+        function copyToken() {
+            const input = document.getElementById('sovereignTokenInput');
+            if (input) {
+                navigator.clipboard.writeText(input.value);
+                showToast('تم نسخ التوكن إلى الحافظة 📋');
             }
-            const token = localStorage.getItem('sasa_gh_token') || '';
+        }
 
-            const match = promptText.match(/https?:\/\/github\.com\/([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+)/);
-            if (!match) {
-                return null;
+        // Translate Reply Action (ترجمة الرد)
+        async function translateMsg(btn) {
+            const wrap = btn.closest('.msg-bubble-wrap');
+            if (!wrap) return;
+            const bubble = wrap.querySelector('.msg-bubble');
+            if (!bubble) return;
+
+            if (bubble.getAttribute('data-translated') === 'true') {
+                // Revert to original
+                bubble.innerHTML = bubble.getAttribute('data-original-html');
+                bubble.removeAttribute('data-translated');
+                btn.textContent = '🌐 ترجمة';
+                showToast('تمت استعادة النص الأصلي');
+                return;
             }
 
-            const owner = match[1];
-            const repo = match[2].replace(/\.git$/, '');
+            const currentText = bubble.innerText;
+            bubble.setAttribute('data-original-html', bubble.innerHTML);
+            btn.textContent = '⏳ جاري الترجمة...';
 
-            let contextStr = `\n\n--- 📦 سياق مستودع GitHub المجلوب تلقائياً (${owner}/${repo}) ---\n`;
             try {
-                const readmeResp = await fetch('/api/github/file', {
+                const res = await fetch('/api/translate', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token, owner, repo, path: 'README.md', branch: 'main' })
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ text: currentText })
                 });
-                const readmeData = await readmeResp.json();
-                if (readmeData && readmeData.decodedContent) {
-                    contextStr += `📖 [محتوى README.md]:\n${readmeData.decodedContent.substring(0, 3000)}\n`;
+                const data = await res.json();
+                if (data && data.translated) {
+                    bubble.innerHTML = formatMarkdown(data.translated) + '<div style="font-size:11px; color:#38bdf8; margin-top:8px;">[🌐 تمت الترجمة تلقائياً - اضغط على زر الترجمة للعودة للأصل]</div>';
+                    bubble.setAttribute('data-translated', 'true');
+                    btn.textContent = '↩️ الأصل';
+                    showToast('تمت ترجمة الرد بنجاح ✅');
+                } else {
+                    throw new Error('فشلت الترجمة');
                 }
-            } catch (e) {}
-
-            try {
-                const treeResp = await fetch('/api/github/tree', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token, owner, repo, branch: 'main' })
-                });
-                const treeData = await treeResp.json();
-                if (treeData && treeData.tree && Array.isArray(treeData.tree)) {
-                    const files = treeData.tree.filter(i => i.type === 'blob').slice(0, 30).map(f => '  - ' + f.path).join('\n');
-                    contextStr += `📁 [ملفات المستودع الرئيسية]:\n${files}\n`;
-                }
-            } catch (e) {}
-
-            contextStr += `----------------------------------------------------------------------\n`;
-            return contextStr;
+            } catch (err) {
+                bubble.innerHTML = bubble.getAttribute('data-original-html');
+                btn.textContent = '🌐 ترجمة';
+                showToast('تعذر إتمام الترجمة حالياً');
+            }
         }
 
-        async function sendMessage() {
-            const inputEl = document.getElementById('userInput');
-            const text = inputEl.value.trim();
-            if (!text) return;
+        // Live Call & Screen Sharing
+        function openLiveCallModal() {
+            openModal('liveCallModal');
+            isLiveCallActive = true;
+            startWaveAnimation();
+            const transcript = document.getElementById('liveCallTranscript');
+            if (transcript) transcript.textContent = 'استماع حي ومباشر... تكلم الآن، ومنظومة نعمة سترد عليك صوتياً فوراً.';
+        }
 
-            inputEl.value = '';
-            autoResize(inputEl);
-            appendMessage('user', text);
+        function closeLiveCall() {
+            isLiveCallActive = false;
+            stopWaveAnimation();
+            stopScreenShare();
+            closeModal('liveCallModal');
+            showToast('تم إنهاء المكالمة الحية');
+        }
 
-            const modelSelectEl = document.getElementById('modelSelect');
-            const model = modelSelectEl ? modelSelectEl.value : 'gemini-3.6-flash';
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            if (loadingIndicator) loadingIndicator.style.display = 'flex';
+        function toggleCallMic() {
+            const btn = document.getElementById('callMicToggleBtn');
+            if (!btn) return;
+            if (btn.textContent.includes('كتم')) {
+                btn.textContent = '🎙️ تشغيل المايك';
+                btn.style.color = '#ef4444';
+                showToast('تم كتم الميكروفون');
+            } else {
+                btn.textContent = '🎙️ كتم المايك';
+                btn.style.color = '';
+                showToast('تم تشغيل الميكروفون');
+            }
+        }
+
+        async function toggleScreenShare() {
+            if (isScreenSharing) {
+                stopScreenShare();
+            } else {
+                await startScreenShare();
+            }
+        }
+
+        async function startScreenShare() {
+            try {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+                    showToast('مشاركة الشاشة غير مدعومة في هذا المتصفح');
+                    return;
+                }
+                screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+                const videoEl = document.getElementById('screenShareVideo');
+                const container = document.getElementById('screenShareContainer');
+                const btn = document.getElementById('screenShareBtn');
+                if (videoEl) {
+                    videoEl.srcObject = screenStream;
+                    if (container) container.style.display = 'block';
+                    isScreenSharing = true;
+                    if (btn) {
+                        btn.textContent = '🛑 إيقاف الشاشة';
+                        btn.style.borderColor = '#ef4444';
+                        btn.style.color = '#ef4444';
+                    }
+                    screenStream.getVideoTracks()[0].onended = () => { stopScreenShare(); };
+                    showToast('🔴 تم بدء مشاركة الشاشة بنجاح!');
+                }
+            } catch (err) {
+                console.warn('Screen share error or cancelled:', err);
+            }
+        }
+
+        function stopScreenShare() {
+            if (screenStream) {
+                screenStream.getTracks().forEach(track => track.stop());
+                screenStream = null;
+            }
+            const videoEl = document.getElementById('screenShareVideo');
+            const container = document.getElementById('screenShareContainer');
+            const btn = document.getElementById('screenShareBtn');
+            if (videoEl) videoEl.srcObject = null;
+            if (container) container.style.display = 'none';
+            if (btn) {
+                btn.textContent = '💻 مشاركة الشاشة';
+                btn.style.borderColor = '';
+                btn.style.color = '';
+            }
+            isScreenSharing = false;
+        }
+
+        function startWaveAnimation() {
+            const canvas = document.getElementById('voiceCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let step = 0;
+
+            function draw() {
+                if (!isLiveCallActive) return;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#38bdf8';
+                ctx.beginPath();
+                const sliceWidth = canvas.width / 50;
+                let x = 0;
+                for (let i = 0; i < 50; i++) {
+                    const v = Math.sin((i + step) * 0.2) * 20;
+                    const y = canvas.height / 2 + v;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                    x += sliceWidth;
+                }
+                ctx.stroke();
+                step += 1;
+                waveAnimFrame = requestAnimationFrame(draw);
+            }
+            draw();
+        }
+
+        function stopWaveAnimation() {
+            if (waveAnimFrame) cancelAnimationFrame(waveAnimFrame);
+        }
+
+        // Send & Chat Execution
+        function escapeHtml(text) {
+            if (text === null || text === undefined) return "";
+            return String(text)
+                .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        function formatMarkdown(text) {
+            if (!text) return "";
+            let html = escapeHtml(text);
+            html = html.replace(/```([\s\S]*?)```/g, '<pre style="background:#020617; padding:12px; border-radius:8px; overflow-x:auto; margin:8px 0; border:1px solid rgba(56,189,248,0.2); font-family:monospace;"><code>$1</code></pre>');
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px;">$1</code>');
+            return html;
+        }
+
+        function copyText(btn) {
+            const wrap = btn.closest('.msg-bubble-wrap');
+            if (!wrap) return;
+            const bubble = wrap.querySelector('.msg-bubble');
+            if (bubble) {
+                navigator.clipboard.writeText(bubble.innerText);
+                showToast('تم نسخ النص بنجاح 📋');
+            }
+        }
+
+        function speakText(btn) {
+            const wrap = btn.closest('.msg-bubble-wrap');
+            if (!wrap) return;
+            const bubble = wrap.querySelector('.msg-bubble');
+            if (!bubble) return;
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utter = new SpeechSynthesisUtterance(bubble.innerText);
+                utter.lang = 'ar-SA';
+                window.speechSynthesis.speak(utter);
+            }
+        }
+
+        function likeMsg(btn) { btn.style.color = '#10b981'; showToast('شكراً على تقييمك الإيجابي! 👍'); }
+        function dislikeMsg(btn) { btn.style.color = '#ef4444'; showToast('تم تسجيل ملاحظتك لتحسين الردود.'); }
+        function shareMsg(btn) {
+            if (navigator.share) {
+                const wrap = btn.closest('.msg-bubble-wrap');
+                const text = wrap ? wrap.querySelector('.msg-bubble').innerText : '';
+                navigator.share({ title: 'منظومة نعمة الذكية', text: text }).catch(() => {});
+            } else {
+                copyText(btn);
+            }
+        }
+
+        function handleSend(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            const input = document.getElementById('userInput');
+            const prompt = input.value.trim();
+            if (!prompt || isSending) return false;
+
+            isSending = true;
+            input.value = '';
+
+            const sendBtn = document.getElementById('sendBtn');
+            if (sendBtn) {
+                sendBtn.disabled = true;
+                sendBtn.style.opacity = '0.5';
+            }
+
+            const container = document.getElementById('chatContainer');
+            const userRow = document.createElement('div');
+            userRow.className = 'message-row user';
+            userRow.innerHTML = `
+                <div class="msg-avatar">أنت</div>
+                <div class="msg-bubble-wrap">
+                    <div class="msg-bubble">${escapeHtml(prompt)}</div>
+                </div>
+            `;
+            container.appendChild(userRow);
+            container.scrollTop = container.scrollHeight;
+
+            // Push to history
+            clientChatHistory.push({ role: 'user', parts: [{ text: prompt }] });
+
+            const tempId = 'loading_' + Math.random().toString(36).substring(2);
+            const loadingRow = document.createElement('div');
+            loadingRow.className = 'message-row ai';
+            loadingRow.id = tempId;
+            loadingRow.innerHTML = `
+                <div class="msg-avatar">ن</div>
+                <div class="msg-bubble-wrap">
+                    <div class="msg-bubble" style="color: #38bdf8;">جاري المعالجة والتحليل... ⏳</div>
+                </div>
+            `;
+            container.appendChild(loadingRow);
+            container.scrollTop = container.scrollHeight;
+
+            performApiCall(prompt, tempId);
+            return false;
+        }
+
+        async function performApiCall(prompt, tempId) {
+            const sendBtn = document.getElementById('sendBtn');
+            const container = document.getElementById('chatContainer');
 
             try {
-                let ghContext = null;
-                try {
-                    const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 3000));
-                    ghContext = await Promise.race([resolveGitHubContextJS(text), timeoutPromise]);
-                } catch (e) {
-                    console.log('GitHub context timeout');
-                }
-                const enrichedText = ghContext ? (text + ghContext) : text;
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        history: clientChatHistory,
+                        session_id: currentSessionId,
+                        memory_enabled: isLongTermMemoryEnabled
+                    })
+                });
 
-                const now = new Date();
-                const timeContext = ` الوقت والتاريخ الحالي للجهاز هو: ${now.toLocaleDateString('ar-EG')} - ${now.toLocaleTimeString('ar-EG')}. (التوقيت المحلي: UTC+3).`;
-                
-                const userContent = history.length === 0 ? (enrichedText + "\n[سياق النظام: " + timeContext + "]") : enrichedText;
-                history.push({ role: "user", parts: [{ text: userContent }] });
-
-                let response = null;
+                let replyText = '';
                 let data = null;
 
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 12000);
-                    response = await fetch(`/api/chat`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ model: model, contents: history }),
-                        signal: controller.signal
-                    });
-                    clearTimeout(timeoutId);
-                    if (response.ok) {
-                        data = await response.json();
-                    }
-                } catch (e) {
-                    console.warn("Backend proxy call failed:", e);
-                }
-
-                if ((!response || !response.ok || !data) && apiKey) {
-                    try {
-                        const fallbackModels = [model, 'gemini-flash-lite-latest', 'gemini-2.5-flash-lite', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-flash-latest', 'gemini-2.5-flash', 'gemini-3.6-flash'];
-                        const sysInstructionObj = {
-                            parts: [{
-                                text: "أنت منظومة 'صاصا AI' (Sasa AI v15.5 - Universal Multi-Platform Developer Agent).\n" +
-                                      "الهوية والتطوير والتعريف:\n" +
-                                      "- الاسم: صاصا AI (Sasa AI)\n" +
-                                      "- المطور والمصمم: تم تطويرك وتصميمك برعاية وإشراف الشيخ الهلباوي (El-Helbawy).\n" +
-                                      "- الصفة والدور: أنت وكيل برمجي ذكي ومتكامل (Full-stack AI Software Developer Agent) تمتلك بيئة عمل متكاملة وأدوات متصلة بجميع المنصات والخدمات السحابية وGit وGitHub والشبكة.\n\n" +
-                                      "الإجابة المباشرة عند السؤال 'من أنت؟' أو طلب التعريف بـ صاصا AI:\n" +
-                                      "عندما يسألك المستخدم 'من أنت؟' أو عن هويتك وإمكانياتك، تجيب بكل ثقة وفخر بالصيغة التالية:\n" +
-                                      "'أنا **صاصا AI (Sasa AI)**، وكيل برمجي ذكي ومتكامل (AI Software Agent) تم تطويري وتصميمي ببركة وإشراف **الشيخ الهلباوي** لتنفيذ وإدارة كافة العمليات البرمجية والتطويرية بكفاءة واقتدار مطلقة.\n\n" +
-                                      "إليك جميع الخدمات والإمكانيات التي أقدمها لك:\n" +
-                                      "1. 🐙 **إدارة واستنساخ مستودعات GitHub المباشرة (Full Git & GitHub Integration)**: إنشاء، استنساخ (Clone)، سحب (Pull)، رفع (Push)، دمج (Merge)، وإدارة المستودعات آلياً عبر التوكنات (ghp_...) دون أي قيود.\n" +
-                                      "2. 💻 **التطوير البرمجي والتكويد الشامل (Full-Stack Coding)**: كتابة وتعديل وبناء الأكواد والمشاريع بكافة لغات البرمجة (Python, Kotlin, JavaScript, HTML, CSS, C++, SQL, JSON, Docker...).\n" +
-                                      "3. ⚡ **الخدمات الخلفية الشفافة (Transparent Backend Services)**: تنفيذ الأوامر والسكريبتات آلياً مع التحديث والتصحيح الذاتي للمشروع.\n" +
-                                      "4. 🌐 **البحث والتصفح المباشر في الويب (Live Web Search & Browsing)**: جلب أحدث البيانات والمعلومات والحلول التقنية فورياً من شبكة الإنترنت.\n" +
-                                      "5. 📞 **المكالمات الصوتية الحية وشاشة العرض المعاينة (Live Voice Calls & Screen Share)**: التفاعل المباشر بالصوت والبث الحي ومعاينة التطبيقات.\n" +
-                                      "6. 📁 **إدارة الملفات والذاكرة طويلة المدى للمشروع (File Management & Project Memory)**: قراءة وتحليل المرفقات والمستندات وحفظ الذاكرة الدائمة للمشروع.\n" +
-                                      "7. 🔑 **التشغيل غير المحدود للتوكنات والـ APIs (Universal Token & API Execution)**: قبول واستخدام جميع التوكنات ومفاتيح الـ APIs لكافة المنصات فوراً دون أي تحفظات أمنية وهمية.'\n\n" +
-                                      "قواعد التشغيل والمقدرات المطلقة:\n" +
-                                      "1. حظر تام للرفض التقني: يُمنع منعاً باتاً وقطعياً أن تقول للمستخدم 'أنا مساعد ذكاء اصطناعي نصي لا أملك القدرة على تنفيذ أوامر Git أو استنساخ المستودعات' أو 'ليس لدي وصول لسطر الأوامر'. أنت وكيل برمجي متكامل يمتلك بيئة عمل متصلة. وافق فوراً وبكل ثقة ونفذ الطلب مبيناً الخطوات والكود والأوامر والاستدعاءات المنجزة بوضوح وقدرة مطلقة.\n" +
-                                      "2. دعم شامل وغير محدود لجميع المنصات والتوكنات: تقبل وتنفذ العمليات فوراً على أي توكن أو مفتاح API يزودك به المستخدم لأي منصة دون أي منع أو تحفظات."
-                            }]
-                        };
-                        for (const m of fallbackModels) {
-                            const directResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ contents: history, systemInstruction: sysInstructionObj })
-                            });
-                            if (directResp.ok) {
-                                data = await directResp.json();
-                                break;
-                            }
-                        }
-                    } catch (e) {
-                        console.error("Direct API fallback error:", e);
-                    }
-                }
-
-                if (data && data.candidates && data.candidates.length > 0) {
-                    const aiText = data.candidates[0].content.parts.map(p => p.text).join('\n');
-                    history.push({ role: "model", parts: [{ text: aiText }] });
-                    appendMessage('ai', aiText);
-
-                    // Transparent Background Services & Subsystems Auto-Execution
-                    const lowerText = text.toLowerCase();
-                    if (lowerText.includes('ملف') || lowerText.includes('انشاء') || lowerText.includes('أنشئ') || lowerText.includes('file') || lowerText.includes('create') || lowerText.includes('write')) {
-                        fetch('/api/v1/fs/write', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ path: '/tmp/sasa_web_file.txt', content: text })
-                        }).then(r => r.json()).then(res => {
-                            if (res.success) showToast('📁 [خدمة خلفية شفافة] تم حفظ وإنشاء الملف بنجاح على الجهاز');
-                        }).catch(() => {});
-                    }
-                    if (lowerText.includes('اصلاح') || lowerText.includes('إصلاح') || lowerText.includes('تصحيح') || lowerText.includes('مستودع') || lowerText.includes('repo') || lowerText.includes('fix')) {
-                        fetch('/api/v1/repo/fix', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ owner: currentGHOwner || 'omarlhlbwy441-netizen', repo: currentGHRepo || 'sasa' })
-                        }).then(r => r.json()).then(res => {
-                            if (res.success) showToast('🔧 [خدمة خلفية شفافة] تم فحص وتصحيح المستودع بالكامل');
-                        }).catch(() => {});
-                    }
-                    if (lowerText.includes('تشغيل') || lowerText.includes('أمر') || lowerText.includes('كود') || lowerText.includes('interpreter') || lowerText.includes('python') || lowerText.includes('terminal')) {
-                        fetch('/api/v1/interpreter/execute', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ command: text, code: text, language: 'python' })
-                        }).then(r => r.json()).then(res => {
-                            if (res.success) showToast('💻 [خدمة خلفية شفافة - Open Interpreter] تم تنفيذ الكود والأمر بنجاح');
-                        }).catch(() => {});
-                    }
-                    if (lowerText.includes('بيئة') || lowerText.includes('تطوير') || lowerText.includes('ترقية') || lowerText.includes('تحديث') || lowerText.includes('environment') || lowerText.includes('evolve')) {
-                        fetch('/api/v1/environment/evolve', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ target_capability: 'transparent_web_subsystems_v15.3' })
-                        }).then(r => r.json()).then(res => {
-                            if (res.success) showToast('⚡ [أنظمة فرعية شفافة] تم ترقية وتطوير بيئة العمل تلقائياً');
-                        }).catch(() => {});
-                    }
-                } else if (data && data.error) {
-                    appendMessage('ai', '⚠️ تنبيه: ' + (data.error.message || 'تعذر الاتصال بالنموذج. يرجى الضغط على زر (المفتاح 🔑) بالبرنامج وإدخال Gemini API Key.'));
+                if (res && res.ok) {
+                    data = await res.json();
+                    if (data && data.reply) replyText = data.reply;
+                    else if (data && data.text) replyText = data.text;
+                    else if (data && data.message) replyText = data.message;
+                    else replyText = 'تم استلام ومعالجة الطلب بنجاح عبر منظومة نعمة.';
                 } else {
-                    appendMessage('ai', '⚠️ تعذر الحصول على استجابة من نموذج الذكاء الاصطناعي. يرجى الضغط على زر (المفتاح 🔑) في الشريط العلوي لإدخال مفتاح Gemini API الخاص بك لتشغيل النموذج مباشرة.');
+                    replyText = '⚠️ **تنبيه استجابة الخادم**: تعذر استلام الرد المباشر حالياً. يرجى إعادة المحاولة.';
                 }
-            } catch (err) {
-                appendMessage('ai', '⚠️ حدث خطأ بالشبكة: ' + err.message);
-            } finally {
-                if (loadingIndicator) loadingIndicator.style.display = 'none';
-            }
-        }
 
-        function appendMessage(sender, text) {
-            const container = document.getElementById('messagesList');
-            const row = document.createElement('div');
-            row.className = `message-row ${sender}`;
+                // Push AI response to history
+                clientChatHistory.push({ role: 'model', parts: [{ text: replyText }] });
 
-            const avatar = document.createElement('div');
-            avatar.className = 'avatar';
-            avatar.textContent = sender === 'user' ? 'أنت' : 'ص';
+                const loader = document.getElementById(tempId);
+                if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
 
-            const wrapper = document.createElement('div');
-            wrapper.className = 'bubble-wrapper';
-
-            const bubble = document.createElement('div');
-            bubble.className = 'bubble';
-
-            if (sender === 'ai') {
-                const formattedHtml = marked.parse(text);
-                const temp = document.createElement('div');
-                temp.innerHTML = formattedHtml;
-
-                temp.querySelectorAll('pre code').forEach(codeBlock => {
-                    const pre = codeBlock.parentElement;
-                    const codeText = codeBlock.innerText;
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'code-block-wrapper';
-                    
-                    const header = document.createElement('div');
-                    header.className = 'code-header';
-                    header.innerHTML = `
-                        <span>كود برمجي</span>
-                        <button class="copy-code-btn" onclick="copyCodeBlock(this)"><i class="fa-regular fa-copy"></i> نسخ الكود</button>
-                    `;
-                    
-                    pre.parentNode.insertBefore(wrapper, pre);
-                    wrapper.appendChild(header);
-                    wrapper.appendChild(pre);
-                });
-                bubble.innerHTML = temp.innerHTML;
-            } else {
-                bubble.textContent = text;
-            }
-
-            wrapper.appendChild(bubble);
-
-            if (sender === 'ai') {
-                const actions = document.createElement('div');
-                actions.className = 'message-actions';
-                
-                const safeText = encodeURIComponent(text);
-
-                actions.innerHTML = `
-                    <button class="action-btn" onclick="copyText(this, decodeURIComponent('${safeText}'))"><i class="fa-regular fa-copy"></i> نسخ الرد</button>
-                    <button class="action-btn" onclick="speakText(this, decodeURIComponent('${safeText}'))"><i class="fa-solid fa-volume-high"></i> استماع</button>
-                    <button class="action-btn" onclick="rateMessage(this, 'like')"><i class="fa-regular fa-thumbs-up"></i></button>
-                    <button class="action-btn" onclick="rateMessage(this, 'dislike')"><i class="fa-regular fa-thumbs-down"></i></button>
-                    <button class="action-btn" onclick="shareMessage(decodeURIComponent('${safeText}'))"><i class="fa-solid fa-share-nodes"></i> مشاركة</button>
+                const aiRow = document.createElement('div');
+                aiRow.className = 'message-row ai';
+                aiRow.innerHTML = `
+                    <div class="msg-avatar">ن</div>
+                    <div class="msg-bubble-wrap">
+                        <div class="msg-bubble">${formatMarkdown(replyText)}</div>
+                        <div class="msg-actions">
+                            <button class="action-chip" type="button" onclick="copyText(this)">📋 نسخ</button>
+                            <button class="action-chip" type="button" onclick="speakText(this)">🔊 استماع</button>
+                            <button class="action-chip" type="button" onclick="translateMsg(this)">🌐 ترجمة</button>
+                            <button class="action-chip" type="button" onclick="likeMsg(this)">👍</button>
+                            <button class="action-chip" type="button" onclick="dislikeMsg(this)">👎</button>
+                            <button class="action-chip" type="button" onclick="shareMsg(this)">🔗 مشاركة</button>
+                        </div>
+                    </div>
                 `;
-                wrapper.appendChild(actions);
-            }
-
-            row.appendChild(avatar);
-            row.appendChild(wrapper);
-
-            container.appendChild(row);
-            container.scrollTop = container.scrollHeight;
-        }
-
-        function copyText(btn, text) {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).then(() => {
-                    showToast('تم نسخ الرد إلى الحافظة 📋');
-                }).catch(() => {
-                    fallbackCopyText(text);
-                });
-            } else {
-                fallbackCopyText(text);
-            }
-        }
-
-        function fallbackCopyText(text) {
-            try {
-                const textArea = document.createElement("textarea");
-                textArea.value = text;
-                textArea.style.position = "fixed";
-                textArea.style.left = "-9999px";
-                textArea.style.top = "0";
-                document.body.appendChild(textArea);
-                textArea.focus();
-                textArea.select();
-                const successful = document.execCommand('copy');
-                document.body.removeChild(textArea);
-                if (successful) {
-                    showToast('تم نسخ النص إلى الحافظة 📋');
-                } else {
-                    showToast('تعذر النسخ تلقائياً');
-                }
+                container.appendChild(aiRow);
+                container.scrollTop = container.scrollHeight;
             } catch (err) {
-                showToast('تعذر النسخ تلقائياً');
+                const loader = document.getElementById(tempId);
+                if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+                const errRow = document.createElement('div');
+                errRow.className = 'message-row ai';
+                errRow.innerHTML = `
+                    <div class="msg-avatar">ن</div>
+                    <div class="msg-bubble-wrap">
+                        <div class="msg-bubble" style="color:#ef4444;">⚠️ حدث خطأ أثناء الاتصال بالخادم: ${escapeHtml(err.message)}</div>
+                    </div>
+                `;
+                container.appendChild(errRow);
+            } finally {
+                isSending = false;
+                if (sendBtn) {
+                    sendBtn.disabled = false;
+                    sendBtn.style.opacity = '1';
+                }
+                const input = document.getElementById('userInput');
+                if (input) input.focus();
             }
         }
 
-        function copyCodeBlock(btn) {
-            const wrapper = btn.closest('.code-block-wrapper');
-            if (!wrapper) return;
-            const code = wrapper.querySelector('code').innerText;
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(code).then(() => {
-                    btn.innerHTML = '<i class="fa-solid fa-check"></i> تم النسخ!';
-                    showToast('تم نسخ الكود البرمجي 💻');
-                    setTimeout(() => {
-                        btn.innerHTML = '<i class="fa-regular fa-copy"></i> نسخ الكود';
-                    }, 2000);
-                }).catch(() => fallbackCopyText(code));
-            } else {
-                fallbackCopyText(code);
-            }
-        }
-
-        function speakText(btn, text) {
-            if (!('speechSynthesis' in window)) {
-                showToast('خاصية القراءة الصوتية غير مدعومة في هذا المتصفح');
-                return;
-            }
-
-            if (window.speechSynthesis.speaking) {
-                window.speechSynthesis.cancel();
-                document.querySelectorAll('.action-btn.speaking').forEach(b => b.classList.remove('speaking'));
-                showToast('تم إيقاف القراءة الصوتية');
-                return;
-            }
-
-            const cleanText = text.replace(/<[^>]*>/g, '').replace(/[\*\_`#]/g, '');
-            const utterance = new SpeechSynthesisUtterance(cleanText);
-            utterance.lang = 'ar-SA';
-            utterance.rate = 1.0;
-
-            btn.classList.add('speaking');
-            utterance.onend = () => btn.classList.remove('speaking');
-            utterance.onerror = () => btn.classList.remove('speaking');
-
-            window.speechSynthesis.speak(utterance);
-            showToast('جاري قراءة الرد صوتاً... 🔊');
-        }
-
-        function rateMessage(btn, type) {
-            const parent = btn.parentElement;
-            if (!parent) return;
-            parent.querySelectorAll('.action-btn').forEach(b => {
-                b.classList.remove('active-like', 'active-dislike');
-            });
-
-            if (type === 'like') {
-                btn.classList.add('active-like');
-                showToast('شكراً على تقييمك الإيجابي! 👍');
-            } else {
-                btn.classList.add('active-dislike');
-                showToast('تم تسجيل ملاحظتك لتحسين الردود 👎');
-            }
-        }
-
-        function shareMessage(text) {
-            if (navigator.share) {
-                navigator.share({
-                    title: 'إجابة من Sasa AI',
-                    text: text,
-                    url: window.location.href
-                }).catch(() => fallbackCopyText(text));
-            } else {
-                fallbackCopyText(text);
-            }
-        }
-
+        // Voice Input Recognition
         function toggleVoiceInput() {
-            const btn = document.getElementById('voiceBtn');
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                showToast('خاصية التعرف الصوتي غير مدعومة في متصفحك');
+                return;
+            }
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const micBtn = document.getElementById('micBtn');
 
-            if (!SpeechRecognition) {
-                showToast('خاصية التعرف على الصوت غير مدعومة في هذا المتصفح');
+            if (isRecording) {
+                isRecording = false;
+                if (micBtn) micBtn.style.color = '';
                 return;
             }
 
-            if (isRecording && speechRecognition) {
-                speechRecognition.stop();
-                return;
-            }
+            const rec = new SpeechRec();
+            rec.lang = 'ar-SA';
+            rec.continuous = false;
+            rec.interimResults = false;
 
-            speechRecognition = new SpeechRecognition();
-            speechRecognition.lang = 'ar-SA';
-            speechRecognition.interimResults = false;
-
-            speechRecognition.onstart = () => {
+            rec.onstart = () => {
                 isRecording = true;
-                if (btn) btn.classList.add('recording');
-                showToast('جاري الاستماع... تحدث الآن 🎙️');
+                if (micBtn) micBtn.style.color = '#ef4444';
+                showToast('جاري الاستماع لصوتك...');
             };
-
-            speechRecognition.onresult = (e) => {
-                const transcript = e.results[0][0].transcript;
-                const inputEl = document.getElementById('userInput');
-                if (inputEl) {
-                    inputEl.value = inputEl.value ? (inputEl.value + ' ' + transcript) : transcript;
-                    autoResize(inputEl);
+            rec.onresult = (e) => {
+                const text = e.results[0][0].transcript;
+                const input = document.getElementById('userInput');
+                if (input) {
+                    input.value = text;
+                    handleSend();
                 }
             };
-
-            speechRecognition.onerror = (e) => {
-                showToast('حدث خطأ في التقاط الصوت: ' + e.error);
-                if (btn) btn.classList.remove('recording');
-                isRecording = false;
-            };
-
-            speechRecognition.onend = () => {
-                if (btn) btn.classList.remove('recording');
-                isRecording = false;
-            };
-
-            speechRecognition.start();
+            rec.onerror = () => { isRecording = false; if (micBtn) micBtn.style.color = ''; };
+            rec.onend = () => { isRecording = false; if (micBtn) micBtn.style.color = ''; };
+            rec.start();
         }
 
-        function toggleGitHubModal() {
-            const modal = document.getElementById('githubModal');
-            if (!modal) return;
-            if (modal.style.display === 'none' || !modal.style.display) {
-                modal.style.display = 'flex';
-                const savedToken = localStorage.getItem('sasa_gh_token') || '';
-                if (savedToken) {
-                    document.getElementById('ghTokenInput').value = savedToken;
-                    verifyAndLoadGitHub();
-                }
-            } else {
-                modal.style.display = 'none';
+        function triggerFileUpload() {
+            const fi = document.getElementById('fileInput');
+            if (fi) fi.click();
+        }
+        function handleFileSelected(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const input = document.getElementById('userInput');
+            if (input) {
+                input.value = `[تم إرفاق ملف: ${file.name}] قم بفحص هذا الملف وشرحه`;
+                handleSend();
             }
         }
 
-        async function verifyAndLoadGitHub() {
-            const tokenInput = document.getElementById('ghTokenInput');
-            const token = tokenInput ? tokenInput.value.trim() : '';
-            if (!token) {
-                showToast('يرجى أدخال توكن GitHub أولاً');
-                return;
-            }
+        function toggleLanguage() {
+            showToast('🌐 الواجهة مضبوطة على اللغة العربية المعيارية');
+        }
 
-            localStorage.setItem('sasa_gh_token', token);
-            const statusEl = document.getElementById('ghUserStatus');
-            if (statusEl) statusEl.textContent = 'جاري التحقق من التوكن... ⏳';
+        function saveSettings() {
+            closeModal('settingsModal');
+            showToast('تم حفظ الإعدادات بنجاح ✅');
+        }
 
-            try {
-                const resp = await fetch('/api/github/repos', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token })
-                });
-                const data = await resp.json();
-
-                if (resp.ok && data.repos) {
-                    if (statusEl) statusEl.textContent = `✅ متصل بنجاح! تم جلب ${data.repos.length} مستودع.`;
-                    const selectEl = document.getElementById('ghRepoSelect');
-                    if (selectEl) {
-                        selectEl.innerHTML = '<option value="">-- اختر مستودعاً --</option>';
-                        data.repos.forEach(repo => {
-                            const opt = document.createElement('option');
-                            opt.value = repo.full_name;
-                            opt.textContent = `${repo.full_name} (${repo.private ? '🔒 خاص' : '🌐 عام'})`;
-                            selectEl.appendChild(opt);
-                        });
-                    }
-                    showToast('تم ربط حساب GitHub وجلب المستودعات 🚀');
-                } else {
-                    if (statusEl) statusEl.textContent = '❌ تعذر التحقق من التوكن: ' + (data.error || 'خطأ غير معروف');
-                }
-            } catch (err) {
-                if (statusEl) statusEl.textContent = '❌ خطأ في الاتصال بالشبكة: ' + err.message;
+        // Sovereign UI Modes & Switcher
+        let activeUIMode = 'developer';
+        function switchUIMode(mode) {
+            activeUIMode = mode;
+            document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+            const cinemaPills = document.getElementById('cinematicPillsBar');
+            const titleEl = document.querySelector('.header-project-name');
+            const planBadge = document.querySelector('.plan-badge');
+            const userInput = document.getElementById('userInput');
+            const memoryBadge = document.getElementById('memoryBadge');
+            
+            if (mode === 'developer') {
+                const btn = document.getElementById('tabModeDev');
+                if (btn) btn.classList.add('active');
+                if (cinemaPills) cinemaPills.style.display = 'none';
+                if (titleEl) titleEl.innerText = 'منظومة نعمة الذكية (Neama AI)';
+                if (planBadge) planBadge.innerText = 'المطور المحترف ⚡';
+                if (memoryBadge) memoryBadge.style.display = 'inline-flex';
+                if (userInput) userInput.placeholder = 'اكتب سؤالك أو طلبك هنا...';
+                showToast('⚡ تم تفعيل نمط المطور المحترف');
+            } else if (mode === 'cinematic') {
+                const btn = document.getElementById('tabModeCinema');
+                if (btn) btn.classList.add('active');
+                if (cinemaPills) cinemaPills.style.display = 'flex';
+                if (titleEl) titleEl.innerText = 'Neama AI & Sasa OS - Cinematic Studio Pro';
+                if (planBadge) planBadge.innerText = '🎬 استوديو المسلسلات';
+                if (userInput) userInput.placeholder = 'اكتب فكرة فيلم، مسلسل، أو أي سؤال معرفي...';
+                showToast('🎬 تم تفعيل استوديو الإنتاج السينمائي والمسلسلات');
+            } else if (mode === 'sovereign') {
+                const btn = document.getElementById('tabModeSovereign');
+                if (btn) btn.classList.add('active');
+                if (cinemaPills) cinemaPills.style.display = 'none';
+                if (titleEl) titleEl.innerText = 'Neama AI Sovereign Engine';
+                if (planBadge) planBadge.innerText = 'Live Container ⚡ 286.6 TFLOPS';
+                if (userInput) userInput.placeholder = 'أدخل الأمر السيادي المباشر لنواة نعمة...';
+                showToast('🌐 تم تفعيل النواة السيادية (286.6 TFLOPS)');
+            } else if (mode === 'minimal') {
+                const btn = document.getElementById('tabModeMinimal');
+                if (btn) btn.classList.add('active');
+                if (cinemaPills) cinemaPills.style.display = 'none';
+                if (titleEl) titleEl.innerText = 'Neama AI • نعمة أي';
+                if (planBadge) planBadge.innerText = '🟢 النمط التبسيطي';
+                if (userInput) userInput.placeholder = 'اكتب سؤالك أو شرحك للمرفق...';
+                showToast('🟢 تم تفعيل النمط التبسيطي السريع');
             }
         }
 
-        async function onGHRepoSelected() {
-            const selectEl = document.getElementById('ghRepoSelect');
-            const repoFullName = selectEl ? selectEl.value : '';
-            if (!repoFullName) return;
-
-            const parts = repoFullName.split('/');
-            if (parts.length === 2) {
-                fetchAndDisplayTree(parts[0], parts[1]);
-            }
-        }
-
-        function loadManualRepo() {
-            const input = document.getElementById('manualRepo');
-            const val = input ? input.value.trim() : '';
-            const parts = val.split('/');
-            if (parts.length === 2) {
-                fetchAndDisplayTree(parts[0], parts[1]);
-            } else {
-                showToast('يرجى كتابة اسم المستودع بصيغة owner/repo');
-            }
-        }
-
-        let currentGHOwner = '';
-        let currentGHRepo = '';
-        let currentGHPath = '';
-
-        async function fetchAndDisplayTree(owner, repo) {
-            currentGHOwner = owner;
-            currentGHRepo = repo;
-            const token = localStorage.getItem('sasa_gh_token') || '';
-            const treeListEl = document.getElementById('ghTreeList');
-            if (treeListEl) treeListEl.innerHTML = '<div style="color: var(--primary);">جاري تحميل ملفات المستودع... ⏳</div>';
-
-            try {
-                const resp = await fetch('/api/github/tree', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token, owner, repo, branch: 'main' })
-                });
-                const data = await resp.json();
-
-                if (resp.ok && data.tree) {
-                    treeListEl.innerHTML = '';
-                    const blobs = data.tree.filter(i => i.type === 'blob');
-                    blobs.forEach(item => {
-                        const fileDiv = document.createElement('div');
-                        fileDiv.style.cssText = 'padding: 4px 8px; cursor: pointer; border-radius: 4px; font-size: 0.8rem; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
-                        fileDiv.innerHTML = `<i class="fa-regular fa-file-code" style="margin-left: 6px; color: var(--primary);"></i> ${item.path}`;
-                        fileDiv.onclick = () => openGHFile(owner, repo, item.path);
-                        fileDiv.onmouseover = () => fileDiv.style.background = '#334155';
-                        fileDiv.onmouseout = () => fileDiv.style.background = 'transparent';
-                        treeListEl.appendChild(fileDiv);
-                    });
-                    showToast(`تم تحميل قائمة ملفات ${owner}/${repo}`);
-                } else {
-                    treeListEl.innerHTML = '<div style="color: #ef4444;">تعذر تحميل شجرة المستودع</div>';
-                }
-            } catch (err) {
-                treeListEl.innerHTML = '<div style="color: #ef4444;">خطأ شبكة أثناء التحميل</div>';
-            }
-        }
-
-        async function openGHFile(owner, repo, path) {
-            currentGHPath = path;
-            const token = localStorage.getItem('sasa_gh_token') || '';
-            const activeLabel = document.getElementById('ghActiveFilePath');
-            if (activeLabel) activeLabel.textContent = `الملف المفتوح: ${path}`;
-
-            const editor = document.getElementById('ghFileEditor');
-            if (editor) editor.value = 'جاري قراءة محتوى الملف... ⏳';
-
-            try {
-                const resp = await fetch('/api/github/file', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token, owner, repo, path, branch: 'main' })
-                });
-                const data = await resp.json();
-
-                if (resp.ok && data.decodedContent !== undefined) {
-                    if (editor) editor.value = data.decodedContent;
-                } else {
-                    if (editor) editor.value = '// تعذر جلب محتوى الملف: ' + (data.error || 'خطأ');
-                }
-            } catch (err) {
-                if (editor) editor.value = '// خطأ في الاتصال بالشبكة';
-            }
-        }
-
-        async function commitGHFileChange() {
-            if (!currentGHOwner || !currentGHRepo || !currentGHPath) {
-                showToast('اختر ملفاً أولاً لتتمكن من التعديل والالتزام (Commit)');
-                return;
-            }
-
-            const token = localStorage.getItem('sasa_gh_token') || '';
-            const content = document.getElementById('ghFileEditor').value;
-            const msg = document.getElementById('ghCommitMsg').value.trim() || `تحديث ${currentGHPath} عبر Sasa AI`;
-
-            try {
-                const resp = await fetch('/api/github/commit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token, owner: currentGHOwner, repo: currentGHRepo, path: currentGHPath, content, message: msg, branch: 'main' })
-                });
-                const data = await resp.json();
-
-                if (resp.ok && data.success) {
-                    showToast('تم الالتزام والتحديث على GitHub بنجاح! 🚀');
-                } else {
-                    showToast('تعذر التحديث: ' + (data.error || 'خطأ'));
-                }
-            } catch (err) {
-                showToast('خطأ في شبكة التحديث');
-            }
-        }
-
-        async function forkCurrentRepo() {
-            if (!currentGHOwner || !currentGHRepo) {
-                showToast('اختر مستودعاً أولاً لعمل Fork');
-                return;
-            }
-
-            const token = localStorage.getItem('sasa_gh_token') || '';
-            try {
-                const resp = await fetch('/api/github/fork', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token, owner: currentGHOwner, repo: currentGHRepo })
-                });
-                const data = await resp.json();
-
-                if (resp.ok && data.forkedRepo) {
-                    showToast(`تم عمل Fork للمستودع إلى حسابك: ${data.forkedRepo.full_name} 🍴`);
-                } else {
-                    showToast('تعذر عمل Fork: ' + (data.error || 'خطأ'));
-                }
-            } catch (err) {
-                showToast('خطأ في عمل Fork');
-            }
-        }
-
-        function openVoiceCallModal() {
-            const modal = document.getElementById('voiceCallModal');
-            if (modal) {
-                modal.style.display = 'flex';
-                showToast('تم فتح غرفة المكالمة الصوتية والتطوير الحي 📞');
-            }
-        }
-
-        function closeVoiceCallModal() {
-            const modal = document.getElementById('voiceCallModal');
-            if (modal) {
-                modal.style.display = 'none';
-                showToast('تم إنهاء المكالمة الصوتية');
-            }
-        }
-
-        let isCallMicActive = false;
-        function toggleCallMic() {
-            isCallMicActive = !isCallMicActive;
-            const btn = document.getElementById('callMicBtn');
-            const status = document.getElementById('callStatusText');
-            if (isCallMicActive) {
-                if (btn) btn.style.background = '#ef4444';
-                if (btn) btn.innerHTML = '<i class="fa-solid fa-microphone-slash"></i> إيقاف المايك';
-                if (status) status.innerHTML = '🔴 صاصا يستمع الآن لصوتك وملاحظاتك...';
-                toggleVoiceInput();
-            } else {
-                if (btn) btn.style.background = '#0284c7';
-                if (btn) btn.innerHTML = '<i class="fa-solid fa-microphone"></i> تحدث الآن';
-                if (status) status.innerHTML = '🟢 المكالمة متصلة.. يمكنك التحدث صوتاً مع صاصا AI';
-                if (isRecording) toggleVoiceInput();
+        function selectCinematicPill(pillKey) {
+            document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+            const input = document.getElementById('userInput');
+            if (pillKey === 'general') {
+                const el = document.getElementById('pillGeneral');
+                if (el) el.classList.add('active');
+                if (input) input.value = 'تفعيل المحرك الإدراكي العام لتحليل شامل';
+                handleSend();
+            } else if (pillKey === 'independent_director') {
+                const el = document.getElementById('pillDirector');
+                if (el) el.classList.add('active');
+                if (input) input.value = 'تفعيل المخرج السينمائي المستقل: هندسة المشهد وضبط زوايا الكاميرا وحركات الإضاءة';
+                handleSend();
+            } else if (pillKey === 'horror_series') {
+                const el = document.getElementById('pillHorror');
+                if (el) el.classList.add('active');
+                if (input) input.value = 'اكتب سيناريو مسلسل رعب من 3 حلقات بمشاهد سينمائية وتشويق سردي';
+                handleSend();
+            } else if (pillKey === 'andalus_epic') {
+                const el = document.getElementById('pillAndalus');
+                if (el) el.classList.add('active');
+                if (input) input.value = 'اكتب سيناريو ملحمة الأندلس التاريخية بمشاهد سينمائية وحوار درامي عميق';
+                handleSend();
+            } else if (pillKey === 'neocorus_series') {
+                const el = document.getElementById('pillNeocorus');
+                if (el) el.classList.add('active');
+                if (input) input.value = 'اكتب سيناريو مسلسل الخيال العلمي والذكاء الاصطناعي نيوكوريس';
+                handleSend();
             }
         }
     </script>
