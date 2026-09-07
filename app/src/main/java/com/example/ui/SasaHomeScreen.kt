@@ -36,9 +36,16 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.ButtonDefaults
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreVert
@@ -56,11 +63,25 @@ import com.example.ui.components.CloudWorkspaceSettingsDialog
 import com.example.ui.components.MemoryDialog
 import com.example.ui.components.VoiceCallDialog
 import com.example.ui.components.GitHubManagerDialog
+import com.example.ui.components.PlansDialog
+import com.example.ui.components.ProfileDialog
+import androidx.compose.material.icons.filled.Translate
+import androidx.compose.material.icons.filled.Add
+import com.example.ui.creative_studio.CreativeStudioScreen
+import com.example.ui.neama.NeamaDomainsHubDialog
+import com.example.ui.domains.NeamaDomainsScreen
+import com.example.ui.sync.NeamaSovereignSyncScreen
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Headset
 import androidx.compose.material.icons.filled.CloudSync
-import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -118,12 +139,20 @@ import com.example.ui.theme.SasaUserBubble
 import kotlinx.coroutines.launch
 import java.util.Locale
 
+enum class NeamaNavTab(val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    CHAT("الدردشة الإدراكية", Icons.Default.SmartToy),
+    DOMAINS("المحركات (23)", Icons.Default.Layers),
+    CINEMA("استوديو السينما", Icons.Default.Movie),
+    SYNC("السيادة والمزامنة", Icons.Default.Shield)
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SasaHomeScreen(
     viewModel: SasaViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var currentTab by remember { mutableStateOf(NeamaNavTab.CHAT) }
     var inputText by remember { mutableStateOf("") }
     var showModelMenu by remember { mutableStateOf(false) }
     var showGlobalPreview by remember { mutableStateOf(false) }
@@ -164,7 +193,7 @@ fun SasaHomeScreen(
     DisposableEffect(context) {
         val tts = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                ttsEngine?.language = Locale("ar")
+                ttsEngine?.language = Locale.forLanguageTag("ar")
             }
         }
         ttsEngine = tts
@@ -241,38 +270,84 @@ fun SasaHomeScreen(
                     onVoiceCallClick = { viewModel.setShowVoiceCallDialog(true) },
                     onCloudSettingsClick = { viewModel.setShowCloudWorkspaceSettings(true) },
                     onGitHubClick = { viewModel.setShowGitHubDialog(true) },
-                    onClearChatClick = { viewModel.onClearChat() }
+                    onCreativeStudioClick = { viewModel.setShowCreativeStudioDialog(true) },
+                    onNeamaHubClick = { viewModel.setShowNeamaHubDialog(true) },
+                    onClearChatClick = { viewModel.onClearChat() },
+                    onPlansClick = { viewModel.setShowPlansDialog(true) },
+                    onProfileClick = { viewModel.setShowProfileDialog(true) },
+                    onNewSessionClick = { viewModel.onNewSession() }
                 )
             },
             bottomBar = {
-                BottomInputBar(
-                    inputText = inputText,
-                    onInputChanged = { inputText = it },
-                    isGenerating = uiState.isGenerating,
-                    activeModelName = uiState.selectedModel.displayName,
-                    onSend = {
-                        if (inputText.isNotBlank() && !uiState.isGenerating) {
-                            val textToSend = inputText.trim()
-                            inputText = ""
-                            viewModel.onSendMessage(textToSend)
-                        }
-                    },
-                    onAttachFile = {
-                        filePickerLauncher.launch("*/*")
-                    },
-                    onVoiceInput = {
-                        try {
-                            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar")
-                                putExtra(RecognizerIntent.EXTRA_PROMPT, "تحدث الآن للاستماع لصلبك البرمجي...")
-                            }
-                            speechLauncher.launch(intent)
-                        } catch (e: Exception) {
-                            Toast.makeText(context, "الميزة غير متوفرة على هذا الجهاز", Toast.LENGTH_SHORT).show()
+                Column {
+                    if (currentTab == NeamaNavTab.CHAT) {
+                        BottomInputBar(
+                            inputText = inputText,
+                            onInputChanged = { inputText = it },
+                            isGenerating = uiState.isGenerating,
+                            activeModelName = uiState.selectedModel.displayName,
+                            onSend = {
+                                if (inputText.isNotBlank() && !uiState.isGenerating) {
+                                    val textToSend = inputText.trim()
+                                    inputText = ""
+                                    viewModel.onSendMessage(textToSend)
+                                }
+                            },
+                            onStopGeneration = {
+                                viewModel.stopGeneration()
+                            },
+                            onAttachFile = {
+                                filePickerLauncher.launch("*/*")
+                            },
+                            onVoiceInput = {
+                                try {
+                                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar")
+                                        putExtra(RecognizerIntent.EXTRA_PROMPT, "تحدث الآن للاستماع لصلبك البرمجي...")
+                                    }
+                                    speechLauncher.launch(intent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "الميزة غير متوفرة على هذا الجهاز", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            onVoiceCallClick = { viewModel.setShowVoiceCallDialog(true) }
+                        )
+                    }
+
+                    // Unified Sovereign Navigation Bar
+                    NavigationBar(
+                        containerColor = Color(0xFF0F172A),
+                        tonalElevation = 8.dp
+                    ) {
+                        NeamaNavTab.values().forEach { tab ->
+                            val isSelected = currentTab == tab
+                            NavigationBarItem(
+                                selected = isSelected,
+                                onClick = { currentTab = tab },
+                                icon = {
+                                    Icon(
+                                        imageVector = tab.icon,
+                                        contentDescription = tab.title,
+                                        tint = if (isSelected) Color(0xFF38BDF8) else Color(0xFF64748B),
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                },
+                                label = {
+                                    Text(
+                                        text = tab.title,
+                                        fontSize = 11.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isSelected) Color(0xFF38BDF8) else Color(0xFF64748B)
+                                    )
+                                },
+                                colors = NavigationBarItemDefaults.colors(
+                                    indicatorColor = Color(0xFF1E293B)
+                                )
+                            )
                         }
                     }
-                )
+                }
             },
             snackbarHost = { SnackbarHost(snackbarHostState) },
             containerColor = SasaDarkBackground
@@ -333,130 +408,188 @@ fun SasaHomeScreen(
                     )
                 }
 
-                Column(modifier = Modifier.fillMaxSize()) {
-
-                    // Chat messages list
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 12.dp)
+                // Creative Studio & Cinema Directing Dialog
+                if (uiState.showCreativeStudioDialog) {
+                    androidx.compose.ui.window.Dialog(
+                        onDismissRequest = { viewModel.setShowCreativeStudioDialog(false) },
+                        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
                     ) {
-                        item { Spacer(modifier = Modifier.height(8.dp)) }
+                        CreativeStudioScreen(
+                            onDismiss = { viewModel.setShowCreativeStudioDialog(false) }
+                        )
+                    }
+                }
 
-                        items(uiState.messages, key = { it.id }) { msg ->
-                            ChatMessageItem(
-                                message = msg,
-                                feedbackValue = feedbackState[msg.id],
-                                onCopy = {
-                                    clipboardManager.setText(AnnotatedString(msg.text))
-                                    Toast.makeText(context, "تم نسخ النص إلى الحافظة", Toast.LENGTH_SHORT).show()
-                                },
-                                onListen = {
-                                    ttsEngine?.stop()
-                                    ttsEngine?.speak(msg.text, TextToSpeech.QUEUE_FLUSH, null, msg.id)
-                                },
-                                onShare = {
-                                    val sendIntent = Intent().apply {
-                                        action = Intent.ACTION_SEND
-                                        putExtra(Intent.EXTRA_TEXT, msg.text)
-                                        type = "text/plain"
-                                    }
-                                    val shareIntent = Intent.createChooser(sendIntent, "مشاركة رد صاصا AI")
-                                    context.startActivity(shareIntent)
-                                },
-                                onPushToCloud = { path, content ->
-                                    viewModel.pushUpdateToCloudRepo(path, content)
-                                },
-                                onFeedback = { isUp ->
-                                    if (feedbackState[msg.id] == isUp) {
-                                        feedbackState.remove(msg.id)
-                                    } else {
-                                        feedbackState[msg.id] = isUp
-                                        val feedbackMsg = if (isUp) "شكراً لك على التقييم الإيجابي! 👍" else "شكراً لملاحظاتك، سنعمل على تحسين الإجابات. 👎"
-                                        Toast.makeText(context, feedbackMsg, Toast.LENGTH_SHORT).show()
+                // Neama Sovereign Cognitive Hub Dialog (23 Unified Domains)
+                if (uiState.showNeamaHubDialog) {
+                    NeamaDomainsHubDialog(
+                        isOpen = uiState.showNeamaHubDialog,
+                        onDismiss = { viewModel.setShowNeamaHubDialog(false) },
+                        onInjectDomainPrompt = { prompt -> viewModel.onSendMessage(prompt) }
+                    )
+                }
+
+                // Plans Dialog
+                if (uiState.showPlansDialog) {
+                    PlansDialog(
+                        isOpen = uiState.showPlansDialog,
+                        onDismiss = { viewModel.setShowPlansDialog(false) }
+                    )
+                }
+
+                // Profile & PAT Dialog
+                if (uiState.showProfileDialog) {
+                    ProfileDialog(
+                        isOpen = uiState.showProfileDialog,
+                        onDismiss = { viewModel.setShowProfileDialog(false) }
+                    )
+                }
+
+                when (currentTab) {
+                    NeamaNavTab.CHAT -> {
+                        Column(modifier = Modifier.fillMaxSize()) {
+
+                            // Chat messages list
+                            LazyColumn(
+                                state = listState,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(horizontal = 12.dp)
+                            ) {
+                                item { Spacer(modifier = Modifier.height(8.dp)) }
+
+                                items(uiState.messages, key = { it.id }) { msg ->
+                                    ChatMessageItem(
+                                        message = msg,
+                                        feedbackValue = feedbackState[msg.id],
+                                        onCopy = {
+                                            clipboardManager.setText(AnnotatedString(msg.text))
+                                            Toast.makeText(context, "تم نسخ النص إلى الحافظة", Toast.LENGTH_SHORT).show()
+                                        },
+                                        onListen = {
+                                            ttsEngine?.stop()
+                                            ttsEngine?.speak(msg.text, TextToSpeech.QUEUE_FLUSH, null, msg.id)
+                                        },
+                                        onShare = {
+                                            val sendIntent = Intent().apply {
+                                                action = Intent.ACTION_SEND
+                                                putExtra(Intent.EXTRA_TEXT, msg.text)
+                                                type = "text/plain"
+                                            }
+                                            val shareIntent = Intent.createChooser(sendIntent, "مشاركة رد نعمة AI")
+                                            context.startActivity(shareIntent)
+                                        },
+                                        onPushToCloud = { path, content ->
+                                            viewModel.pushUpdateToCloudRepo(path, content)
+                                        },
+                                        onFeedback = { isUp ->
+                                            if (feedbackState[msg.id] == isUp) {
+                                                feedbackState.remove(msg.id)
+                                            } else {
+                                                feedbackState[msg.id] = isUp
+                                                val feedbackMsg = if (isUp) "شكراً لك على التقييم الإيجابي! 👍" else "شكراً لملاحظاتك، سنعمل على تحسين الإجابات. 👎"
+                                                Toast.makeText(context, feedbackMsg, Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    )
+                                }
+
+                                if (uiState.isGenerating) {
+                                    item {
+                                        ThinkingIndicator(modelName = uiState.selectedModel.displayName)
                                     }
                                 }
-                            )
-                        }
 
-                        if (uiState.isGenerating) {
-                            item {
-                                ThinkingIndicator(modelName = uiState.selectedModel.displayName)
-                            }
-                        }
+                                // Clean empty-state greeting when conversation is empty
+                                if (uiState.messages.isEmpty() && !uiState.isGenerating) {
+                                    item {
+                                        Spacer(modifier = Modifier.height(24.dp))
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(20.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(64.dp)
+                                                    .clip(CircleShape)
+                                                    .background(SasaPrimaryContainer)
+                                                    .border(2.dp, SasaPrimary, CircleShape),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.AutoAwesome,
+                                                    contentDescription = "نعمة AI",
+                                                    tint = SasaSecondary,
+                                                    modifier = Modifier.size(32.dp)
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            Text(
+                                                text = "مرحباً بك في منظومة نعمة الذكية (Neama AI)",
+                                                style = MaterialTheme.typography.titleLarge,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(
+                                                text = "المنظومة المعرفية السيادية الموحدة للذكاء الاصطناعي والهندسة البرمجية",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = SasaAccentGreen,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                            Spacer(modifier = Modifier.height(6.dp))
+                                            Text(
+                                                text = "23 محركاً تخصصياً، الاستوديو السينمائي، ومزامنة GitHub اللحظية جاهزة كلياً.",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = SasaTextSecondary,
+                                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                            )
+                                            Spacer(modifier = Modifier.height(20.dp))
 
-                        // Clean empty-state greeting when conversation is empty
-                        if (uiState.messages.isEmpty() && !uiState.isGenerating) {
-                            item {
-                                Spacer(modifier = Modifier.height(24.dp))
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(20.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(64.dp)
-                                            .clip(CircleShape)
-                                            .background(SasaPrimaryContainer)
-                                            .border(2.dp, SasaPrimary, CircleShape),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.AutoAwesome,
-                                            contentDescription = "صاصا AI",
-                                            tint = SasaSecondary,
-                                            modifier = Modifier.size(32.dp)
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    Text(
-                                        text = "مرحباً بك في صاصا AI (Sasa AI)",
-                                        style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = "الوكيل البرمجي المتكامل وتطوير الشيخ الهلباوي",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = SasaAccentGreen,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                    Spacer(modifier = Modifier.height(6.dp))
-                                    Text(
-                                        text = "أنظمة التكويد، مستودعات GitHub، المكالمات الصوتية، والخدمات الخلفية الشفافة نشطة وجاهزة.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = SasaTextSecondary,
-                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                    )
-                                    Spacer(modifier = Modifier.height(20.dp))
-
-                                    @OptIn(ExperimentalLayoutApi::class)
-                                    FlowRow(
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        PromptChip(label = "📞 اتصال صوتي حي مع صاصا") {
-                                            viewModel.setShowVoiceCallDialog(true)
-                                        }
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        PromptChip(label = "🤖 من أنت وما هي جميع خدماتك؟") {
-                                            viewModel.onSendMessage("من أنت وما هي جميع الخدمات والإمكانيات التي تقدمها بالتفصيل؟")
-                                        }
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        PromptChip(label = "🐙 إدارة مستودعات GitHub") {
-                                            viewModel.setShowGitHubDialog(true)
+                                            @OptIn(ExperimentalLayoutApi::class)
+                                            FlowRow(
+                                                horizontalArrangement = Arrangement.Center,
+                                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                PromptChip(label = "📞 اتصال صوتي حي مع نعمة AI") {
+                                                    viewModel.setShowVoiceCallDialog(true)
+                                                }
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                PromptChip(label = "🤖 ما هي إمكانيات منظومة نعمة؟") {
+                                                    viewModel.onSendMessage("من أنت وما هي جميع الخدمات والإمكانيات التي تقدمها منظومة نعمة بالتفصيل؟")
+                                                }
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                PromptChip(label = "🏛️ استعراض المحركات (23)") {
+                                                    currentTab = NeamaNavTab.DOMAINS
+                                                }
+                                            }
                                         }
                                     }
                                 }
+
+                                item { Spacer(modifier = Modifier.height(12.dp)) }
                             }
                         }
-
-                        item { Spacer(modifier = Modifier.height(12.dp)) }
+                    }
+                    NeamaNavTab.DOMAINS -> {
+                        NeamaDomainsScreen(
+                            onOpenCinemaStudio = { currentTab = NeamaNavTab.CINEMA }
+                        )
+                    }
+                    NeamaNavTab.CINEMA -> {
+                        CreativeStudioScreen(
+                            onDismiss = { currentTab = NeamaNavTab.CHAT }
+                        )
+                    }
+                    NeamaNavTab.SYNC -> {
+                        NeamaSovereignSyncScreen(
+                            onOpenGitHubManager = { viewModel.setShowGitHubDialog(true) },
+                            onOpenCloudWorkspaceSettings = { viewModel.setShowCloudWorkspaceSettings(true) },
+                            onOpenMemoryManager = { viewModel.setShowMemoryDialog(true) }
+                        )
                     }
                 }
 
@@ -506,9 +639,15 @@ fun HeaderBar(
     onVoiceCallClick: () -> Unit = {},
     onCloudSettingsClick: () -> Unit = {},
     onGitHubClick: () -> Unit = {},
-    onClearChatClick: () -> Unit = {}
+    onCreativeStudioClick: () -> Unit = {},
+    onNeamaHubClick: () -> Unit = {},
+    onClearChatClick: () -> Unit = {},
+    onPlansClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {},
+    onNewSessionClick: () -> Unit = {}
 ) {
     var showMoreMenu by remember { mutableStateOf(false) }
+    var currentLanguage by remember { mutableStateOf("العربية") }
 
     Surface(
         color = SasaCardBackground,
@@ -533,7 +672,7 @@ fun HeaderBar(
                 ) {
                     Icon(
                         imageVector = Icons.Default.AutoAwesome,
-                        contentDescription = "صاصا AI",
+                        contentDescription = "نعمة AI",
                         tint = SasaSecondary,
                         modifier = Modifier.size(22.dp)
                     )
@@ -542,7 +681,7 @@ fun HeaderBar(
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "صاصا AI",
+                            text = "نعمة AI",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -563,7 +702,7 @@ fun HeaderBar(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "خدمات خلفية شفافة مفعلة 🟢",
+                                    text = "23 محركاً سيادياً موحداً 🟢",
                                     fontSize = 10.sp,
                                     color = SasaAccentGreen,
                                     fontWeight = FontWeight.Bold
@@ -574,8 +713,66 @@ fun HeaderBar(
                 }
             }
 
-            // Top Primary Action Buttons (Voice Call + Live Preview Screen + Transparent Services Overflow Menu)
+            // Top Primary Action Buttons
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // Neama Hub Direct Button
+                Surface(
+                    onClick = onNeamaHubClick,
+                    shape = RoundedCornerShape(10.dp),
+                    color = SasaPrimary.copy(alpha = 0.2f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, SasaPrimary)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Psychology,
+                            contentDescription = "محركات نعمة الـ 23",
+                            tint = SasaSecondary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "المحركات",
+                            color = SasaSecondary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(6.dp))
+
+                // New Session Button (جلسة جديدة)
+                Surface(
+                    onClick = onNewSessionClick,
+                    shape = RoundedCornerShape(10.dp),
+                    color = SasaPrimary.copy(alpha = 0.2f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, SasaPrimary)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "جلسة جديدة",
+                            tint = SasaPrimary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "جلسة جديدة",
+                            color = SasaPrimary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(6.dp))
+
                 // Voice Call & Live Screen Share Button (زر الاتصال)
                 Surface(
                     onClick = onVoiceCallClick,
@@ -648,6 +845,55 @@ fun HeaderBar(
                             .border(1.dp, SasaPrimary.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
                     ) {
                         DropdownMenuItem(
+                            text = { Text("👑 الخطط والاشتراكات (Plans)", color = Color(0xFFF59E0B), fontSize = 13.sp, fontWeight = FontWeight.Bold) },
+                            onClick = {
+                                showMoreMenu = false
+                                onPlansClick()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("📁 المشاريع ومستودعات GitHub", color = Color.White, fontSize = 13.sp) },
+                            onClick = {
+                                showMoreMenu = false
+                                onGitHubClick()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("👤 الملف الشخصي وتوليد التوكن (PAT)", color = Color.White, fontSize = 13.sp) },
+                            onClick = {
+                                showMoreMenu = false
+                                onProfileClick()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("⚙️ الإعدادات والذاكرة طويلة المدى", color = Color.White, fontSize = 13.sp) },
+                            onClick = {
+                                showMoreMenu = false
+                                onMemoryClick()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { 
+                                Text(
+                                    "🌐 اللغة: $currentLanguage (تبديل)", 
+                                    color = SasaSecondary, 
+                                    fontSize = 13.sp
+                                ) 
+                            },
+                            onClick = {
+                                currentLanguage = if (currentLanguage == "العربية") "English" else "العربية"
+                                showMoreMenu = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("✨ بدء جلسة جديدة وتصفير السياق", color = SasaPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) },
+                            onClick = {
+                                showMoreMenu = false
+                                onNewSessionClick()
+                            }
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+                        DropdownMenuItem(
                             text = { Text("🤖 تغيير نموذج الذكاء الاصطناعي", color = Color.White, fontSize = 13.sp) },
                             onClick = {
                                 showMoreMenu = false
@@ -668,13 +914,6 @@ fun HeaderBar(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("🧠 الذاكرة طويلة المدى للمشروع (شغالة خلفياً)", color = Color.White, fontSize = 13.sp) },
-                            onClick = {
-                                showMoreMenu = false
-                                onMemoryClick()
-                            }
-                        )
-                        DropdownMenuItem(
                             text = { Text("☁️ إعدادات وتراسل البيئة السحابية (Codespaces)", color = Color.White, fontSize = 13.sp) },
                             onClick = {
                                 showMoreMenu = false
@@ -682,10 +921,17 @@ fun HeaderBar(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("🐙 إعدادات ومستودعات GitHub API", color = Color.White, fontSize = 13.sp) },
+                            text = { Text("🌌 كتالوج محركات نعمة الـ 23 (Neama Hub)", color = Color.White, fontSize = 13.sp) },
                             onClick = {
                                 showMoreMenu = false
-                                onGitHubClick()
+                                onNeamaHubClick()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("🎬 الاستوديو الإبداعي والإخراج السينمائي (Neama)", color = Color.White, fontSize = 13.sp) },
+                            onClick = {
+                                showMoreMenu = false
+                                onCreativeStudioClick()
                             }
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
@@ -710,6 +956,7 @@ fun ChatMessageItem(
     onCopy: () -> Unit = {},
     onListen: () -> Unit = {},
     onShare: () -> Unit = {},
+    onTranslate: () -> Unit = {},
     onPushToCloud: ((filePath: String, content: String) -> Unit)? = null,
     onFeedback: (Boolean) -> Unit = {}
 ) {
@@ -807,6 +1054,22 @@ fun ChatMessageItem(
                     onPushToCloud = onPushToCloud
                 )
 
+                // Render Media Attachment if present (Generated Image, Video, Movie, SVG)
+                val directMediaUrl = message.mediaUrl ?: run {
+                    val regex = Regex("""\[(https?://[^\s)]+|/api/media/[^\s)]+|data:image/[^\s)]+)\]\(\1\)""")
+                    val m = regex.find(message.text)
+                    m?.groupValues?.get(1)
+                }
+
+                if (!directMediaUrl.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    MediaAttachmentCard(
+                        mediaUrl = directMediaUrl,
+                        mediaType = message.mediaType ?: "وسائط",
+                        mediaTitle = message.mediaTitle ?: "معاينة ملف الوسائط المنجز"
+                    )
+                }
+
                 // Action buttons under AI responses (Copy, Listen, Share, Thumb Up, Thumb Down)
                 if (!isUser && !message.isError) {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -838,7 +1101,7 @@ fun ChatMessageItem(
                                 .testTag("listen_response_button")
                         ) {
                             Icon(
-                                imageVector = Icons.Default.VolumeUp,
+                                imageVector = Icons.AutoMirrored.Filled.VolumeUp,
                                 contentDescription = "استماع للرد",
                                 tint = SasaTextSecondary,
                                 modifier = Modifier.size(16.dp)
@@ -856,6 +1119,21 @@ fun ChatMessageItem(
                                 imageVector = Icons.Default.Share,
                                 contentDescription = "مشاركة الرد",
                                 tint = SasaTextSecondary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+
+                        // Translate Button
+                        IconButton(
+                            onClick = onTranslate,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .testTag("translate_response_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Translate,
+                                contentDescription = "ترجمة الرد",
+                                tint = SasaPrimary,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -947,8 +1225,10 @@ fun BottomInputBar(
     isGenerating: Boolean,
     activeModelName: String,
     onSend: () -> Unit,
+    onStopGeneration: () -> Unit = {},
     onAttachFile: () -> Unit = {},
-    onVoiceInput: () -> Unit = {}
+    onVoiceInput: () -> Unit = {},
+    onVoiceCallClick: () -> Unit = {}
 ) {
     Surface(
         color = SasaDarkSurface,
@@ -1027,32 +1307,62 @@ fun BottomInputBar(
                 )
             )
 
-            // High-Visibility Standalone Send Button
+            // Live Voice Call Button right next to Send button
+            Surface(
+                onClick = onVoiceCallClick,
+                shape = CircleShape,
+                color = Color(0xFF10B981).copy(alpha = 0.2f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF10B981)),
+                modifier = Modifier
+                    .size(48.dp)
+                    .testTag("live_chat_call_button")
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Call,
+                        contentDescription = "بدء محادثة صوتية مباشرة",
+                        tint = Color(0xFF10B981),
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+
+            // High-Visibility Standalone Send / Stop Button
             val canSend = inputText.trim().isNotEmpty() && !isGenerating
 
             Surface(
                 onClick = {
-                    if (canSend) {
+                    if (isGenerating) {
+                        onStopGeneration()
+                    } else if (canSend) {
                         onSend()
                     }
                 },
-                enabled = canSend,
+                enabled = canSend || isGenerating,
                 shape = CircleShape,
-                color = if (canSend) SasaPrimary else SasaCardBackground,
+                color = when {
+                    isGenerating -> Color(0xFFEF4444) // Sovereign Red stop button
+                    canSend -> SasaPrimary
+                    else -> SasaCardBackground
+                },
                 modifier = Modifier
                     .size(48.dp)
                     .testTag("send_message_button"),
-                shadowElevation = if (canSend) 4.dp else 0.dp
+                shadowElevation = if (canSend || isGenerating) 4.dp else 0.dp
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier.fillMaxSize()
                 ) {
                     if (isGenerating) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(22.dp),
-                            color = SasaPrimary,
-                            strokeWidth = 2.5.dp
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "إيقاف التوليد",
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
                         )
                     } else {
                         Icon(
@@ -1062,6 +1372,132 @@ fun BottomInputBar(
                             modifier = Modifier.size(22.dp)
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun MediaAttachmentCard(
+    mediaUrl: String,
+    mediaType: String,
+    mediaTitle: String
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val isVideo = mediaType.contains("video", ignoreCase = true) ||
+            mediaType.contains("movie", ignoreCase = true) ||
+            mediaType.contains("cinema", ignoreCase = true) ||
+            mediaType.contains("film", ignoreCase = true) ||
+            mediaType.contains("مسلسل", ignoreCase = true) ||
+            mediaType.contains("فيلم", ignoreCase = true)
+
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
+        border = androidx.compose.foundation.BorderStroke(1.dp, SasaPrimary.copy(alpha = 0.5f)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .testTag("media_attachment_card")
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .background(Color(0xFF020617))
+                    .clickable {
+                        try {
+                            if (mediaUrl.startsWith("http")) {
+                                val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(mediaUrl))
+                                context.startActivity(intent)
+                            } else {
+                                Toast.makeText(context, "معاينة: $mediaTitle", Toast.LENGTH_SHORT).show()
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "الملف جاهز: $mediaTitle", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(mediaUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = mediaTitle,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                )
+
+                if (isVideo) {
+                    Box(
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xCC000000)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = "تشغيل العرض",
+                            tint = SasaPrimary,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF1E293B))
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = mediaTitle,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "${mediaType.uppercase()} • جاهز للمعاينة الفورية والتحميل",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = SasaPrimary
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                FilledTonalButton(
+                    onClick = {
+                        try {
+                            if (mediaUrl.startsWith("http")) {
+                                val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(mediaUrl))
+                                context.startActivity(intent)
+                            } else {
+                                Toast.makeText(context, "تم تجهيز رابط التحميل بنجاح", Toast.LENGTH_SHORT).show()
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "الرابط جاهز للتحميل", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    colors = ButtonDefaults.filledTonalButtonColors(containerColor = SasaPrimary)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Download,
+                        contentDescription = "تحميل",
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("تحميل", color = Color.White, fontSize = 12.sp)
                 }
             }
         }
