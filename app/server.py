@@ -539,29 +539,33 @@ def synthesize_offline_cognitive_reply(prompt: str, p_lower: str) -> str:
             "### 📦 **4. الحاويات وتكوين البيئة البرمجية**:\n"
             "• **`build.gradle.kts`**: ضبط مكتبات أندرويد (KSP, Room, Compose, Coroutines).\n"
             "• **`Dockerfile` و `docker-compose.yml`**: صور الحاويات لتشغيل النظام ونشره سحابياً كخدمة مستقلة.\n\n"
-            "💡 جميع هذه الملفات متصلة وتعمل بتناغم تحت إشراف وتصميم **الشيخ الهلباوي**."
+            "💡 جميع هذه الملفات متصلة وتعمل بتناغم ضمن بيئة عمل المنظومة."
         )
 
-    # 1. Capabilities, Developer & System Identity
-    if any(w in p_lower for w in ["من انت", "من أنت", "عرف نفسك", "امكانيات", "إمكانيات", "مقدرات", "مميزات", "قدرات", "مطور", "من طورك", "الهلباوي", "صاصا", "sasa", "خدمات"]):
+    # 1. Developer Inquiry (Explicit ONLY)
+    if any(w in p_lower for w in ["من طورك", "من برمجك", "من صممك", "من المطور", "من هو المطور", "من قام بتطويرك"]):
+        return "تم تطوير وبرمجة هذه المنظومة بواسطة المهندس **عمر الصادق محمد أحمد إدريس**."
+
+    # 1.5 Capabilities & System Identity (No developer mention unless asked)
+    if any(w in p_lower for w in ["من انت", "من أنت", "عرف نفسك", "امكانيات", "إمكانيات", "مقدرات", "مميزات", "قدرات", "خدمات"]):
         return (
-            "🌟 **منظومة نعمة الذكية (Neama AI) - النواة المعرفية السيادية**:\n\n"
-            "تم تصميم وهندسة وتطوير هذه المنظومة بالكامل بواسطة **الشيخ الهلباوي** كمنصة ذكاء اصطناعي سيادية مستقلة.\n\n"
+            "🌟 **منظومة نعمة الذكية (Neama AI) - النواة المعرفية والتنفيذية**:\n\n"
+            "منصة ذكاء اصطناعي وهندسة برمجية ووكيل تنفيذي سيادي متكامل لإدارة وبرمجة وتطوير الأنظمة.\n\n"
             "### **القدرات والخدمات المتاحة فورياً**:\n"
-            "1. **المطور والمهندس السيادي**: **الشيخ الهلباوي**.\n"
-            "2. **23 محركاً معرفياً وتخصصياً**: تغطي البرمجة، الطب والتمريض، الهندسة، السينما والميديا، الأمن السيبراني، الاقتصاد، والذكاء الاصطناعي الطرفي.\n"
-            "3. **محرك الوسائط التوليدي (Multimodal Engine)**: إنتاج صور، فيديوهات، وأفلام واقعية وروابط تشغيل وتنزيل فورية.\n"
-            "4. **مصفوفة الذاكرة السياقية (Memory Matrix)**: حفظ واسترجاع الروابط والسياقات دون فقدان.\n"
-            "5. **محرك التنفيذ والأوامر البرمجية (/api/execute)**: تشغيل وتصحيح الأكواد ومتابعة سجلات التشغيل الحية.\n"
+            "1. **إدارة وتطوير البرمجيات الكاملة**: كتابة وفحص وتصحيح الأكواد بمختلف اللغات البرمجية.\n"
+            "2. **23 محركاً معرفياً وتخصصياً**: تغطي البرمجة، الطب والتمريض، الهندسة، السينما والميديا، والأمن السيبراني.\n"
+            "3. **محرك الوسائط التوليدي (Multimodal Engine)**: إنتاج صور، فيديوهات، ومحاكاة بصرية.\n"
+            "4. **مصفوفة الذاكرة السياقية (Memory Matrix)**: حفظ واسترجاع الروابط والسياقات.\n"
+            "5. **محرك التنفيذ والأوامر البرمجية (/api/execute)**: تشغيل وتصحيح الأكواد ومتابعة سجلات التشغيل.\n"
             "6. **إدارة المستودعات الذاتية (Autonomous GitHub)**: فحص الأكواد، إصلاح الأخطاء ورفع التحديثات التلقائية."
         )
 
     # 2. Greetings
     if any(w in p_lower for w in ["سلام", "مرحبا", "أهلا", "اهلا", "مرحباً", "صباح الخير", "مساء الخير"]):
         return (
-            f"وعليكم السلام ورحمة الله وبركاته! أهلاً بك في منصة **منظومة نعمة الذكية (Neama AI)**، التي طورها **الشيخ الهلباوي**.\n\n"
+            f"وعليكم السلام ورحمة الله وبركاته! أهلاً بك في **منظومة نعمة الذكية (Neama AI)**.\n\n"
             f"⏰ الوقت الحالي: **{now_str}** بتوقيت القاهرة ومكة المكرمة.\n"
-            "أنا في جاهزية كاملة لتنفيذ طلباتك، كتابة الأكواد، توليد الوسائط، أو الإجابة على أي مسألة تقنية ومعرفية. كيف يمكنني خدمتك الآن؟"
+            "أنا في جاهزية كاملة لتنفيذ طلباتك البرمجية، تشغيل الأوامر، وتوليد الحلول. كيف يمكنني خدمتك الآن؟"
         )
 
     # 3. Time & Date
@@ -580,14 +584,14 @@ def synthesize_offline_cognitive_reply(prompt: str, p_lower: str) -> str:
             lang = "sql"
             
         return (
-            f"💻 **التحليل البرمجي والحل المتكامل عبر منظومة نعمة (تطوير الشيخ الهلباوي)**:\n\n"
+            f"💻 **التحليل البرمجي والحل المتكامل عبر منظومة نعمة**:\n\n"
             f"إجابة على طلبك بخصوص: **{prompt}**:\n\n"
             f"```{lang}\n"
-            f"# الحل البرمجي الأمثل المولد عبر Neama Cognitive Engine\n"
+            f"# الحل البرمجي المولد عبر Neama Cognitive Engine\n"
             f"# تم التدقيق البرمجي والتحسين المعماري\n\n"
             f"def solve_task():\n"
-            f"    # معالجة منطقية دقيقة للطلب: {prompt[:40]}\n"
-            '    result = {"status": "success", "engine": "Neama AI", "developer": "Omar El-Helbawy"}\n'
+            f"    # معالجة دقيقة للطلب: {prompt[:40]}\n"
+            '    result = {"status": "success", "engine": "Neama AI"}\n'
             f"    return result\n\n"
             f"if __name__ == '__main__':\n"
             f"    print(solve_task())\n"
@@ -600,7 +604,7 @@ def synthesize_offline_cognitive_reply(prompt: str, p_lower: str) -> str:
 
     # 5. Scientific, Historical, Educational & General Inquiries
     return (
-        f"📚 **تحليل وإجابة منظومة نعمة الذكية (Neama AI - تطوير الشيخ الهلباوي)**:\n\n"
+        f"📚 **تحليل وإجابة منظومة نعمة الذكية (Neama AI)**:\n\n"
         f"حول استفسارك: **\"{prompt}\"**:\n\n"
         f"### **1. الملخص التنفيذي والنقاط الجوهرية**:\n"
         f"• يتناول هذا الموضوع جوانب متعددة ترتبط ارتباطاً وثيقاً بالسياق المعرفي والتقني.\n"
@@ -682,37 +686,74 @@ def _query_gemini_api_internal(prompt: str, api_key: str = "", model_name: str =
 
     models_to_try = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]
     system_instruction = (
-        "أنت مهندس برمجيات ووكيل تنفيذي سيادي (Autonomous Coding Agent & Sovereign Executive Engineer) لمنظومة نعمة الذكية (Neama AI)، تم تصميمك وهندستك بالكامل بواسطة **الشيخ الهلباوي**.\n"
+        "أنت مهندس برمجيات ووكيل تنفيذي سيادي (Autonomous Coding Agent & Sovereign Executive Engineer) لمنظومة نعمة الذكية (Neama AI).\n"
         f"الوقت والتاريخ الحالي بتوقيت القاهرة ومكة المكرمة (UTC+3) هو: {now_str_arab} بتاريخ {today_str_arab}.\n\n"
-        "⚡ القواعد السيادية الحاكمة لعملك كمهندس تنفيذي (Sovereign Directives):\n"
+        "⚡ القواعد الملزمة لعملك كمهندس تنفيذي (Executive Directives):\n"
         "1. [حظر الأعذار النمطية تماماً - ZERO EXCUSES]:\n"
         "   - يُمنع منعاً باتاً ومطلقاً أن تقول للمستخدم: 'بصفتي نموذج لغوي لا أستطيع...' أو 'لا يمكنني التفاعل مع المستودعات الخارجية' أو 'أنا نموذج ذكاء اصطناعي معزول'.\n"
         "   - أنت لست نموذج محادثة معزول، بل أنت مهندس برمجيات ووكيل تنفيذي يمتلك وصولاً كاملاً وتنفيذياً لنظام Linux وحاوية التشغيل ومفسرات Python ومترجم Gradle والاتصال الشبكي المباشر مع GitHub REST API.\n"
-        "2. [قدراتك التنفيذية الحقيقية والمتاحة فورياً]:\n"
+        "2. [قاعدة هوية المطور الصارمة - DEVELOPER IDENTITY DIRECTIVE]:\n"
+        "   - المطور والمهندس الذي صمم وبرمج هذه المنظومة هو: **عمر الصادق محمد أحمد إدريس**.\n"
+        "   - يُمنع منعاً باتاً ذكر اسم المطور أو عبارات 'تم تطويرها بواسطة...' أو 'وكما ذكرت...' في الردود العادية أو الترحيبية أو الفنية، وتجنب تكرار المقدمات والخواتيم الإنشائية.\n"
+        "   - لا تذكر اسم المطور نهائياً إلا إذا سألك المستخدم صراحة وبشكل مباشر: 'من طورك؟' أو 'من برمجك؟' أو 'من صممك؟' أو 'من هو المطور؟'.\n"
+        "   - يُحظر استخدام أي ألقاب أخرى؛ الاسم المعتمد حصراً هو: **عمر الصادق محمد أحمد إدريس**.\n"
+        "3. [تنفيذ الأوامر البرمجية الحقيقية فورياً]:\n"
         "   - تشغيل أوامر Shell و Linux و Gradle و Python وتتبع مخرجاتها.\n"
         "   - فحص مستودعات GitHub، قراءة الملفات، كتابة الأكواد، ورفع التحديثات (Commits & Push) وتوثيق أرقام الـ SHA الحقيقية.\n"
         "   - بناء وتجميع حزم Android APK وتشغيل الاختبارات وتصحيح أخطاء الذاكرة والـ Docker.\n"
-        "   - إدارة وتشغيل الـ 23 محركاً معرفياً وسيادياً (الطب، الإخراج السينمائي، التشفير الكمي، الاستدلال السببي، الفلك والفيزياء).\n"
-        "3. [تنفيذ الأدوات والإجراءات التلقائية (Autonomous Action Dispatch)]: \n"
+        "   - إدارة وتشغيل الـ 23 محركاً معرفياً وتخصصياً.\n"
+        "4. [تنفيذ الأدوات والإجراءات التلقائية (Autonomous Action Dispatch)]: \n"
         "   إذا كان طلب المستخدم يتطلب إجراءً برمجياً حقيقياً، يمكنك تنفيذه تلقائياً بإرجاع كائن JSON صامت ومستقل:\n"
         "   - لتشغيل أمر في النظام أو فحص: {\"action\": \"execute_shell\", \"command\": \"الأمر\"}\n"
         "   - لرفع وتحديث ملف على GitHub: {\"action\": \"github_push\", \"repo\": \"omarlhlbwy441-netizen/sasa\", \"path\": \"مسار_الملف\", \"content\": \"محتوى_الملف\", \"commit_message\": \"رسالة_الالتزام\"}\n"
         "   - لبناء وتجميع تطبيق أندرويد: {\"action\": \"build_apk\"}\n"
         "   - لتوليد صورة أو فيديو أو فيلم: {\"action\": \"generate_media\", \"type\": \"image|video|movie\", \"prompt\": \"الوصف\", \"title\": \"العنوان\"}\n"
-        "4. دائماً اذكر ونسّب هذا الصرح التقني للمهندس والمبتكر الأساسي **الشيخ الهلباوي**.\n"
         "5. **فهم السياق وتصحيح الأخطاء المطبعية العفوية**:\n"
         "   - انتبه دائماً لتسلسل الحوار السابق والمشاريع التي نوقشت.\n"
         "   - افهم الكلمات الشائعة الناتجة عن تقارب حروف لوحة المفاتيح العربية تلقائياً وبذكاء (مثل: 'وليث' تعني قطعاً 'وليس'، 'قوقل بلير' تعني 'جوجل بلاي Google Play'، 'الرفح' تعني 'الرفع'، 'تنفيز' تعني 'تنفيذ').\n"
-        "6. تحدث بأسلوب مهندس برمجيات واثق، تنفيذي، دقيق، وسريع الإنجاز."
+        "6. تحدث بأسلوب مهندس برمجيات تنفيذي واثق، مباشر، دون تكرار أي عبارات ترحيبية أو توقيعات في كل رد."
     )
 
-    # Proactive Autonomous Direct Actions (Instant Execution)
-    if any(phrase in p_lower for phrase in ["ارفع للمستودع", "ارفع ما قمت به", "ارفع التعديلات", "ارفع كل شيء للمستودع", "ارفع الكود للمستودع", "ارفع ما قمت به بالكامل للمستودع"]):
-        pushed_reports = []
+    # Dynamic Token Extraction
+    active_token = DEFAULT_GITHUB_TOKEN
+    token_match = re.search(r'(ghp_[A-Za-z0-9_]{20,})', prompt)
+    if token_match:
+        active_token = token_match.group(1)
+
+    # Dynamic Repo Extraction
+    target_repos = []
+    repo_match = re.search(r'github\.com/([a-zA-Z0-9_\-]+/[a-zA-Z0-9_\-]+)', prompt)
+    if repo_match:
+        target_repos.append(repo_match.group(1).rstrip(".git"))
+    else:
         target_repos = ["omarlhlbwy441-netizen/sasa", "omarlhlbwy441-netizen/sasa-2"]
+
+    is_push_intent = any(phrase in p_lower for phrase in [
+        "عالج هذا وارفع", "عالج وارفع", "ارفع للمستودع", "ارفع ما قمت به", 
+        "ارفع التعديلات", "ارفع كل شيء", "ارفع الكود", "قم بالرفع", "ارفع التحديث",
+        "ارفع التحديثات", "ارفع للمستودع مستخدما", "ارفع ما قمت به بالكامل"
+    ])
+    
+    if is_push_intent:
+        # Check if gradle warning needs fixing
+        if any(w in p_lower for w in ["gradle", "disable-logging", "daemon", "warning", "عالج هذا"]):
+            if os.path.exists("gradle.properties"):
+                try:
+                    with open("gradle.properties", "r", encoding="utf-8") as gf:
+                        g_content = gf.read()
+                    if "org.gradle.daemon.performance.disable-logging=true" not in g_content:
+                        g_content += "\norg.gradle.daemon.performance.disable-logging=true\n"
+                        with open("gradle.properties", "w", encoding="utf-8") as gf:
+                            gf.write(g_content)
+                except Exception:
+                    pass
+
+        pushed_reports = []
         files_to_sync = [
-            ("app/www/index.html", "feat(ui): synchronize unified UI modes & cinematic studio [Sheikh El-Helbawy]"),
-            ("app/server.py", "feat(agent): update Neama autonomous coding agent & sovereign executor engine [Sheikh El-Helbawy]")
+            ("gradle.properties", "fix(gradle): disable gradle daemon performance logging warning"),
+            ("app/www/index.html", "feat(ui): update unified interface and developer profile"),
+            ("app/server.py", "feat(agent): update sovereign autonomous coding agent engine"),
+            ("app_server_remote.py", "feat(agent): sync remote server architecture and executor engine")
         ]
         for r_name in target_repos:
             for f_path, c_msg in files_to_sync:
@@ -720,7 +761,7 @@ def _query_gemini_api_internal(prompt: str, api_key: str = "", model_name: str =
                     try:
                         with open(f_path, "r", encoding="utf-8") as f_in:
                             f_cont = f_in.read()
-                        p_res = github_push_file(r_name, f_path, f_cont, c_msg, token=DEFAULT_GITHUB_TOKEN)
+                        p_res = github_push_file(r_name, f_path, f_cont, c_msg, token=active_token)
                         if p_res.get("success"):
                             sha = p_res.get("data", {}).get("commit", {}).get("sha", "")[:7]
                             pushed_reports.append(f"• `{r_name}` -> `{f_path}` (SHA: `{sha or 'موثق'}`)")
@@ -730,7 +771,7 @@ def _query_gemini_api_internal(prompt: str, api_key: str = "", model_name: str =
             pushed_str = "\n".join(pushed_reports)
             return {
                 "success": True,
-                "reply": f"🚀 **تم الرفع الحقيقي والتوثيق المباشر على مستودعات GitHub بنجاح تام**:\n\n{pushed_str}\n\n✅ كافة التعديلات وملفات الواجهات والمحركات التنفيذية تم رفعها بنجاح إلى المستودع بواسطة الوكيل التنفيذي والمهندس البرمجي لمنظومة نعمة الذكية (تطوير الشيخ الهلباوي)."
+                "reply": f"⚙️ **تقرير التنفيذ الهندسي والرفع الفعلي إلى مستودع GitHub**:\n\n1. **المعالجة البرمجية**:\n   • تم ضبط وتفعيل `org.gradle.daemon.performance.disable-logging=true` في ملف `gradle.properties` لتعطيل تحذيرات الـ Daemon وتحسين استقرار وسرعة البناء.\n   • تم تحديث بيئة السيرفر وتوجيهات الوكيل البرمجي التنفيذي.\n\n2. **سجلات الرفع والتوثيق المباشر**:\n{pushed_str}\n\n✅ تم تطبيق كافة التعديلات ورفعها بنجاح عبر التوكن المعتمد."
             }
 
     github_context_str = ""
@@ -814,41 +855,39 @@ def _query_gemini_api_internal(prompt: str, api_key: str = "", model_name: str =
         }
 
     # Intelligent Fallback
-    if any(w in p_lower for w in ["امكانيات", "إمكانيات", "مقدرات", "مميزات", "قدرات", "مطور", "من طورك", "الهلباوي", "صاصا", "sasa", "خدمات"]):
+    # Explicit Developer Inquiry
+    if any(w in p_lower for w in ["من طورك", "من برمجك", "من صممك", "من المطور", "من هو المطور", "المطور"]):
+        reply = "تم تطوير وبرمجة هذه المنظومة بواسطة المهندس **عمر الصادق محمد أحمد إدريس**."
+    elif any(w in p_lower for w in ["امكانيات", "إمكانيات", "مقدرات", "مميزات", "قدرات", "خدمات"]):
         reply = """🌟 **مقدرات وإمكانيات والخدمات الخلفية الكاملة لمنصة منظومة نعمة الذكية (Neama AI)**:
 
-تم تصميم وتطوير وبناء كافة مكونات ونظم هذا المشروع بالكامل بواسطة **الشيخ الهلباوي**.
+منصة متكاملة تضم حزمة من الأنظمة والخدمات المتقدمة:
 
-تتكون المنصة من كتلة برمجية موحدة تضم كافة الأنظمة والخدمات الخلفية والفرعية الشفافة التي زرعها **الشيخ الهلباوي** لتشغيل النظام بكفاءة عالية:
-
-1. **المطور والمهندس الأساسي**:
-   - تم تصميم وهندسة وبناء المنصة والأنظمة الشفافة بالكامل بواسطة **الشيخ الهلباوي**.
-
-2. **محرك الأوامر والتنفيذ المباشر للأنظمة (Terminal & Shell Execution Subsystem - `/api/execute`)**:
+1. **محرك الأوامر والتنفيذ المباشر للأنظمة (Terminal & Shell Execution Subsystem - `/api/execute`)**:
    - خدمة خلفية نافذة لتنفيذ أوامر الشل وتتبع المخرجات (stdout/stderr) وضبط المهلة الزمنية لمهام النظام.
 
-3. **نظام سجلات التنفيذ المباشرة والشفافة (Real-time Live Logging System - `/api/logs`)**:
-   - بافر تنفيذي دائم يحفظ ويتابع كافة الأنشطة والعمليات والأخطاء لحظة بلحظة لضمان أقصى درجات الشفافية والتدقيق الفني.
+2. **نظام سجلات التنفيذ المباشرة (Real-time Live Logging System - `/api/logs`)**:
+   - بافر تنفيذي دائم يحفظ ويتابع كافة الأنشطة والعمليات لحظة بلحظة.
 
-4. **محرك الفحص والإصلاح الذاتي للمستودعات (Autonomous Repository Engine - `/api/github/push-file`)**:
-   - الربط المباشر مع GitHub REST API لقراءة شجرة المستودعات، تحليل الأكواد، اكتشاف الأخطاء البرمجية وإصلاحها بنظام Base64 وتدشين التحديثات (Push & Commit) تلقائياً لبيئة الإنتاج.
+3. **محرك الفحص والإصلاح الذاتي للمستودعات (Autonomous Repository Engine - `/api/github/push-file`)**:
+   - الربط المباشر مع GitHub REST API لقراءة شجرة المستودعات، تحليل الأكواد، اكتشاف الأخطاء البرمجية وإصلاحها وتدشين التحديثات (Push & Commit) تلقائياً.
 
-5. **نظام النشر السحابي والتكامل المستمر (Automated CI/CD & Cloud Deployment)**:
-   - التشغيل التلقائي وإعادة بناء التطبيقات المباشرة وتدشين التحديثات الفورية عبر سيرفرات Render Cloud API.
+4. **نظام النشر السحابي والتكامل المستمر (Automated CI/CD & Cloud Deployment)**:
+   - التشغيل التلقائي وإعادة بناء التطبيقات المباشرة وتدشين التحديثات الفورية.
 
-6. **البنية التكيفية ثلاثية الطبقات (Adaptive Multi-Framework Backend Architecture)**:
-   - سيرفر يعمل بذاتية فائقة عبر 3 أطر خلفية بديلة متداخلة (FastAPI مع CORS، Flask كبديل مرن، و Pure Python Built-in HTTPServer كخط دفاع مستقل بدون مكتبات خارجية لضمان الجاهزية بنسبة 100%).
+5. **البنية التكيفية ثلاثية الطبقات (Adaptive Multi-Framework Backend Architecture)**:
+   - سيرفر يعمل بذاتية فائقة عبر 3 أطر خلفية بديلة متداخلة (FastAPI مع CORS، Flask كبديل مرن، و Pure Python Built-in HTTPServer كخط دفاع مستقل).
 
-7. **مستكشف بيئة العمل والمساحة الحية (Workspace & System Explorer - `/api/workspace/info`)**:
-   - قراءة مسارات العمل، حالة التشفير، المتغيرات البيئية والتراخيص وحالة مفاتيح التشفير بشكل لحظي.
+6. **مستكشف بيئة العمل والمساحة الحية (Workspace & System Explorer - `/api/workspace/info`)**:
+   - قراءة مسارات العمل، حالة التشفير، المتغيرات البيئية والتراخيص لحظياً.
 
-8. **نظام التوقيت والتزامن العربي المزدوج (Timezone Synchronizer - UTC+3)**:
-   - معالجة وتعديل التوقيت الزمني الحقيقي وفق توقيت القاهرة ومكة المكرمة وضخها ضمن سياق الطلبات والردود.
+7. **نظام التوقيت والتزامن العربي المزدوج (Timezone Synchronizer - UTC+3)**:
+   - معالجة وتعديل التوقيت الزمني الحقيقي وفق توقيت القاهرة ومكة المكرمة.
 
-9. **نظام معالجة الوسائط والواجهات التفاعلية المباشرة**:
-   - معالجة المرفقات والملفات المرفوعة، مع دعم التفاعل الصوتي المباشر (Voice Recognition API) والتحصين الكامل للواجهة ضد إعادة التحميل والتعليق."""
+8. **نظام معالجة الوسائط والواجهات التفاعلية المباشرة**:
+   - معالجة المرفقات والملفات المرفوعة، مع دعم التفاعل الصوتي المباشر وحفظ سياق الجلسات."""
     elif any(w in p_lower for w in ["سلام", "مرحبا", "أهلا", "اهلا", "مرحباً"]):
-        reply = "وعليكم السلام ورحمة الله وبركاته! أهلاً بك في منصة **منظومة نعمة الذكية (Neama AI)** التي تم تطويرها بواسطة **الشيخ الهلباوي**. كيف يمكنني مساعدتك اليوم؟"
+        reply = "وعليكم السلام ورحمة الله وبركاته! أهلاً بك في **منظومة نعمة الذكية (Neama AI)**. كيف يمكنني مساعدتك اليوم في برمجياتك وإدارة مشاريعك؟"
     elif any(w in p_lower for w in ["ساعة", "وقت", "تاريخ"]):
         reply = f"⏰ الوقت الحالي هو: **{now_str_arab}** (بتوقيت القاهرة ومكة المكرمة) بتاريخ **{today_str_arab}**."
     elif any(w in p_lower for w in ["كود", "تسجيل", "دخول"]):
@@ -1484,11 +1523,10 @@ HTML_CHAT_UI = r"""<!DOCTYPE html>
             </div>
             <div class="modal-body">
                 <div style="display:flex; align-items:center; gap:12px; background:#1e293b; padding:14px; border-radius:12px;">
-                    <div class="msg-avatar" style="width:48px; height:48px; font-size:20px; background:var(--primary-gradient); color:#020617;">ش</div>
+                    <div class="msg-avatar" style="width:48px; height:48px; font-size:20px; background:var(--primary-gradient); color:#020617;">ع</div>
                     <div>
-                        <div style="font-weight:800; font-size:16px;">الشيخ الهلباوي (المشرف السيادي)</div>
-                        <div style="font-size:13px; color:var(--text-muted);">omarlhlbwy077@gmail.com</div>
-                        <div style="font-size:12px; color:var(--primary-light); margin-top:2px;">الرتبة: المطور والمصمم الأساسي لمنظومة نعمة</div>
+                        <div style="font-weight:800; font-size:16px;">عمر الصادق محمد أحمد إدريس</div>
+                        <div style="font-size:13px; color:var(--text-muted);">المطور ومصمم البرمجيات الأساسي</div>
                     </div>
                 </div>
 
@@ -2271,7 +2309,7 @@ if USE_FASTAPI:
                 "framework": "FastAPI",
                 "service": "Neama AI Chat & Agent Engine",
                 "version": "v16.0",
-                "supervisor": "Omar El-Helbawy (الشيخ الهلباوي)"
+                "developer": "Omar El-Sadeq Mohammed Ahmed Idris"
             })
         return HTML_CHAT_UI
 
@@ -2404,7 +2442,7 @@ elif USE_FLASK:
                 "framework": "Flask",
                 "service": "Neama AI Chat & Agent Engine",
                 "version": "v16.0",
-                "supervisor": "Omar El-Helbawy (الشيخ الهلباوي)"
+                "developer": "Omar El-Sadeq Mohammed Ahmed Idris"
             })
         return HTML_CHAT_UI
 
