@@ -548,6 +548,7 @@
         <!-- Sub-bar for Cinematic Mode Pills (Shown when in Cinematic mode) -->
         <div class="cinematic-pills-bar" id="cinematicPillsBar" style="display:none;">
             <button class="pill-btn active" id="pillGeneral" onclick="selectCinematicPill('general')">🧠 المحرك الإدراكي العام</button>
+            <button class="pill-btn" id="pillMasterOrchestrator" onclick="selectCinematicPill('master_orchestrator')">🚀 إنتاج فيلم بضغطة زر (One-Step Orchestrator)</button>
             <button class="pill-btn" id="pillDirector" onclick="selectCinematicPill('independent_director')">🎬 المخرج السينمائي المستقل</button>
             <button class="pill-btn" id="pillHorror" onclick="selectCinematicPill('horror_series')">🎬 مسلسل رعب (3 حلقات)</button>
             <button class="pill-btn" id="pillAndalus" onclick="selectCinematicPill('andalus_epic')">🏛️ ملحمة الأندلس</button>
@@ -576,7 +577,19 @@
     </div>
 
     <!-- Bottom Input Area (Suggestions Removed) -->
-    <input type="file" id="fileInput" style="display: none;" onchange="handleFileSelected(event)">
+        <!-- Attachment Preview Staging Bar -->
+    <div id="attachmentPreviewContainer" style="display: none; padding: 8px 16px; background: rgba(15, 23, 42, 0.96); border-top: 1px solid rgba(56, 189, 248, 0.25); border-bottom: 1px solid rgba(56, 189, 248, 0.15);">
+        <div id="attachmentPreviewBox" style="display: inline-flex; align-items: center; gap: 12px; background: #1e293b; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 12px; padding: 6px 14px; box-shadow: 0 4px 14px rgba(0,0,0,0.3);">
+            <div id="attachmentThumb" style="display: flex; align-items: center; justify-content: center;"></div>
+            <div style="display: flex; flex-direction: column; max-width: 260px; overflow: hidden;">
+                <span id="attachmentName" style="font-size: 13px; font-weight: bold; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
+                <span id="attachmentSize" style="font-size: 11px; color: #94a3b8;"></span>
+            </div>
+            <button type="button" onclick="cancelAttachment()" title="إلغاء إرفاق الملف" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; margin-inline-start: 8px; transition: 0.2s;">✕</button>
+        </div>
+    </div>
+    <!-- Bottom Input Area -->
+    <input type="file" id="fileInput" style="display: none;" onchange="handleFileSelected(event)" accept="*/*">
     <form class="input-bar-container" id="chatForm" action="javascript:void(0);" onsubmit="event.preventDefault(); handleSend(event); return false;">
         <button class="input-icon-btn" type="button" onclick="triggerFileUpload()" title="إرفاق ملف">📎</button>
         <button class="input-icon-btn" type="button" id="micBtn" onclick="toggleVoiceInput()" title="تسجيل صوتي">🎙️</button>
@@ -1205,10 +1218,92 @@
 
         function formatMarkdown(text) {
             if (!text) return "";
-            let html = escapeHtml(text);
-            html = html.replace(/```([\s\S]*?)```/g, '<pre style="background:#020617; padding:12px; border-radius:8px; overflow-x:auto; margin:8px 0; border:1px solid rgba(56,189,248,0.2); font-family:monospace;"><code>$1</code></pre>');
+            
+            // Protect code blocks first
+            const codeBlocks = [];
+            let processed = String(text).replace(/```([\s\S]*?)```/g, function(match, code) {
+                codeBlocks.push(code);
+                return `___CODE_BLOCK_${codeBlocks.length - 1}___`;
+            });
+
+            // Protect inline code
+            const inlineCodes = [];
+            processed = processed.replace(/`([^`]+)`/g, function(match, code) {
+                inlineCodes.push(code);
+                return `___INLINE_CODE_${inlineCodes.length - 1}___`;
+            });
+
+            // Extract & convert Markdown images: ![alt](url)
+            const mediaImages = [];
+            processed = processed.replace(/!\[(.*?)\]\((.*?)\)/g, function(match, alt, url) {
+                const cleanUrl = url.trim();
+                const cleanAlt = alt.trim() || 'صورة مولدة';
+                const isVideo = cleanUrl.endsWith('.mp4');
+                const isAudio = cleanUrl.endsWith('.wav');
+                let tag = '';
+                if (isVideo) {
+                    tag = `<div class="msg-rendered-media" style="margin: 14px 0; text-align: center;">
+                        <video controls playsinline src="${cleanUrl}" style="max-width: 100%; max-height: 420px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.3); box-shadow: 0 8px 30px rgba(0,0,0,0.6); outline: none; background: #000;"></video>
+                    </div>`;
+                } else if (isAudio) {
+                    tag = `<div class="msg-rendered-media" style="margin: 14px 0; text-align: center;">
+                        <audio controls src="${cleanUrl}" style="width: 100%; max-width: 480px; outline: none;"></audio>
+                    </div>`;
+                } else {
+                    tag = `<div class="msg-rendered-media" style="margin: 14px 0; border-radius: 14px; overflow: hidden; border: 1px solid rgba(56, 189, 248, 0.4); background: #030712; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                        <div style="cursor: pointer; position: relative; text-align: center; background: #020617;" onclick="previewMediaModal('${cleanUrl}', '${escapeHtml(cleanAlt)}')">
+                            <img src="${cleanUrl}" alt="${escapeHtml(cleanAlt)}" style="width: 100%; max-height: 480px; object-fit: contain; display: block; margin: 0 auto;" loading="lazy" />
+                            <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.75); color: #38bdf8; padding: 4px 10px; border-radius: 8px; font-size: 11px; backdrop-filter: blur(4px); font-weight: bold;">🔍 انقر للتكبير</div>
+                        </div>
+                        <div style="padding: 8px 14px; background: rgba(15, 23, 42, 0.95); border-top: 1px solid rgba(56, 189, 248, 0.15); display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 12px; font-weight: bold; color: #38bdf8;">🖼️ ${escapeHtml(cleanAlt)}</span>
+                            <a href="${cleanUrl}" download style="font-size: 11px; color: #f8fafc; background: #1e293b; padding: 5px 12px; border-radius: 6px; text-decoration: none; border: 1px solid #334155; display: inline-flex; align-items: center; gap: 4px;">⬇️ تحميل</a>
+                        </div>
+                    </div>`;
+                }
+                mediaImages.push(tag);
+                return `___MEDIA_IMAGE_${mediaImages.length - 1}___`;
+            });
+
+            // Extract & convert Markdown links: [text](url)
+            const links = [];
+            processed = processed.replace(/\[(.*?)\]\((.*?)\)/g, function(match, label, url) {
+                const linkTag = `<a href="${url.trim()}" target="_blank" rel="noopener noreferrer" style="color: #38bdf8; text-decoration: underline; font-weight: bold;">${escapeHtml(label)}</a>`;
+                links.push(linkTag);
+                return `___LINK_${links.length - 1}___`;
+            });
+
+            // Escape HTML characters in remaining text
+            let html = escapeHtml(processed);
+
+            // Bold formatting
             html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            html = html.replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px;">$1</code>');
+            
+            // Newlines to line breaks
+            html = html.replace(/\n/g, '<br />');
+
+            // Restore links
+            html = html.replace(/___LINK_(\d+)___/g, function(match, idx) {
+                return links[parseInt(idx)] || '';
+            });
+
+            // Restore media images
+            html = html.replace(/___MEDIA_IMAGE_(\d+)___/g, function(match, idx) {
+                return mediaImages[parseInt(idx)] || '';
+            });
+
+            // Restore inline code
+            html = html.replace(/___INLINE_CODE_(\d+)___/g, function(match, idx) {
+                const code = inlineCodes[parseInt(idx)] || '';
+                return `<code style="background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px;">${escapeHtml(code)}</code>`;
+            });
+
+            // Restore code blocks
+            html = html.replace(/___CODE_BLOCK_(\d+)___/g, function(match, idx) {
+                const code = codeBlocks[parseInt(idx)] || '';
+                return `<pre style="background:#020617; padding:12px; border-radius:8px; overflow-x:auto; margin:8px 0; border:1px solid rgba(56,189,248,0.2); font-family:monospace;"><code>${escapeHtml(code)}</code></pre>`;
+            });
+
             return html;
         }
 
@@ -1254,10 +1349,13 @@
             if (!mediaUrl) return '';
             const mediaType = (data.media_type || 'MEDIA').toUpperCase();
             const title = data.title || 'إنتاج استوديو نعمة السينمائي';
-            const isVideoOrMovie = mediaType.includes('VIDEO') || mediaType.includes('MOVIE') || mediaType.includes('FILM') || mediaType.includes('SERIES');
-            const badgeIcon = isVideoOrMovie ? '🎬' : '🎨';
-            const specs = isVideoOrMovie ? '4K Ultra HDR • 60 FPS • Dolby Atmos' : '1024x1024 • High-Fidelity Vector Render';
-            const fileName = data.file_name || ('neama_' + mediaType.toLowerCase() + '.svg');
+            const isAudio = mediaType.includes('AUDIO') || mediaType.includes('SOUND') || mediaType.includes('VOICE') || (data.file_name && data.file_name.endsWith('.wav'));
+            const isMp4 = (data.file_name && data.file_name.endsWith('.mp4')) || (mediaUrl && mediaUrl.endsWith('.mp4')) || data.is_real_mp4;
+            const isVideoOrMovie = !isAudio && (isMp4 || mediaType.includes('VIDEO') || mediaType.includes('MOVIE') || mediaType.includes('FILM') || mediaType.includes('SERIES'));
+            const badgeIcon = isAudio ? '🎙️' : (isVideoOrMovie ? '🎬' : '🎨');
+            const specs = isAudio ? '24kHz Studio Audio • Real WAV • Gemini TTS' : (isMp4 ? '1080p MP4 Video • H.264 / AAC • Local Render' : (isVideoOrMovie ? '4K Ultra HDR • 60 FPS • Dolby Atmos' : 'High-Fidelity PNG Render'));
+            const defaultExt = isAudio ? '.wav' : (isMp4 ? '.mp4' : (data.is_real_png ? '.png' : '.svg'));
+            const fileName = data.file_name || ('neama_' + mediaType.toLowerCase() + defaultExt);
 
             return `
                 <div class="chat-media-card" style="margin-top: 14px; background: #0b1329; border: 1px solid #1e293b; border-radius: 14px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.5);">
@@ -1267,22 +1365,30 @@
                         </span>
                         <span style="font-size: 11px; color: #94a3b8; background: #0f172a; padding: 3px 10px; border-radius: 12px; border: 1px solid #334155;">${specs}</span>
                     </div>
-                    <div style="position: relative; background: #020617; cursor: pointer; text-align: center; padding: 12px 0;" onclick="previewMediaModal('${mediaUrl}', '${escapeHtml(title)}')">
-                        <img src="${mediaUrl}" alt="${escapeHtml(title)}" style="width: 100%; max-height: 420px; object-fit: contain; display: block; margin: 0 auto;" />
-                        ${isVideoOrMovie ? `
-                        <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); transition: all 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='rgba(0,0,0,0.2)'">
-                            <div style="width: 58px; height: 58px; border-radius: 50%; background: #38bdf8; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 25px rgba(56,189,248,0.8);">
-                                <svg width="26" height="26" viewBox="0 0 24 24" fill="#0f172a"><polygon points="8,5 19,12 8,19"/></svg>
-                            </div>
-                        </div>` : ''}
+                    <div style="position: relative; background: #020617; text-align: center; padding: 14px 12px;">
+                        ${isAudio ? `
+                        <div style="padding: 10px 0;">
+                            <div style="font-size: 14px; color: #38bdf8; font-weight: bold; margin-bottom: 10px;">🔊 مشغل الصوت عالي الدقة الفعلي:</div>
+                            <audio controls src="${mediaUrl}" style="width: 100%; max-width: 500px; outline: none; border-radius: 30px;"></audio>
+                        </div>
+                        ` : isMp4 ? `
+                        <div style="padding: 4px 0;">
+                            <video controls playsinline src="${mediaUrl}" style="width: 100%; max-height: 420px; border-radius: 8px; background: #000; outline: none; box-shadow: 0 4px 20px rgba(0,0,0,0.6);"></video>
+                        </div>
+                        ` : `
+                        <div style="cursor: pointer;" onclick="previewMediaModal('${mediaUrl}', '${escapeHtml(title)}')">
+                            <img src="${mediaUrl}" alt="${escapeHtml(title)}" style="width: 100%; max-height: 420px; object-fit: contain; display: block; margin: 0 auto;" />
+                        </div>
+                        `}
                     </div>
                     <div style="padding: 10px 16px; display: flex; gap: 10px; align-items: center; justify-content: flex-end; background: #070e1e; border-top: 1px solid #1e293b;">
                         <a href="${mediaUrl}" download="${fileName}" style="text-decoration: none; font-size: 12px; font-weight: bold; background: #1e293b; color: #f8fafc; padding: 7px 14px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid #334155;">
-                            ⬇️ تحميل الملف
+                            ⬇️ تحميل الملف (${fileName.split('.').pop().toUpperCase()})
                         </a>
+                        ${!isAudio && !isMp4 ? `
                         <button type="button" onclick="previewMediaModal('${mediaUrl}', '${escapeHtml(title)}')" style="font-size: 12px; font-weight: bold; background: #0284c7; color: #ffffff; padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
                             🔍 تكبير ومشاهدة
-                        </button>
+                        </button>` : ''}
                     </div>
                 </div>
             `;
@@ -1295,23 +1401,38 @@
             const dlBtn = document.getElementById('mediaViewerDownloadBtn');
             if (!modal || !contentEl) return;
 
-            if (titleEl) titleEl.textContent = '🎬 ' + (title || 'استعراض العمل السينمائي');
+            const isMp4 = mediaUrl.endsWith('.mp4');
+            const isAudio = mediaUrl.endsWith('.wav');
+            if (titleEl) titleEl.textContent = (isMp4 ? '🎬 ' : (isAudio ? '🎙️ ' : '🎨 ')) + (title || 'استعراض العمل السينمائي');
             if (dlBtn) {
                 dlBtn.href = mediaUrl;
-                dlBtn.download = (title || 'neama_production').replace(/\s+/g, '_') + '.svg';
+                dlBtn.download = (title || 'neama_production').replace(/\s+/g, '_') + (isMp4 ? '.mp4' : (isAudio ? '.wav' : '.png'));
             }
-            contentEl.innerHTML = `<img src="${mediaUrl}" style="max-width: 100%; max-height: 520px; object-fit: contain; margin: 0 auto; display: block;" />`;
+            if (isMp4) {
+                contentEl.innerHTML = `<video controls autoplay playsinline src="${mediaUrl}" style="max-width: 100%; max-height: 520px; border-radius: 8px; background: #000; outline: none;"></video>`;
+            } else if (isAudio) {
+                contentEl.innerHTML = `<audio controls autoplay src="${mediaUrl}" style="width: 100%; outline: none; margin: 40px auto;"></audio>`;
+            } else {
+                contentEl.innerHTML = `<img src="${mediaUrl}" style="max-width: 100%; max-height: 520px; object-fit: contain; margin: 0 auto; display: block;" />`;
+            }
             openModal('mediaViewerModal');
         }
 
         function handleSend(e) {
             if (e && e.preventDefault) e.preventDefault();
             const input = document.getElementById('userInput');
-            const prompt = input.value.trim();
-            if (!prompt || isSending) return false;
+            let prompt = input.value.trim();
 
+            if (!prompt && stagedAttachment) {
+                prompt = stagedAttachment.isImage ? 'فحص وتحليل هذه الصورة وشرح تفاصيلها' : `فحص وتحليل محتوى الملف المرفق: ${stagedAttachment.name}`;
+            }
+
+            if (!prompt && !stagedAttachment) return false;
+            if (isSending) return false;
             isSending = true;
+
             input.value = '';
+            input.placeholder = 'اكتب سؤالك أو طلبك هنا...';
 
             const sendBtn = document.getElementById('sendBtn');
             if (sendBtn) {
@@ -1319,13 +1440,42 @@
                 sendBtn.style.opacity = '0.5';
             }
 
+            // Capture staged attachment to send with this message
+            const attachmentToSend = stagedAttachment;
+            cancelAttachment();
+
             const container = document.getElementById('chatContainer');
             const userRow = document.createElement('div');
             userRow.className = 'message-row user';
+
+            let userMediaHtml = '';
+            if (attachmentToSend) {
+                if (attachmentToSend.isImage) {
+                    userMediaHtml = `
+                        <div style="margin-top: 8px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.25); max-width: 340px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <img src="${attachmentToSend.data_url}" alt="${escapeHtml(attachmentToSend.name)}" style="width: 100%; max-height: 240px; object-fit: cover; display: block; cursor: pointer;" onclick="previewMediaModal('${attachmentToSend.data_url}', '${escapeHtml(attachmentToSend.name)}')" title="انقر لتكبير الصورة" />
+                            <div style="padding: 6px 12px; background: rgba(0,0,0,0.5); font-size: 11px; color: #f8fafc; display: flex; align-items: center; justify-content: space-between;">
+                                <span>📷 ${escapeHtml(attachmentToSend.name)}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    userMediaHtml = `
+                        <div style="margin-top: 8px; display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; padding: 6px 12px; font-size: 12px; color: #fff;">
+                            <span>📎</span>
+                            <span style="font-weight: 600;">${escapeHtml(attachmentToSend.name)}</span>
+                        </div>
+                    `;
+                }
+            }
+
             userRow.innerHTML = `
                 <div class="msg-avatar">أنت</div>
                 <div class="msg-bubble-wrap">
-                    <div class="msg-bubble">${escapeHtml(prompt)}</div>
+                    <div class="msg-bubble">
+                        ${escapeHtml(prompt)}
+                        ${userMediaHtml}
+                    </div>
                 </div>
             `;
             container.appendChild(userRow);
@@ -1347,11 +1497,11 @@
             container.appendChild(loadingRow);
             container.scrollTop = container.scrollHeight;
 
-            performApiCall(prompt, tempId);
+            performApiCall(prompt, tempId, attachmentToSend);
             return false;
         }
 
-        async function performApiCall(prompt, tempId) {
+        async function performApiCall(prompt, tempId, attachment = null) {
             const sendBtn = document.getElementById('sendBtn');
             const container = document.getElementById('chatContainer');
 
@@ -1363,7 +1513,13 @@
                         prompt: prompt,
                         history: clientChatHistory,
                         session_id: currentSessionId,
-                        memory_enabled: isLongTermMemoryEnabled
+                        memory_enabled: isLongTermMemoryEnabled,
+                        attachment: attachment ? {
+                            name: attachment.name,
+                            type: attachment.type,
+                            size: attachment.size,
+                            data_url: attachment.data_url
+                        } : null
                     })
                 });
 
@@ -1387,7 +1543,8 @@
                 if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
 
                 let mediaCardHtml = '';
-                if (data && (data.action === 'generate_media' || data.media_url || data.data_url)) {
+                const hasEmbeddedImage = replyText && replyText.includes('![');
+                if (data && (data.action === 'generate_media' || data.media_url || data.data_url) && !hasEmbeddedImage) {
                     mediaCardHtml = renderMediaCard(data);
                 }
 
@@ -1473,17 +1630,70 @@
             rec.start();
         }
 
+        let stagedAttachment = null;
+
         function triggerFileUpload() {
             const fi = document.getElementById('fileInput');
             if (fi) fi.click();
         }
+
         function handleFileSelected(e) {
-            const file = e.target.files[0];
+            const file = e.target.files && e.target.files[0];
             if (!file) return;
+
+            const isImage = file.type.startsWith('image/');
+            const reader = new FileReader();
+
+            reader.onload = function(evt) {
+                stagedAttachment = {
+                    name: file.name,
+                    type: file.type || (isImage ? 'image/jpeg' : 'application/octet-stream'),
+                    size: file.size,
+                    data_url: evt.target.result,
+                    isImage: isImage
+                };
+
+                const container = document.getElementById('attachmentPreviewContainer');
+                const thumb = document.getElementById('attachmentThumb');
+                const nameEl = document.getElementById('attachmentName');
+                const sizeEl = document.getElementById('attachmentSize');
+
+                if (container && thumb && nameEl && sizeEl) {
+                    nameEl.textContent = file.name;
+                    const sizeKB = (file.size / 1024).toFixed(1);
+                    sizeEl.textContent = (sizeKB > 1024) ? (sizeKB / 1024).toFixed(2) + ' MB' : sizeKB + ' KB';
+
+                    if (isImage) {
+                        thumb.innerHTML = `<img src="${evt.target.result}" alt="معاينة" style="width: 40px; height: 40px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.5);">`;
+                    } else {
+                        thumb.innerHTML = `<span style="font-size: 24px;">📄</span>`;
+                    }
+                    container.style.display = 'block';
+                }
+
+                const input = document.getElementById('userInput');
+                if (input) {
+                    input.focus();
+                    if (!input.value.trim()) {
+                        input.placeholder = isImage ? 'اكتب طلبك أو شرحك حول هذه الصورة ثم اضغط إرسال...' : 'اكتب طلبك أو شرحك حول هذا الملف ثم اضغط إرسال...';
+                    }
+                }
+                showToast('📎 تم إرفاق الملف بنجاح! اكتب شرحك أو طلبك ثم اضغط إرسال');
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        function cancelAttachment() {
+            stagedAttachment = null;
+            const fi = document.getElementById('fileInput');
+            if (fi) fi.value = '';
+            const container = document.getElementById('attachmentPreviewContainer');
+            if (container) container.style.display = 'none';
             const input = document.getElementById('userInput');
             if (input) {
-                input.value = `[تم إرفاق ملف: ${file.name}] قم بفحص هذا الملف وشرحه`;
-                handleSend();
+                input.placeholder = 'اكتب سؤالك أو طلبك هنا...';
+                input.focus();
             }
         }
 
@@ -1550,6 +1760,11 @@
                 const el = document.getElementById('pillGeneral');
                 if (el) el.classList.add('active');
                 if (input) input.value = 'تفعيل المحرك الإدراكي العام لتحليل شامل';
+                handleSend();
+            } else if (pillKey === 'master_orchestrator') {
+                const el = document.getElementById('pillMasterOrchestrator');
+                if (el) el.classList.add('active');
+                if (input) input.value = 'أنتج فيلم كامل بضغطة زر واحدة عبر وحدة التحكم المركزية (Design Master Orchestrator)';
                 handleSend();
             } else if (pillKey === 'independent_director') {
                 const el = document.getElementById('pillDirector');
