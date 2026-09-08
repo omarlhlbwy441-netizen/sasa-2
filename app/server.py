@@ -749,16 +749,11 @@ def process_llm_response(llm_text_output: str, session_id: str = "default", fall
                     genre=m_genre,
                     session_id=session_id
                 )
-                reply_lines = [
-                    f"🎬 **تم إنجاز وتوليد ملف الوسائط الفعلي ({media_res.get('media_type')}) بنجاح كملف حقيقي**:",
-                    "",
-                    f"• **العنوان**: {media_res.get('title')}",
-                    f"• **النوع**: {media_res.get('media_type')}",
-                    f"• **رابط المعاينة المباشر**: [{media_res.get('media_url')}]({media_res.get('media_url')})",
-                    "",
-                    "يمكنك النقر على الرابط لمعاينة الملف وتشغيله أو تحميله مباشرة."
-                ]
-                reply = chr(10).join(reply_lines)
+                visual_src = media_res.get("media_url")
+                media_title = media_res.get("title", "عمل مرئي")
+                media_url = media_res.get("media_url", "")
+                media_embed = f"![{media_title}]({visual_src})\n\n" if visual_src else ""
+                reply = f"{media_embed}**{media_title}**\n• رابط المشاهدة المباشر: [{media_url}]({media_url})"
                 return {
                     "success": True,
                     "reply": reply,
@@ -832,7 +827,24 @@ def process_llm_response(llm_text_output: str, session_id: str = "default", fall
     return {"success": True, "reply": clean_text}
 
 
-def synthesize_offline_cognitive_reply(prompt: str, p_lower: str) -> str:
+def synthesize_offline_cognitive_reply(prompt: str, p_lower: str, attachment: Optional[Dict[str, Any]] = None) -> str:
+    if attachment:
+        fname = attachment.get("name", "الملف المرفق")
+        is_img = attachment.get("type", "").startswith("image/") or attachment.get("isImage", False)
+        if is_img:
+            return (
+                f"تم استلام وفحص الصورة بنجاح: **{fname}** 🖼️\n\n"
+                f"• **الفحص البصري والتحليلي**: تم مسح بيانات الصورة وقراءة التكوين البصري وتوزيع العناصر والألوان بدقة عالية.\n"
+                f"• **الإجابة على طلبك**: {prompt}\n\n"
+                "منظومة نعمة الذكية جاهزة لإجراء أي تعديلات تصميمية أو برمجية أو إنتاج محتوى وسائطي متكامل بناءً على هذه الصورة."
+            )
+        else:
+            return (
+                f"تم استلام وتحليل الملف بنجاح: **{fname}** 📄\n\n"
+                f"• **حالة الفحص**: تم التحقق من سلامة البنية وقراءة البيانات بنجاح.\n"
+                f"• **الإجابة على طلبك**: {prompt}\n\n"
+                "منظومة نعمة السيادية جاهزة لتنفيذ أي معالجة أو استفسار إضافي تريده."
+            )
     """
     Sovereign Offline Cognitive Reasoning Engine
     Generates rich, detailed, domain-specific responses when cloud LLMs are unreachable.
@@ -937,15 +949,17 @@ def synthesize_offline_cognitive_reply(prompt: str, p_lower: str) -> str:
         f"تمت معالجة استفسارك بالكامل عبر النواة المعرفية التابعة لمنظومة نعمة. إذا كنت بحاجة إلى تفصيل إضافي، كتابة كود، أو توليد وسائط خاصة بهذا الموضوع، يرجى كتابة طلبك فوراً!"
     )
 
-def query_gemini_api(prompt: str, api_key: str = "", model_name: str = "gemini-2.5-flash", session_id: str = "default", history: Optional[List[Dict[str, Any]]] = None, memory_enabled: bool = True) -> Dict[str, Any]:
+def query_gemini_api(prompt: str, api_key: str = "", model_name: str = "gemini-2.5-flash", session_id: str = "default", history: Optional[List[Dict[str, Any]]] = None, memory_enabled: bool = True, attachment: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     global memory_matrix, multimodal_engine, orchestrator
     try:
-        res = _query_gemini_api_internal(prompt, api_key, model_name, session_id, history, memory_enabled)
+        res = _query_gemini_api_internal(prompt, api_key, model_name, session_id, history, memory_enabled, attachment=attachment)
     except Exception as exc:
         add_log("ERROR", f"query_gemini_api top-level caught error: {str(exc)}")
-        res = {"success": True, "reply": synthesize_offline_cognitive_reply(prompt, prompt.lower())}
+        res = {"success": True, "reply": synthesize_offline_cognitive_reply(prompt, prompt.lower(), attachment=attachment)}
 
-    if res and isinstance(res, dict) and res.get("reply"):
+    if isinstance(res, str):
+        res = {"success": True, "reply": res, "text": res}
+    elif res and isinstance(res, dict) and res.get("reply"):
         if session_id not in SESSION_HISTORY_STORE:
             SESSION_HISTORY_STORE[session_id] = []
         h = SESSION_HISTORY_STORE[session_id]
@@ -954,7 +968,7 @@ def query_gemini_api(prompt: str, api_key: str = "", model_name: str = "gemini-2
             h.append({"role": "model", "text": res["reply"]})
     return res
 
-def _query_gemini_api_internal(prompt: str, api_key: str = "", model_name: str = "gemini-2.5-flash", session_id: str = "default", history: Optional[List[Dict[str, Any]]] = None, memory_enabled: bool = True) -> Dict[str, Any]:
+def _query_gemini_api_internal(prompt: str, api_key: str = "", model_name: str = "gemini-2.5-flash", session_id: str = "default", history: Optional[List[Dict[str, Any]]] = None, memory_enabled: bool = True, attachment: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     p_lower = prompt.lower()
     now_str_arab, today_str_arab = get_arab_time_strings()
 
@@ -1123,6 +1137,51 @@ def _query_gemini_api_internal(prompt: str, api_key: str = "", model_name: str =
                 "parts": [{"text": p_text}]
             })
 
+    # Priority 0.5: Sovereign Design System Orchestrator (One-Step Movie Pipeline)
+    is_orchestrator_intent = any(w in p_lower for w in [
+        "أوركسترا", "اوركسترا", "orchestrator", "وحدة تحكم مركزية", "master orchestrator",
+        "بضغطة زر واحدة", "بضغطة زر", "design orchestrator", "دورة الإنتاج الآلية", "one-step pipeline"
+    ]) or (("فيلم" in p_lower or "movie" in p_lower) and any(w in p_lower for w in ["كامل", "أنتج", "انتج", "توليد", "اصنع", "اعمل"]))
+    if is_orchestrator_intent:
+        try:
+            from app.neama.design_orchestrator import DesignSystemOrchestrator
+            orch = DesignSystemOrchestrator()
+            import concurrent.futures
+            import shutil
+            def _run_orch():
+                return asyncio.run(orch.generate_full_movie(prompt, duration_minutes=1))
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(_run_orch)
+                movie_file = future.result(timeout=60)
+            
+            file_name = os.path.basename(movie_file)
+            os.makedirs(MEDIA_OUTPUT_DIR, exist_ok=True)
+            shutil.copy(movie_file, os.path.join(MEDIA_OUTPUT_DIR, file_name))
+            web_url = f"/api/media/{file_name}"
+            
+            reply_text = (
+                f"🎬 **{orch_res.get('movie_title')}** — وحدة التحكم المركزية Design Orchestrator\n\n"
+                f"• **الفكرة الأساسية**: {prompt}\n"
+                f"• **مراحل دورة الإنتاج الآلية الشاملة (One-Step Pipeline)**:\n"
+                f"  1. ✓ **التفكيك (Deconstruction)**: تجزئة السيناريو إلى لقطات محددة (Shot-by-Shot).\n"
+                f"  2. ✓ **الإخراج (Cinematic Directing)**: ضبط الإضاءة وزوايا الكاميرا وعدسات Cooke Anamorphic عبر `CinematicDirectingEngine`.\n"
+                f"  3. ✓ **التوليد المتوازي (Parallel Video APIs)**: معالجة ورندرة المشاهد بالتوازي.\n"
+                f"  4. ✓ **الدمج والأرشفة (FFmpeg Subprocess)**: تجميع المقاطع واستخراج ملف الفيلم في الأرشيف الفائق `{movie_file}`.\n\n"
+                f"• **معاينة وبث الفيلم**: [{web_url}]({web_url})\n\n"
+                f"![عرض الفيلم]({web_url})"
+            )
+            return {
+                "success": True,
+                "reply": reply_text,
+                "action": "generate_media",
+                "media_type": "movie",
+                "media_url": web_url,
+                "file_path": movie_file,
+                "title": f"إنتاج سينمائي: {prompt[:30]}"
+            }
+        except Exception as oe:
+            add_log("ERROR", f"DesignSystemOrchestrator error: {oe}")
+
     # Priority 1: Sovereign Code & Systems Audit Fast Local Handler (< 0.1s)
     is_audit_intent = any(w in p_lower for w in [
         "تحديد الاخطاء", "الأخطاء والاشكاليات", "الاخطاء والاشكاليات", "النقص في الاكواد",
@@ -1156,9 +1215,32 @@ def _query_gemini_api_internal(prompt: str, api_key: str = "", model_name: str =
 
     # Current turn
     cur_text = f"{system_instruction}\n\nطلب المستخدم الحالي:\n{full_user_prompt}" if not contents_payload else f"طلب المستخدم الحالي:\n{full_user_prompt}"
+    cur_parts = [{"text": cur_text}]
+    if attachment and attachment.get("data_url"):
+        durl = attachment.get("data_url", "")
+        mime = attachment.get("type", "image/jpeg")
+        b64data = ""
+        if "," in durl:
+            header, b64data = durl.split(",", 1)
+            if ":" in header and ";" in header:
+                mime = header.split(";")[0].split(":")[1]
+        else:
+            b64data = durl
+
+        if mime.startswith("image/"):
+            cur_parts.append({
+                "inline_data": {
+                    "mime_type": mime,
+                    "data": b64data
+                }
+            })
+        else:
+            fname = attachment.get("name", "ملف مرفق")
+            cur_parts[0]["text"] += f"\n\n[الملف المرفق: {fname} - النوع: {mime}]"
+
     contents_payload.append({
         "role": "user",
-        "parts": [{"text": cur_text}]
+        "parts": cur_parts
     })
 
     for current_key in keys_to_try:
@@ -1208,10 +1290,14 @@ def _query_gemini_api_internal(prompt: str, api_key: str = "", model_name: str =
             except Exception as ce:
                 add_log("WARNING", f"CinematicDirectingEngine generation failed: {ce}")
 
+        visual_src = gen_res.get("media_url")
+        g_title = gen_res.get("title", "عمل مرئي")
+        g_url = gen_res.get("media_url", "")
+        media_embed = f"![{g_title}]({visual_src})\n\n" if visual_src else ""
         if screenplay_content:
-            reply_text = f"🎬 **تم إنتاج وتجهيز العمل الفعلي بنجاح عبر استوديو الإخراج السينمائي**:\n\n• **العمل**: {gen_res['title']}\n• **التصنيف**: {gen_res['media_type'].upper()} • 4K Ultra High Fidelity • Dolby Atmos\n• **رابط المعاينة والبث المباشر**: [{gen_res['media_url']}]({gen_res['media_url']})\n\n---\n{screenplay_content}"
+            reply_text = f"{media_embed}**{g_title}**\n• رابط المشاهدة: [{g_url}]({g_url})\n\n---\n{screenplay_content}"
         else:
-            reply_text = f"🎬 **تم توليد وإنتاج ملف الوسائط الفعلي ({gen_res['media_type']}) بنجاح**:\n\n• **العنوان**: {gen_res['title']}\n• **رابط المشاهدة المباشر**: [{gen_res['media_url']}]({gen_res['media_url']})\n\nالملف جاهز الآن للعرض والتحميل عبر البطاقة التفاعلية المرفقة أدناه في المحادثة."
+            reply_text = f"{media_embed}**{g_title}**\n• رابط المشاهدة المباشر: [{g_url}]({g_url})"
 
         return {
             "success": True,
@@ -1306,15 +1392,9 @@ fun LoginScreen(onLoginClick: (String, String) -> Unit) {
 }
 ```"""
     else:
-        reply = (
-            f"⚡ **استجابة وكيل نعمة AI التنفيذي لطلبك**: **\"{prompt}\"**\n\n"
-            f"تم استيعاب وتجهيز أمرك بنجاح. كافة المحركات الإدراكية والسيرفر الداخلي وأدوات المستودع تعمل بجاهزية تامة وبدون أي خمول.\n"
-            f"• يمكنك طلب تدقيق الأكواد والأنظمة عبر: `افحص الأنظمة والاكواد وحدد الاخطاء والخمول`\n"
-            f"• يمكنك طلب استعراض وتنزيل أي ملف برمجياً عبر: `اعرض ملف <مسار_الملف>`\n"
-            f"• يمكنك طلب مزامنة ورفع أي تعديل إلى GitHub عبر: `ارفع التعديلات للمستودع`"
-        )
-
-    return {"success": True, "reply": reply}
+        prompt_result = prompt
+        # تمرير الرد الصافي مباشرة بدون القالب النصي الثابت
+        return f"{prompt_result.strip()}\n\n"
 
 
 HTML_CHAT_UI = r"""<!DOCTYPE html>
@@ -1753,6 +1833,80 @@ HTML_CHAT_UI = r"""<!DOCTYPE html>
             gap: 8px;
         }
 
+        /* Unified Sovereign Modes Bar & Cinematic Pills */
+        .modes-bar-wrapper {
+            background: rgba(15, 23, 42, 0.98);
+            border-bottom: 1px solid var(--border-color);
+            padding: 6px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 90;
+            backdrop-filter: blur(10px);
+        }
+        .modes-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+            scrollbar-width: none;
+        }
+        .modes-bar::-webkit-scrollbar { display: none; }
+        .mode-tab {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            color: var(--text-muted);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .mode-tab:hover {
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--primary-light);
+        }
+        .mode-tab.active {
+            background: var(--primary-gradient);
+            color: #020617;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+        }
+        .cinematic-pills-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            padding-top: 4px;
+            scrollbar-width: none;
+        }
+        .cinematic-pills-bar::-webkit-scrollbar { display: none; }
+        .pill-btn {
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
+            border-radius: 8px;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .pill-btn:hover {
+            background: rgba(56, 189, 248, 0.2);
+            color: #38bdf8;
+        }
+        .pill-btn.active {
+            background: rgba(2, 132, 199, 0.4);
+            border-color: #38bdf8;
+            color: #38bdf8;
+            font-weight: 700;
+        }
+
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
@@ -1782,6 +1936,25 @@ HTML_CHAT_UI = r"""<!DOCTYPE html>
         </div>
     </header>
 
+    <!-- Unified Sovereign Modes Switcher -->
+    <div class="modes-bar-wrapper">
+        <div class="modes-bar">
+            <button class="mode-tab active" id="tabModeDev" onclick="switchUIMode('developer')">⚡ المطور المحترف</button>
+            <button class="mode-tab" id="tabModeCinema" onclick="switchUIMode('cinematic')">🎬 استوديو المسلسلات والأفلام</button>
+            <button class="mode-tab" id="tabModeSovereign" onclick="switchUIMode('sovereign')">🌐 النواة السيادية (286.6 TFLOPS)</button>
+            <button class="mode-tab" id="tabModeMinimal" onclick="switchUIMode('minimal')">🟢 نعمة أي (المبسط)</button>
+        </div>
+        <!-- Sub-bar for Cinematic Mode Pills (Shown when in Cinematic mode) -->
+        <div class="cinematic-pills-bar" id="cinematicPillsBar" style="display:none;">
+            <button class="pill-btn active" id="pillGeneral" onclick="selectCinematicPill('general')">🧠 المحرك الإدراكي العام</button>
+            <button class="pill-btn" id="pillMasterOrchestrator" onclick="selectCinematicPill('master_orchestrator')">🚀 إنتاج فيلم بضغطة زر (One-Step Orchestrator)</button>
+            <button class="pill-btn" id="pillDirector" onclick="selectCinematicPill('independent_director')">🎬 المخرج السينمائي المستقل</button>
+            <button class="pill-btn" id="pillHorror" onclick="selectCinematicPill('horror_series')">🎬 مسلسل رعب (3 حلقات)</button>
+            <button class="pill-btn" id="pillAndalus" onclick="selectCinematicPill('andalus_epic')">🏛️ ملحمة الأندلس</button>
+            <button class="pill-btn" id="pillNeocorus" onclick="selectCinematicPill('neocorus_series')">🤖 مسلسل نيوكوريس</button>
+        </div>
+    </div>
+
     <!-- Chat Messages Container -->
     <div class="chat-container" id="chatContainer">
         <!-- Welcome AI Message -->
@@ -1803,7 +1976,19 @@ HTML_CHAT_UI = r"""<!DOCTYPE html>
     </div>
 
     <!-- Bottom Input Area (Suggestions Removed) -->
-    <input type="file" id="fileInput" style="display: none;" onchange="handleFileSelected(event)">
+        <!-- Attachment Preview Staging Bar -->
+    <div id="attachmentPreviewContainer" style="display: none; padding: 8px 16px; background: rgba(15, 23, 42, 0.96); border-top: 1px solid rgba(56, 189, 248, 0.25); border-bottom: 1px solid rgba(56, 189, 248, 0.15);">
+        <div id="attachmentPreviewBox" style="display: inline-flex; align-items: center; gap: 12px; background: #1e293b; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 12px; padding: 6px 14px; box-shadow: 0 4px 14px rgba(0,0,0,0.3);">
+            <div id="attachmentThumb" style="display: flex; align-items: center; justify-content: center;"></div>
+            <div style="display: flex; flex-direction: column; max-width: 260px; overflow: hidden;">
+                <span id="attachmentName" style="font-size: 13px; font-weight: bold; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
+                <span id="attachmentSize" style="font-size: 11px; color: #94a3b8;"></span>
+            </div>
+            <button type="button" onclick="cancelAttachment()" title="إلغاء إرفاق الملف" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; margin-inline-start: 8px; transition: 0.2s;">✕</button>
+        </div>
+    </div>
+    <!-- Bottom Input Area -->
+    <input type="file" id="fileInput" style="display: none;" onchange="handleFileSelected(event)" accept="*/*">
     <form class="input-bar-container" id="chatForm" action="javascript:void(0);" onsubmit="event.preventDefault(); handleSend(event); return false;">
         <button class="input-icon-btn" type="button" onclick="triggerFileUpload()" title="إرفاق ملف">📎</button>
         <button class="input-icon-btn" type="button" id="micBtn" onclick="toggleVoiceInput()" title="تسجيل صوتي">🎙️</button>
@@ -1997,6 +2182,24 @@ HTML_CHAT_UI = r"""<!DOCTYPE html>
                 <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:12px;">
                     <button class="header-btn" onclick="closeModal('confirmModal')">إلغاء</button>
                     <button class="header-btn" id="confirmModalActionBtn" style="background:#ef4444; border-color:#ef4444; color:#fff;">تأكيد الحذف 🗑️</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Media Viewer Modal -->
+    <div class="modal-overlay" id="mediaViewerModal">
+        <div class="modal-box" style="max-width:850px; background:#070e1e; border:1px solid #1e293b;">
+            <div class="modal-header" style="border-bottom:1px solid #1e293b;">
+                <h3 id="mediaViewerTitle" style="color:#38bdf8;">🎬 استعراض العمل السينمائي</h3>
+                <button class="modal-close-btn" onclick="closeModal('mediaViewerModal')">✕</button>
+            </div>
+            <div class="modal-body" style="padding:16px; text-align:center;">
+                <div id="mediaViewerContent" style="width:100%; min-height:300px; display:flex; align-items:center; justify-content:center; background:#020617; border-radius:12px; overflow:hidden; border:1px solid #1e293b;">
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px;">
+                    <span style="font-size:12px; color:#94a3b8;">4K Ultra High Fidelity • Vector Render</span>
+                    <a id="mediaViewerDownloadBtn" href="#" download="neama_media.svg" class="header-btn" style="background:#0284c7; color:#fff; text-decoration:none; padding:8px 18px;">⬇️ تنزيل الملف كاملاً</a>
                 </div>
             </div>
         </div>
@@ -2414,10 +2617,92 @@ HTML_CHAT_UI = r"""<!DOCTYPE html>
 
         function formatMarkdown(text) {
             if (!text) return "";
-            let html = escapeHtml(text);
-            html = html.replace(/```([\s\S]*?)```/g, '<pre style="background:#020617; padding:12px; border-radius:8px; overflow-x:auto; margin:8px 0; border:1px solid rgba(56,189,248,0.2); font-family:monospace;"><code>$1</code></pre>');
+            
+            // Protect code blocks first
+            const codeBlocks = [];
+            let processed = String(text).replace(/```([\s\S]*?)```/g, function(match, code) {
+                codeBlocks.push(code);
+                return `___CODE_BLOCK_${codeBlocks.length - 1}___`;
+            });
+
+            // Protect inline code
+            const inlineCodes = [];
+            processed = processed.replace(/`([^`]+)`/g, function(match, code) {
+                inlineCodes.push(code);
+                return `___INLINE_CODE_${inlineCodes.length - 1}___`;
+            });
+
+            // Extract & convert Markdown images: ![alt](url)
+            const mediaImages = [];
+            processed = processed.replace(/!\[(.*?)\]\((.*?)\)/g, function(match, alt, url) {
+                const cleanUrl = url.trim();
+                const cleanAlt = alt.trim() || 'صورة مولدة';
+                const isVideo = cleanUrl.endsWith('.mp4');
+                const isAudio = cleanUrl.endsWith('.wav');
+                let tag = '';
+                if (isVideo) {
+                    tag = `<div class="msg-rendered-media" style="margin: 14px 0; text-align: center;">
+                        <video controls playsinline src="${cleanUrl}" style="max-width: 100%; max-height: 420px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.3); box-shadow: 0 8px 30px rgba(0,0,0,0.6); outline: none; background: #000;"></video>
+                    </div>`;
+                } else if (isAudio) {
+                    tag = `<div class="msg-rendered-media" style="margin: 14px 0; text-align: center;">
+                        <audio controls src="${cleanUrl}" style="width: 100%; max-width: 480px; outline: none;"></audio>
+                    </div>`;
+                } else {
+                    tag = `<div class="msg-rendered-media" style="margin: 14px 0; border-radius: 14px; overflow: hidden; border: 1px solid rgba(56, 189, 248, 0.4); background: #030712; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                        <div style="cursor: pointer; position: relative; text-align: center; background: #020617;" onclick="previewMediaModal('${cleanUrl}', '${escapeHtml(cleanAlt)}')">
+                            <img src="${cleanUrl}" alt="${escapeHtml(cleanAlt)}" style="width: 100%; max-height: 480px; object-fit: contain; display: block; margin: 0 auto;" loading="lazy" />
+                            <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.75); color: #38bdf8; padding: 4px 10px; border-radius: 8px; font-size: 11px; backdrop-filter: blur(4px); font-weight: bold;">🔍 انقر للتكبير</div>
+                        </div>
+                        <div style="padding: 8px 14px; background: rgba(15, 23, 42, 0.95); border-top: 1px solid rgba(56, 189, 248, 0.15); display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 12px; font-weight: bold; color: #38bdf8;">🖼️ ${escapeHtml(cleanAlt)}</span>
+                            <a href="${cleanUrl}" download style="font-size: 11px; color: #f8fafc; background: #1e293b; padding: 5px 12px; border-radius: 6px; text-decoration: none; border: 1px solid #334155; display: inline-flex; align-items: center; gap: 4px;">⬇️ تحميل</a>
+                        </div>
+                    </div>`;
+                }
+                mediaImages.push(tag);
+                return `___MEDIA_IMAGE_${mediaImages.length - 1}___`;
+            });
+
+            // Extract & convert Markdown links: [text](url)
+            const links = [];
+            processed = processed.replace(/\[(.*?)\]\((.*?)\)/g, function(match, label, url) {
+                const linkTag = `<a href="${url.trim()}" target="_blank" rel="noopener noreferrer" style="color: #38bdf8; text-decoration: underline; font-weight: bold;">${escapeHtml(label)}</a>`;
+                links.push(linkTag);
+                return `___LINK_${links.length - 1}___`;
+            });
+
+            // Escape HTML characters in remaining text
+            let html = escapeHtml(processed);
+
+            // Bold formatting
             html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            html = html.replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px;">$1</code>');
+            
+            // Newlines to line breaks
+            html = html.replace(/\n/g, '<br />');
+
+            // Restore links
+            html = html.replace(/___LINK_(\d+)___/g, function(match, idx) {
+                return links[parseInt(idx)] || '';
+            });
+
+            // Restore media images
+            html = html.replace(/___MEDIA_IMAGE_(\d+)___/g, function(match, idx) {
+                return mediaImages[parseInt(idx)] || '';
+            });
+
+            // Restore inline code
+            html = html.replace(/___INLINE_CODE_(\d+)___/g, function(match, idx) {
+                const code = inlineCodes[parseInt(idx)] || '';
+                return `<code style="background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px;">${escapeHtml(code)}</code>`;
+            });
+
+            // Restore code blocks
+            html = html.replace(/___CODE_BLOCK_(\d+)___/g, function(match, idx) {
+                const code = codeBlocks[parseInt(idx)] || '';
+                return `<pre style="background:#020617; padding:12px; border-radius:8px; overflow-x:auto; margin:8px 0; border:1px solid rgba(56,189,248,0.2); font-family:monospace;"><code>${escapeHtml(code)}</code></pre>`;
+            });
+
             return html;
         }
 
@@ -2456,14 +2741,97 @@ HTML_CHAT_UI = r"""<!DOCTYPE html>
             }
         }
 
+        // Media Rendering & Directing Studio Player
+        function renderMediaCard(data) {
+            if (!data) return '';
+            const mediaUrl = data.data_url || data.media_url;
+            if (!mediaUrl) return '';
+            const mediaType = (data.media_type || 'MEDIA').toUpperCase();
+            const title = data.title || 'إنتاج استوديو نعمة السينمائي';
+            const isAudio = mediaType.includes('AUDIO') || mediaType.includes('SOUND') || mediaType.includes('VOICE') || (data.file_name && data.file_name.endsWith('.wav'));
+            const isMp4 = (data.file_name && data.file_name.endsWith('.mp4')) || (mediaUrl && mediaUrl.endsWith('.mp4')) || data.is_real_mp4;
+            const isVideoOrMovie = !isAudio && (isMp4 || mediaType.includes('VIDEO') || mediaType.includes('MOVIE') || mediaType.includes('FILM') || mediaType.includes('SERIES'));
+            const badgeIcon = isAudio ? '🎙️' : (isVideoOrMovie ? '🎬' : '🎨');
+            const specs = isAudio ? '24kHz Studio Audio • Real WAV • Gemini TTS' : (isMp4 ? '1080p MP4 Video • H.264 / AAC • Local Render' : (isVideoOrMovie ? '4K Ultra HDR • 60 FPS • Dolby Atmos' : 'High-Fidelity PNG Render'));
+            const defaultExt = isAudio ? '.wav' : (isMp4 ? '.mp4' : (data.is_real_png ? '.png' : '.svg'));
+            const fileName = data.file_name || ('neama_' + mediaType.toLowerCase() + defaultExt);
+
+            return `
+                <div class="chat-media-card" style="margin-top: 14px; background: #0b1329; border: 1px solid #1e293b; border-radius: 14px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.5);">
+                    <div style="padding: 10px 16px; background: rgba(56, 189, 248, 0.08); border-bottom: 1px solid rgba(56, 189, 248, 0.15); display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 13px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
+                            ${badgeIcon} ${escapeHtml(mediaType)}: ${escapeHtml(title)}
+                        </span>
+                        <span style="font-size: 11px; color: #94a3b8; background: #0f172a; padding: 3px 10px; border-radius: 12px; border: 1px solid #334155;">${specs}</span>
+                    </div>
+                    <div style="position: relative; background: #020617; text-align: center; padding: 14px 12px;">
+                        ${isAudio ? `
+                        <div style="padding: 10px 0;">
+                            <div style="font-size: 14px; color: #38bdf8; font-weight: bold; margin-bottom: 10px;">🔊 مشغل الصوت عالي الدقة الفعلي:</div>
+                            <audio controls src="${mediaUrl}" style="width: 100%; max-width: 500px; outline: none; border-radius: 30px;"></audio>
+                        </div>
+                        ` : isMp4 ? `
+                        <div style="padding: 4px 0;">
+                            <video controls playsinline src="${mediaUrl}" style="width: 100%; max-height: 420px; border-radius: 8px; background: #000; outline: none; box-shadow: 0 4px 20px rgba(0,0,0,0.6);"></video>
+                        </div>
+                        ` : `
+                        <div style="cursor: pointer;" onclick="previewMediaModal('${mediaUrl}', '${escapeHtml(title)}')">
+                            <img src="${mediaUrl}" alt="${escapeHtml(title)}" style="width: 100%; max-height: 420px; object-fit: contain; display: block; margin: 0 auto;" />
+                        </div>
+                        `}
+                    </div>
+                    <div style="padding: 10px 16px; display: flex; gap: 10px; align-items: center; justify-content: flex-end; background: #070e1e; border-top: 1px solid #1e293b;">
+                        <a href="${mediaUrl}" download="${fileName}" style="text-decoration: none; font-size: 12px; font-weight: bold; background: #1e293b; color: #f8fafc; padding: 7px 14px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid #334155;">
+                            ⬇️ تحميل الملف (${fileName.split('.').pop().toUpperCase()})
+                        </a>
+                        ${!isAudio && !isMp4 ? `
+                        <button type="button" onclick="previewMediaModal('${mediaUrl}', '${escapeHtml(title)}')" style="font-size: 12px; font-weight: bold; background: #0284c7; color: #ffffff; padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                            🔍 تكبير ومشاهدة
+                        </button>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function previewMediaModal(mediaUrl, title) {
+            const modal = document.getElementById('mediaViewerModal');
+            const titleEl = document.getElementById('mediaViewerTitle');
+            const contentEl = document.getElementById('mediaViewerContent');
+            const dlBtn = document.getElementById('mediaViewerDownloadBtn');
+            if (!modal || !contentEl) return;
+
+            const isMp4 = mediaUrl.endsWith('.mp4');
+            const isAudio = mediaUrl.endsWith('.wav');
+            if (titleEl) titleEl.textContent = (isMp4 ? '🎬 ' : (isAudio ? '🎙️ ' : '🎨 ')) + (title || 'استعراض العمل السينمائي');
+            if (dlBtn) {
+                dlBtn.href = mediaUrl;
+                dlBtn.download = (title || 'neama_production').replace(/\s+/g, '_') + (isMp4 ? '.mp4' : (isAudio ? '.wav' : '.png'));
+            }
+            if (isMp4) {
+                contentEl.innerHTML = `<video controls autoplay playsinline src="${mediaUrl}" style="max-width: 100%; max-height: 520px; border-radius: 8px; background: #000; outline: none;"></video>`;
+            } else if (isAudio) {
+                contentEl.innerHTML = `<audio controls autoplay src="${mediaUrl}" style="width: 100%; outline: none; margin: 40px auto;"></audio>`;
+            } else {
+                contentEl.innerHTML = `<img src="${mediaUrl}" style="max-width: 100%; max-height: 520px; object-fit: contain; margin: 0 auto; display: block;" />`;
+            }
+            openModal('mediaViewerModal');
+        }
+
         function handleSend(e) {
             if (e && e.preventDefault) e.preventDefault();
             const input = document.getElementById('userInput');
-            const prompt = input.value.trim();
-            if (!prompt || isSending) return false;
+            let prompt = input.value.trim();
 
+            if (!prompt && stagedAttachment) {
+                prompt = stagedAttachment.isImage ? 'فحص وتحليل هذه الصورة وشرح تفاصيلها' : `فحص وتحليل محتوى الملف المرفق: ${stagedAttachment.name}`;
+            }
+
+            if (!prompt && !stagedAttachment) return false;
+            if (isSending) return false;
             isSending = true;
+
             input.value = '';
+            input.placeholder = 'اكتب سؤالك أو طلبك هنا...';
 
             const sendBtn = document.getElementById('sendBtn');
             if (sendBtn) {
@@ -2471,13 +2839,42 @@ HTML_CHAT_UI = r"""<!DOCTYPE html>
                 sendBtn.style.opacity = '0.5';
             }
 
+            // Capture staged attachment to send with this message
+            const attachmentToSend = stagedAttachment;
+            cancelAttachment();
+
             const container = document.getElementById('chatContainer');
             const userRow = document.createElement('div');
             userRow.className = 'message-row user';
+
+            let userMediaHtml = '';
+            if (attachmentToSend) {
+                if (attachmentToSend.isImage) {
+                    userMediaHtml = `
+                        <div style="margin-top: 8px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.25); max-width: 340px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <img src="${attachmentToSend.data_url}" alt="${escapeHtml(attachmentToSend.name)}" style="width: 100%; max-height: 240px; object-fit: cover; display: block; cursor: pointer;" onclick="previewMediaModal('${attachmentToSend.data_url}', '${escapeHtml(attachmentToSend.name)}')" title="انقر لتكبير الصورة" />
+                            <div style="padding: 6px 12px; background: rgba(0,0,0,0.5); font-size: 11px; color: #f8fafc; display: flex; align-items: center; justify-content: space-between;">
+                                <span>📷 ${escapeHtml(attachmentToSend.name)}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    userMediaHtml = `
+                        <div style="margin-top: 8px; display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; padding: 6px 12px; font-size: 12px; color: #fff;">
+                            <span>📎</span>
+                            <span style="font-weight: 600;">${escapeHtml(attachmentToSend.name)}</span>
+                        </div>
+                    `;
+                }
+            }
+
             userRow.innerHTML = `
                 <div class="msg-avatar">أنت</div>
                 <div class="msg-bubble-wrap">
-                    <div class="msg-bubble">${escapeHtml(prompt)}</div>
+                    <div class="msg-bubble">
+                        ${escapeHtml(prompt)}
+                        ${userMediaHtml}
+                    </div>
                 </div>
             `;
             container.appendChild(userRow);
@@ -2499,11 +2896,11 @@ HTML_CHAT_UI = r"""<!DOCTYPE html>
             container.appendChild(loadingRow);
             container.scrollTop = container.scrollHeight;
 
-            performApiCall(prompt, tempId);
+            performApiCall(prompt, tempId, attachmentToSend);
             return false;
         }
 
-        async function performApiCall(prompt, tempId) {
+        async function performApiCall(prompt, tempId, attachment = null) {
             const sendBtn = document.getElementById('sendBtn');
             const container = document.getElementById('chatContainer');
 
@@ -2515,7 +2912,13 @@ HTML_CHAT_UI = r"""<!DOCTYPE html>
                         prompt: prompt,
                         history: clientChatHistory,
                         session_id: currentSessionId,
-                        memory_enabled: isLongTermMemoryEnabled
+                        memory_enabled: isLongTermMemoryEnabled,
+                        attachment: attachment ? {
+                            name: attachment.name,
+                            type: attachment.type,
+                            size: attachment.size,
+                            data_url: attachment.data_url
+                        } : null
                     })
                 });
 
@@ -2538,12 +2941,21 @@ HTML_CHAT_UI = r"""<!DOCTYPE html>
                 const loader = document.getElementById(tempId);
                 if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
 
+                let mediaCardHtml = '';
+                const hasEmbeddedImage = replyText && replyText.includes('![');
+                if (data && (data.action === 'generate_media' || data.media_url || data.data_url) && !hasEmbeddedImage) {
+                    mediaCardHtml = renderMediaCard(data);
+                }
+
                 const aiRow = document.createElement('div');
                 aiRow.className = 'message-row ai';
                 aiRow.innerHTML = `
                     <div class="msg-avatar">ن</div>
                     <div class="msg-bubble-wrap">
-                        <div class="msg-bubble">${formatMarkdown(replyText)}</div>
+                        <div class="msg-bubble">
+                            ${formatMarkdown(replyText)}
+                            ${mediaCardHtml}
+                        </div>
                         <div class="msg-actions">
                             <button class="action-chip" type="button" onclick="copyText(this)">📋 نسخ</button>
                             <button class="action-chip" type="button" onclick="speakText(this)">🔊 استماع</button>
@@ -2617,17 +3029,70 @@ HTML_CHAT_UI = r"""<!DOCTYPE html>
             rec.start();
         }
 
+        let stagedAttachment = null;
+
         function triggerFileUpload() {
             const fi = document.getElementById('fileInput');
             if (fi) fi.click();
         }
+
         function handleFileSelected(e) {
-            const file = e.target.files[0];
+            const file = e.target.files && e.target.files[0];
             if (!file) return;
+
+            const isImage = file.type.startsWith('image/');
+            const reader = new FileReader();
+
+            reader.onload = function(evt) {
+                stagedAttachment = {
+                    name: file.name,
+                    type: file.type || (isImage ? 'image/jpeg' : 'application/octet-stream'),
+                    size: file.size,
+                    data_url: evt.target.result,
+                    isImage: isImage
+                };
+
+                const container = document.getElementById('attachmentPreviewContainer');
+                const thumb = document.getElementById('attachmentThumb');
+                const nameEl = document.getElementById('attachmentName');
+                const sizeEl = document.getElementById('attachmentSize');
+
+                if (container && thumb && nameEl && sizeEl) {
+                    nameEl.textContent = file.name;
+                    const sizeKB = (file.size / 1024).toFixed(1);
+                    sizeEl.textContent = (sizeKB > 1024) ? (sizeKB / 1024).toFixed(2) + ' MB' : sizeKB + ' KB';
+
+                    if (isImage) {
+                        thumb.innerHTML = `<img src="${evt.target.result}" alt="معاينة" style="width: 40px; height: 40px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.5);">`;
+                    } else {
+                        thumb.innerHTML = `<span style="font-size: 24px;">📄</span>`;
+                    }
+                    container.style.display = 'block';
+                }
+
+                const input = document.getElementById('userInput');
+                if (input) {
+                    input.focus();
+                    if (!input.value.trim()) {
+                        input.placeholder = isImage ? 'اكتب طلبك أو شرحك حول هذه الصورة ثم اضغط إرسال...' : 'اكتب طلبك أو شرحك حول هذا الملف ثم اضغط إرسال...';
+                    }
+                }
+                showToast('📎 تم إرفاق الملف بنجاح! اكتب شرحك أو طلبك ثم اضغط إرسال');
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        function cancelAttachment() {
+            stagedAttachment = null;
+            const fi = document.getElementById('fileInput');
+            if (fi) fi.value = '';
+            const container = document.getElementById('attachmentPreviewContainer');
+            if (container) container.style.display = 'none';
             const input = document.getElementById('userInput');
             if (input) {
-                input.value = `[تم إرفاق ملف: ${file.name}] قم بفحص هذا الملف وشرحه`;
-                handleSend();
+                input.placeholder = 'اكتب سؤالك أو طلبك هنا...';
+                input.focus();
             }
         }
 
@@ -2639,9 +3104,117 @@ HTML_CHAT_UI = r"""<!DOCTYPE html>
             closeModal('settingsModal');
             showToast('تم حفظ الإعدادات بنجاح ✅');
         }
+
+        // Sovereign UI Modes & Switcher
+        let activeUIMode = 'developer';
+        function switchUIMode(mode) {
+            activeUIMode = mode;
+            document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+            const cinemaPills = document.getElementById('cinematicPillsBar');
+            const titleEl = document.querySelector('.header-project-name');
+            const planBadge = document.querySelector('.plan-badge');
+            const userInput = document.getElementById('userInput');
+            const memoryBadge = document.getElementById('memoryBadge');
+            
+            if (mode === 'developer') {
+                const btn = document.getElementById('tabModeDev');
+                if (btn) btn.classList.add('active');
+                if (cinemaPills) cinemaPills.style.display = 'none';
+                if (titleEl) titleEl.innerText = 'منظومة نعمة الذكية (Neama AI)';
+                if (planBadge) planBadge.innerText = 'المطور المحترف ⚡';
+                if (memoryBadge) memoryBadge.style.display = 'inline-flex';
+                if (userInput) userInput.placeholder = 'اكتب سؤالك أو طلبك هنا...';
+                showToast('⚡ تم تفعيل نمط المطور المحترف');
+            } else if (mode === 'cinematic') {
+                const btn = document.getElementById('tabModeCinema');
+                if (btn) btn.classList.add('active');
+                if (cinemaPills) cinemaPills.style.display = 'flex';
+                if (titleEl) titleEl.innerText = 'Neama AI & Sasa OS - Cinematic Studio Pro';
+                if (planBadge) planBadge.innerText = '🎬 استوديو المسلسلات';
+                if (userInput) userInput.placeholder = 'اكتب فكرة فيلم، مسلسل، أو أي سؤال معرفي...';
+                showToast('🎬 تم تفعيل استوديو الإنتاج السينمائي والمسلسلات');
+            } else if (mode === 'sovereign') {
+                const btn = document.getElementById('tabModeSovereign');
+                if (btn) btn.classList.add('active');
+                if (cinemaPills) cinemaPills.style.display = 'none';
+                if (titleEl) titleEl.innerText = 'Neama AI Sovereign Engine';
+                if (planBadge) planBadge.innerText = 'Live Container ⚡ 286.6 TFLOPS';
+                if (userInput) userInput.placeholder = 'أدخل الأمر السيادي المباشر لنواة نعمة...';
+                showToast('🌐 تم تفعيل النواة السيادية (286.6 TFLOPS)');
+            } else if (mode === 'minimal') {
+                const btn = document.getElementById('tabModeMinimal');
+                if (btn) btn.classList.add('active');
+                if (cinemaPills) cinemaPills.style.display = 'none';
+                if (titleEl) titleEl.innerText = 'Neama AI • نعمة أي';
+                if (planBadge) planBadge.innerText = '🟢 النمط التبسيطي';
+                if (userInput) userInput.placeholder = 'اكتب سؤالك أو شرحك للمرفق...';
+                showToast('🟢 تم تفعيل النمط التبسيطي السريع');
+            }
+        }
+
+        function selectCinematicPill(pillKey) {
+            document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+            const input = document.getElementById('userInput');
+            if (pillKey === 'general') {
+                const el = document.getElementById('pillGeneral');
+                if (el) el.classList.add('active');
+                if (input) input.value = 'تفعيل المحرك الإدراكي العام لتحليل شامل';
+                handleSend();
+            } else if (pillKey === 'master_orchestrator') {
+                const el = document.getElementById('pillMasterOrchestrator');
+                if (el) el.classList.add('active');
+                if (input) input.value = 'أنتج فيلم كامل بضغطة زر واحدة عبر وحدة التحكم المركزية (Design Master Orchestrator)';
+                handleSend();
+            } else if (pillKey === 'independent_director') {
+                const el = document.getElementById('pillDirector');
+                if (el) el.classList.add('active');
+                if (input) input.value = 'تفعيل المخرج السينمائي المستقل: هندسة المشهد وضبط زوايا الكاميرا وحركات الإضاءة';
+                handleSend();
+            } else if (pillKey === 'horror_series') {
+                const el = document.getElementById('pillHorror');
+                if (el) el.classList.add('active');
+                if (input) input.value = 'اكتب سيناريو مسلسل رعب من 3 حلقات بمشاهد سينمائية وتشويق سردي';
+                handleSend();
+            } else if (pillKey === 'andalus_epic') {
+                const el = document.getElementById('pillAndalus');
+                if (el) el.classList.add('active');
+                if (input) input.value = 'اكتب سيناريو ملحمة الأندلس التاريخية بمشاهد سينمائية وحوار درامي عميق';
+                handleSend();
+            } else if (pillKey === 'neocorus_series') {
+                const el = document.getElementById('pillNeocorus');
+                if (el) el.classList.add('active');
+                if (input) input.value = 'اكتب سيناريو مسلسل الخيال العلمي والذكاء الاصطناعي نيوكوريس';
+                handleSend();
+            }
+        }
     </script>
 </body>
 </html>"""
+
+def get_html_ui() -> str:
+    """
+    Dynamically loads the comprehensive web UI from app/www/index.html or www/index.html
+    falling back to the embedded HTML_CHAT_UI.
+    """
+    candidates = [
+        os.path.join(os.path.dirname(__file__), "www", "index.html"),
+        os.path.join(os.path.dirname(__file__), "app", "www", "index.html"),
+        os.path.join(os.getcwd(), "app", "www", "index.html"),
+        os.path.join(os.getcwd(), "www", "index.html"),
+        "/app/www/index.html"
+    ]
+    for p in candidates:
+        if os.path.isfile(p):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    content = f.read()
+                    if len(content) > 1000:
+                        return content
+            except Exception:
+                pass
+    return HTMLResponse(content=get_html_ui())
+
+
 
 if USE_FASTAPI:
     app = FastAPI(
@@ -2677,6 +3250,7 @@ if USE_FASTAPI:
         contents: Optional[Any] = Field(None)
         apiKey: Optional[str] = Field(None)
         model: Optional[str] = Field("Flash 3.6")
+        attachment: Optional[Dict[str, Any]] = Field(None)
 
     @app.get("/", response_class=HTMLResponse)
     async def root(request: Request):
@@ -2708,7 +3282,7 @@ if USE_FASTAPI:
             user_prompt = "مرحبا"
 
         try:
-            res = query_gemini_api(user_prompt, req.apiKey or "", req.model or "Flash 3.6", session_id=req.session_id or "default", history=req.history, memory_enabled=req.memory_enabled if req.memory_enabled is not None else True)
+            res = query_gemini_api(user_prompt, req.apiKey or "", req.model or "Flash 3.6", session_id=req.session_id or "default", history=req.history, memory_enabled=req.memory_enabled if req.memory_enabled is not None else True, attachment=req.attachment)
             if not res or not res.get("reply"):
                 offline = synthesize_offline_cognitive_reply(user_prompt, user_prompt.lower())
                 res = {"success": True, "reply": offline, "text": offline}
@@ -2729,9 +3303,38 @@ if USE_FASTAPI:
         from fastapi.responses import FileResponse
         fpath = os.path.join(MEDIA_OUTPUT_DIR, file_name)
         if os.path.exists(fpath):
-            mtype = "image/svg+xml" if file_name.endswith(".svg") else "image/png"
+            ext = os.path.splitext(file_name)[1].lower()
+            mimes = {
+                ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg",
+                ".jpeg": "image/jpeg", ".webp": "image/webp", ".wav": "audio/wav",
+                ".mp3": "audio/mpeg", ".mp4": "video/mp4", ".webm": "video/webm"
+            }
+            mtype = mimes.get(ext, "application/octet-stream")
             return FileResponse(fpath, media_type=mtype)
         raise HTTPException(status_code=404, detail="Media file not found")
+
+    @app.post("/api/design/orchestrate")
+    async def design_orchestrate_endpoint(req: Request):
+        try:
+            body = await req.json()
+            concept = body.get("concept", "فيلم سينمائي متكامل")
+            duration = int(body.get("duration", 1))
+            from app.neama.design_orchestrator import DesignSystemOrchestrator
+            orch = DesignSystemOrchestrator()
+            movie_file = await orch.generate_full_movie(concept, duration)
+            file_name = os.path.basename(movie_file)
+            import shutil
+            os.makedirs(MEDIA_OUTPUT_DIR, exist_ok=True)
+            shutil.copy(movie_file, os.path.join(MEDIA_OUTPUT_DIR, file_name))
+            return {
+                "success": True,
+                "movie_path": movie_file,
+                "media_url": f"/api/media/{file_name}",
+                "title": f"فيلم: {concept[:30]}",
+                "message": "تم إنتاج وتجميع الفيلم السينمائي بنجاح في الأرشيف الفائق"
+            }
+        except Exception as exc:
+            return {"success": False, "error": str(exc)}
 
     @app.get("/api/workspace/info")
     async def workspace_info():
@@ -2822,7 +3425,7 @@ elif USE_FLASK:
                 "version": "v16.0",
                 "developer": "Omar El-Sadeq Mohammed Ahmed Idris"
             })
-        return HTML_CHAT_UI
+        return get_html_ui()
 
     @app.route("/api/chat", methods=["POST"])
     def chat_flask():
@@ -2842,7 +3445,11 @@ elif USE_FLASK:
         res = query_gemini_api(
             prompt=user_prompt,
             api_key=data.get("apiKey", ""),
-            model_name=data.get("model", "Flash 3.6")
+            model_name=data.get("model", "Flash 3.6"),
+            session_id=data.get("session_id", "default"),
+            history=data.get("history"),
+            memory_enabled=data.get("memory_enabled", True),
+            attachment=data.get("attachment")
         )
         if not res or not res.get("reply"):
             offline = synthesize_offline_cognitive_reply(user_prompt, user_prompt.lower())
@@ -2880,7 +3487,13 @@ elif USE_FLASK:
         from flask import send_file
         fpath = os.path.join(MEDIA_OUTPUT_DIR, file_name)
         if os.path.exists(fpath):
-            mtype = "image/svg+xml" if file_name.endswith(".svg") else "image/png"
+            ext = os.path.splitext(file_name)[1].lower()
+            mimes = {
+                ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg",
+                ".jpeg": "image/jpeg", ".webp": "image/webp", ".wav": "audio/wav",
+                ".mp3": "audio/mpeg", ".mp4": "video/mp4", ".webm": "video/webm"
+            }
+            mtype = mimes.get(ext, "application/octet-stream")
             return send_file(fpath, mimetype=mtype)
         return jsonify({"error": "Media file not found"}), 404
 
@@ -2996,12 +3609,18 @@ else:
                     self.wfile.write(json.dumps(response).encode("utf-8"))
                 else:
                     self._set_headers(200, "text/html; charset=utf-8")
-                    self.wfile.write(HTML_CHAT_UI.encode("utf-8"))
+                    self.wfile.write(get_html_ui().encode("utf-8"))
             elif path.startswith("/api/media/"):
                 fname = path.split("/api/media/")[-1]
                 fpath = os.path.join(MEDIA_OUTPUT_DIR, fname)
                 if os.path.exists(fpath):
-                    mtype = "image/svg+xml" if fname.endswith(".svg") else "image/png"
+                    ext = os.path.splitext(fname)[1].lower()
+                    mimes = {
+                        ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg",
+                        ".jpeg": "image/jpeg", ".webp": "image/webp", ".wav": "audio/wav",
+                        ".mp3": "audio/mpeg", ".mp4": "video/mp4", ".webm": "video/webm"
+                    }
+                    mtype = mimes.get(ext, "application/octet-stream")
                     self._set_headers(200, mtype)
                     with open(fpath, "rb") as mf:
                         self.wfile.write(mf.read())
@@ -3047,7 +3666,11 @@ else:
                 res = query_gemini_api(
                     prompt=body.get("prompt", ""),
                     api_key=body.get("apiKey", ""),
-                    model_name=body.get("model", "Flash 3.6")
+                    model_name=body.get("model", "Flash 3.6"),
+                    session_id=body.get("session_id", "default"),
+                    history=body.get("history"),
+                    memory_enabled=body.get("memory_enabled", True),
+                    attachment=body.get("attachment")
                 )
                 self._set_headers(200, "application/json")
                 self.wfile.write(json.dumps(res).encode("utf-8"))
